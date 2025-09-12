@@ -1,0 +1,57 @@
+package com.finance.tracker.transactions.controller;
+
+import com.finance.tracker.transactions.domain.TransactionCreateUpdateRequest;
+import com.finance.tracker.transactions.domain.TransactionsWithCategoryAndAccount;
+import com.finance.tracker.transactions.domain.dtos.TransactionDto;
+import com.finance.tracker.transactions.domain.entities.Transaction;
+import com.finance.tracker.transactions.mapper.TransactionMapper;
+import com.finance.tracker.transactions.service.TransactionService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1")
+@RequiredArgsConstructor
+@CrossOrigin
+public class TransactionController {
+
+    private final TransactionService transactionService;
+    private final TransactionMapper transactionMapper;
+
+
+    @PostMapping("/transaction")
+    public ResponseEntity<TransactionDto> createTransaction(@RequestBody TransactionCreateUpdateRequest request){
+        Transaction createdTransaction = transactionService.createNewTransaction(request);
+        return new ResponseEntity<>(transactionMapper.toDto(createdTransaction), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/transaction/{id}")
+    public ResponseEntity<TransactionDto> getTransaction(@PathVariable("id") String id) {
+        return transactionService.getTransaction(id)
+                .map(transaction -> ResponseEntity.ok(transactionMapper.toDto(transaction)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/transactions")
+    public Object getTransactions(
+            @RequestParam(value = "page", defaultValue = "1", required = false) int page,
+            @RequestParam(value = "size", defaultValue = "20", required = false) int size,
+            @RequestParam(value = "version", defaultValue = "1", required = false) int version
+    ){
+        if(version==1){
+            Page<Transaction> transactions = transactionService.getTransactions(PageRequest.of(page-1, size, Sort.by("occuredAt").descending()));
+            return new ResponseEntity<>(transactions.map(transactionMapper::toDto), HttpStatus.OK);
+        } else if (version==2) {
+            Page<TransactionsWithCategoryAndAccount> transactions = transactionService.getTransactionsV2(PageRequest.of(page-1, size, Sort.by("occuredAt").descending()));
+            return new ResponseEntity<>(transactions.map(transactionMapper::toDto), HttpStatus.OK);
+        }
+        return ResponseEntity.badRequest();
+    }
+}
