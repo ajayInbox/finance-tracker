@@ -15,10 +15,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
 
     @Query(
             value = "SELECT t._id AS _id, t.transaction_name AS transactionName, t.amount AS amount, t.type AS type," +
-                    "a._id AS accountId, a.label AS accountName, a.balance_cached AS balanceCached, " +
+                    "a._id AS accountId, a.label AS accountName, ats.balance_after AS balanceCached, " +
                     "c._id AS categoryId, c.label AS categoryName, t.occured_at AS occuredAt," +
                     "t.posted_at AS postedAt, t.currency AS currency FROM transaction t " +
-                    "INNER JOIN category c ON t.category=c._id INNER JOIN account a ON t.account=a._id",
+                    "INNER JOIN category c ON t.category=c._id INNER JOIN account a ON t.account=a._id INNER JOIN " +
+                    "account_transaction_snapshot ats ON t._id=ats.transaction_id and a._id=ats.account_id",
             nativeQuery = true
     )
     Page<TransactionsWithCategoryAndAccount> fetchTransactions(Pageable pageable);

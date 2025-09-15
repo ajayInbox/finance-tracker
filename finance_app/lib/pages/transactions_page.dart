@@ -1,9 +1,10 @@
 // lib/pages/transactions_page.dart
+import 'package:finance_app/utils/category_icon.dart';
 import 'package:flutter/material.dart';
 import 'add_transaction_page.dart';
 import '../data/services/transaction_service.dart';
 import '../data/repository/transaction_repository.dart';
-import '../data/models/_transaction.dart';
+import '../data/models/transaction_summary.dart';
 
 class TransactionsPage extends StatefulWidget {
   const TransactionsPage({super.key});
@@ -13,7 +14,7 @@ class TransactionsPage extends StatefulWidget {
 }
 
 class _TransactionsPageState extends State<TransactionsPage> {
-  late Future<List<Transaction>> transactions;
+  late Future<List<TransactionSummary>> transactions;
 
   @override
   void initState() {
@@ -24,15 +25,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
     final svc = TransactionService(repo);
     transactions = svc.getFeed(); // trigger GET on load
   }
-  
-  // Mock data - replace with actual data from your backend
-  // final List<Transaction> transactions = [
-  //   Transaction('Swiggy', 'Food & Dining', -450, DateTime.now(), Icons.restaurant),
-  //   Transaction('Uber', 'Transport', -250, DateTime.now().subtract(const Duration(hours: 2)), Icons.directions_car),
-  //   Transaction('Salary', 'Income', 65000, DateTime.now().subtract(const Duration(days: 1)), Icons.account_balance_wallet),
-  //   Transaction('Grocery Store', 'Groceries', -1200, DateTime.now().subtract(const Duration(days: 1)), Icons.shopping_cart),
-  //   Transaction('Netflix', 'Subscriptions', -799, DateTime.now().subtract(const Duration(days: 2)), Icons.play_circle_outline),
-  // ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +47,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
           ),
         ],
       ),
-      body: FutureBuilder<List<Transaction>>(
+      body: FutureBuilder<List<TransactionSummary>>(
         future: transactions,
         builder: (context, snap) {
           if (snap.connectionState != ConnectionState.done) {
@@ -139,7 +132,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   //   );
   // }
 
-  Widget _buildTransactionCard(Transaction transaction) {
+  Widget _buildTransactionCard(TransactionSummary transaction) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -163,12 +156,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
               color: transaction.type.toLowerCase()=="income" ? Colors.green[50] : Colors.red[50],
               borderRadius: BorderRadius.circular(10),
             ),
-             child: Text("data")
-             //Icon(
-            //   transaction.icon,
-            //   color: transaction.amount > 0 ? Colors.green[600] : Colors.red[600],
-            //   size: 24,
-            // ),
+          //   child: Text("data")
+             child: Icon(
+              CategoryIcons.of(Category.food)
+              // color: transaction.amount > 0 ? Colors.green[600] : Colors.red[600],
+              // size: 24,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -184,7 +177,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  transaction.category,
+                  transaction.categoryName,
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 14,
@@ -212,6 +205,28 @@ class _TransactionsPageState extends State<TransactionsPage> {
                   fontSize: 16,
                 ),
               ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                transaction.accountName,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              Text(" | "),
+                          Text(
+                transaction.balanceCached.toString(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+                ]
+              
+              )
+              
             ],
           ),
         ],

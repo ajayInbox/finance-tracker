@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/_transaction.dart';
+import '../models/transaction_summary.dart';
 
 // domain/repositories
 abstract class TransactionRepository {
-  Future<List<Transaction>> fetchAll();
+  Future<List<TransactionSummary>> fetchAll();
 }
 
 // data/repositories
@@ -14,9 +14,10 @@ class HttpTransactionRepository implements TransactionRepository {
   final Uri baseUrl;
 
   @override
-  Future<List<Transaction>> fetchAll() async {
+  Future<List<TransactionSummary>> fetchAll() async {
     final uri = baseUrl.replace(
       path: '/api/v1/transactions',
+      queryParameters: {"version":"2"}
     );
 
     final res = await http.get(
@@ -32,7 +33,7 @@ class HttpTransactionRepository implements TransactionRepository {
     final List list = body is List ? body : (body['content'] as List);
     return list
         .cast<Map<String, dynamic>>()
-        .map(Transaction.fromJson)
+        .map(TransactionSummary.fromJson)
         .toList();
   }
 }

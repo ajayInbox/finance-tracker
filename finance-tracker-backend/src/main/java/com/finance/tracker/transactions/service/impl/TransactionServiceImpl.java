@@ -58,13 +58,12 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private Transaction saveTransaction( TransactionCreateUpdateRequest request){
-        double amount = request.type().equalsIgnoreCase("expense") ? -request.amount() : request.amount();
         Transaction newTransaction = Transaction.builder()
                 .type(TransactionType.fromValueIgnoreCase(request.type()))
                 .transactionName(request.transactionName())
                 .currency(request.currency())
                 .account(request.account())
-                .amount(amount)
+                .amount(request.amount())
                 .category(request.category())
                 .merchant(request.merchant())
                 .occuredAt(LocalDateTime.parse(request.occuredAt(), DateTimeFormatter.ISO_DATE_TIME))

@@ -73,7 +73,7 @@ public class AccountServiceImpl implements AccountService {
                 .currency(request.currency())
                 .lastFour(request.lastFour())
                 .readOnly(false)
-                .type(AccountType.CARD)
+                .type(AccountType.valueOf(request.accountType()))
                 .build();
 
         return accountRepository.save(newAccount);

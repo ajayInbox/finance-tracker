@@ -16,7 +16,7 @@ public class TransactionsWithCategoryAndAccount {
 
     private String transactionName;
     private Double amount;
-    private Short type;
+    private String type;
     private String accountId;
     private String accountName;
     private BigDecimal balanceCached;
@@ -27,7 +27,7 @@ public class TransactionsWithCategoryAndAccount {
     private Timestamp postedAt;
     private String currency;
 
-    public TransactionsWithCategoryAndAccount(String id, String transactionName, Double amount, Short type, String accountId, String accountName, BigDecimal balanceCached, String categoryId, String categoryName, Timestamp occuredAt, Timestamp postedAt, String currency) {
+    public TransactionsWithCategoryAndAccount(String id, String transactionName, Double amount, String type, String accountId, String accountName, BigDecimal balanceCached, String categoryId, String categoryName, Timestamp occuredAt, Timestamp postedAt, String currency) {
         this.id = id;
         this.transactionName = transactionName;
         this.amount = amount;
