@@ -8,14 +8,14 @@ import com.finance.tracker.category.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
+@CrossOrigin
 public class CategoryController {
 
     private final CategoryService categoryService;
@@ -25,5 +25,12 @@ public class CategoryController {
     public ResponseEntity<CategoryDto> createCategory(@RequestBody CategoryCreateUpdateRequest request){
         Category category = categoryService.createCategory(request);
         return new ResponseEntity<>(categoryMapper.toDto(category), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/categories")
+    public ResponseEntity<List<CategoryDto>> getAllCategories(){
+        List<Category> categories = categoryService.getAllCategories();
+        List<CategoryDto> res = categories.stream().map(categoryMapper::toDto).toList();
+        return ResponseEntity.ok(res);
     }
 }

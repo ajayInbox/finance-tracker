@@ -1,4 +1,8 @@
 // lib/pages/add_transaction_page.dart
+import 'package:finance_app/data/models/account.dart';
+import 'package:finance_app/data/models/category.dart';
+import 'package:finance_app/data/services/account_service.dart';
+import 'package:finance_app/data/services/category_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -13,32 +17,31 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _notesController = TextEditingController();
+  late List<Account> accounts = [];
+  late List<Category> categories = [];
   
   String _transactionType = 'Expense';
   String? _selectedCategory;
   String? _selectedAccount;
   DateTime _selectedDate = DateTime.now();
 
-  final List<String> _categories = [
-    'Food & Dining',
-    'Transport',
-    'Shopping',
-    'Groceries',
-    'Entertainment',
-    'Bills & Utilities',
-    'Health & Medical',
-    'Education',
-    'Travel',
-    'Others'
-  ];
 
-  final List<String> _accounts = [
-    'HDFC Bank',
-    'SBI Account',
-    'Cash',
-    'Paytm Wallet',
-    'Credit Card'
-  ];
+  @override
+  void initState(){
+    super.initState();
+    _getAccountData();
+    _getCategoriesData();
+  }
+
+  void _getAccountData() async {
+    accounts = (await AccountService().getAccounts());
+    Future.delayed(const Duration(seconds: 1)).then((value) => setState(() {}));
+  }
+
+  void _getCategoriesData() async {
+    categories = (await CategoryService().getAllCategories());
+    Future.delayed(const Duration(seconds: 1)).then((value) => setState(() {}));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -195,24 +198,29 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   }
 
   Widget _buildCategoryField() {
-    return _buildDropdownField(
+    return _buildDropdownFieldForCategory(
       'Category',
       _selectedCategory,
-      _categories,
+      categories,
       (value) => setState(() => _selectedCategory = value),
     );
   }
 
   Widget _buildAccountField() {
-    return _buildDropdownField(
+    return _buildDropdownFieldForAccount(
       'Account',
       _selectedAccount,
-      _accounts,
-      (value) => setState(() => _selectedAccount = value),
+      accounts,
+      (value) {
+        setState(() {
+          print(value);
+          _selectedAccount = value;
+        });
+      }
     );
   }
 
-  Widget _buildDropdownField(String label, String? value, List<String> items, Function(String?) onChanged) {
+  Widget _buildDropdownFieldForAccount(String label, String? value, List<Account> items, Function(String?) onChanged) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -247,8 +255,59 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             ),
             hint: Text('Select $label'),
             items: items.map((item) => DropdownMenuItem(
-              value: item,
-              child: Text(item),
+              value: item.id,
+              child: Text(item.accountName),
+            )).toList(),
+            onChanged: onChanged,
+            validator: (value) {
+              if (value == null) {
+                return 'Please select a $label';
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownFieldForCategory(String label, String? value, List<Category> items, Function(String?) onChanged) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            initialValue: value,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+            ),
+            hint: Text('Select $label'),
+            items: items.map((item) => DropdownMenuItem(
+              value: item.id,
+              child: Text(item.label),
             )).toList(),
             onChanged: onChanged,
             validator: (value) {

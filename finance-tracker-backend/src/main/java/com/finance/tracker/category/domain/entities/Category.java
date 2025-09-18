@@ -18,7 +18,7 @@ public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "_id")
-    private String _id;
+    private String id;
     private String key;
     private String label;
 

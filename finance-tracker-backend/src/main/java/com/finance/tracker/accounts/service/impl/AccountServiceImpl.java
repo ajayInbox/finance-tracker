@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -77,6 +78,11 @@ public class AccountServiceImpl implements AccountService {
                 .build();
 
         return accountRepository.save(newAccount);
+    }
+
+    @Override
+    public List<Account> getAccounts() {
+        return accountRepository.findAll();
     }
 
     private BigDecimal calculateBalanceDelta(TransactionType type, BigDecimal amount, AccountType accountType) {

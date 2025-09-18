@@ -3,7 +3,6 @@ import 'package:finance_app/utils/category_icon.dart';
 import 'package:flutter/material.dart';
 import 'add_transaction_page.dart';
 import '../data/services/transaction_service.dart';
-import '../data/repository/transaction_repository.dart';
 import '../data/models/transaction_summary.dart';
 
 class TransactionsPage extends StatefulWidget {
@@ -19,10 +18,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
   @override
   void initState() {
     super.initState();
-    final repo = HttpTransactionRepository(
-      baseUrl: Uri.parse('http://localhost:8080'),
-    );
-    final svc = TransactionService(repo);
+    final svc = TransactionService();
     transactions = svc.getFeed(); // trigger GET on load
   }
 
@@ -158,7 +154,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
             ),
           //   child: Text("data")
              child: Icon(
-              CategoryIcons.of(Category.food)
+              CategoryIcons.of(transaction.categoryName.toLowerCase())
               // color: transaction.amount > 0 ? Colors.green[600] : Colors.red[600],
               // size: 24,
             ),

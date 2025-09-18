@@ -1,18 +1,17 @@
-import 'dart:convert';
+
+import 'package:finance_app/data/models/category.dart';
+import 'package:finance_app/utils/api_constants.dart';
 import 'package:http/http.dart' as http;
-import '../models/transaction_summary.dart';
-import '../../utils/api_constants.dart';
+import 'dart:convert';
 
-// data/repositories
-class TransactionRepository {
+class CategoryRepository {
 
-  Future<List<TransactionSummary>> fetchAllTransactions() async {
-    
+  Future<List<Category>> fetchAllCategories() async {
+
     Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
-      path: ApiConstants.getTransactions,
-      queryParameters: {"version":"2"}
+      path: ApiConstants.getCategories
     );
-                  
+
     final res = await http.get(
       uri,
       headers: {'Accept': 'application/json'},
@@ -26,7 +25,7 @@ class TransactionRepository {
     final List list = body is List ? body : (body['content'] as List);
     return list
         .cast<Map<String, dynamic>>()
-        .map(TransactionSummary.fromJson)
+        .map(Category.fromJson)
         .toList();
   }
 }

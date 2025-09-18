@@ -8,14 +8,14 @@ import com.finance.tracker.accounts.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
+@CrossOrigin
 public class AccountController {
 
     private final AccountService accountService;
@@ -25,5 +25,12 @@ public class AccountController {
     public ResponseEntity<AccountDto> addAccount(@RequestBody AccountCreateUpdateRequest request){
         Account account = accountService.createAccount(request);
         return new ResponseEntity<>(accountMapper.toDto(account), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/accounts")
+    public ResponseEntity<List<AccountDto>> getAccounts(){
+        List<Account> accounts = accountService.getAccounts();
+        List<AccountDto> res = accounts.stream().map(accountMapper::toDto).toList();
+        return ResponseEntity.ok(res);
     }
 }

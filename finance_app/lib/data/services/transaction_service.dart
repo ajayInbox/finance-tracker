@@ -3,12 +3,11 @@ import '../models/transaction_summary.dart';
 
 // application/service
 class TransactionService {
-  TransactionService(this._repo);
-  final TransactionRepository _repo;
+  final TransactionRepository _repo = TransactionRepository();
 
   // Example orchestration: fetch and sort descending by date
   Future<List<TransactionSummary>> getFeed() async {
-    final items = await _repo.fetchAll();
+    final items = await _repo.fetchAllTransactions();
     return items;
   }
 

@@ -4,6 +4,8 @@ import com.finance.tracker.accounts.domain.AccountCreateUpdateRequest;
 import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
 import com.finance.tracker.accounts.domain.entities.Account;
 
+import java.util.List;
+
 public interface AccountService {
 
     Account getAccountByIdAndUser(String accountId, String userId);
@@ -11,4 +13,6 @@ public interface AccountService {
     void updateBalanceForTransaction(BalanceUpdateRequest request);
 
     Account createAccount(AccountCreateUpdateRequest request);
+
+    List<Account> getAccounts();
 }
