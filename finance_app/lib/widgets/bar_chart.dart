@@ -9,7 +9,9 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 
 /// Renders default Column Chart sample.
 class ColumnDefault extends StatefulWidget {
-  const ColumnDefault({super.key});
+  const ColumnDefault({super.key, this.data});
+
+  final List<ChartSampleData>? data;
 
   @override
   State<ColumnDefault> createState() => _ColumnDefaultState();
@@ -28,15 +30,15 @@ class _ColumnDefaultState extends State<ColumnDefault> {
       header: '',
       canShowMarker: false,
     );
-    _chartData = <ChartSampleData>[
-      ChartSampleData(x: 'Monday', y: 1000.0),
-      ChartSampleData(x: 'Tuesday', y: 0.818),
-      ChartSampleData(x: 'Wednesday', y: 1.51),
-      ChartSampleData(x: 'Thursday', y: 1.302),
-      ChartSampleData(x: 'Friday', y: 2.017),
-      ChartSampleData(x: 'Saturday', y: 1.683),
-      ChartSampleData(x: 'Sunday', y: 1.7),
-    ];
+    _chartData = List<ChartSampleData>.from(widget.data ?? <ChartSampleData>[
+      ChartSampleData(x: 'Mon', y: 150.0),
+      ChartSampleData(x: 'Tue', y: 200.0),
+      ChartSampleData(x: 'Wed', y: 75.0),
+      ChartSampleData(x: 'Thu', y: 300.0),
+      ChartSampleData(x: 'Fri', y: 180.0),
+      ChartSampleData(x: 'Sat', y: 120.0),
+      ChartSampleData(x: 'Sun', y: 90.0),
+    ]);
     super.initState();
   }
 

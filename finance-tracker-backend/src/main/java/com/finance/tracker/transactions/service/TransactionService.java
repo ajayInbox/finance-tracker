@@ -17,4 +17,6 @@ public interface TransactionService {
     Page<Transaction> getTransactions(Pageable pageable);
 
     Page<TransactionsWithCategoryAndAccount> getTransactionsV2(Pageable pageable);
+
+    Object search(String from, String to, String account, String category, String query);
 }

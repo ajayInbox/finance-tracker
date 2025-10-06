@@ -1,18 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/transaction_summary.dart';
+import '../models/transaction.dart';
 import '../../utils/api_constants.dart';
 
 // data/repositories
 class TransactionRepository {
 
   Future<List<TransactionSummary>> fetchAllTransactions() async {
-    
+
     Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
       path: ApiConstants.getTransactions,
       queryParameters: {"version":"2"}
     );
-                  
+
     final res = await http.get(
       uri,
       headers: {'Accept': 'application/json'},
@@ -28,5 +29,24 @@ class TransactionRepository {
         .cast<Map<String, dynamic>>()
         .map(TransactionSummary.fromJson)
         .toList();
+  }
+
+  Future<void> createTransaction(Transaction transaction) async {
+    Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
+      path: ApiConstants.createTransaction,
+    );
+
+    final res = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: jsonEncode(transaction.toJson()),
+    );
+
+    if (res.statusCode != 201 && res.statusCode != 200) {
+      throw Exception('Failed to create transaction: ${res.statusCode} - ${res.body}');
+    }
   }
 }

@@ -1,8 +1,11 @@
 // lib/pages/add_transaction_page.dart
+
 import 'package:finance_app/data/models/account.dart';
 import 'package:finance_app/data/models/category.dart';
+import 'package:finance_app/data/models/transaction.dart';
 import 'package:finance_app/data/services/account_service.dart';
 import 'package:finance_app/data/services/category_service.dart';
+import 'package:finance_app/data/services/transaction_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -19,28 +22,42 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   final _notesController = TextEditingController();
   late List<Account> accounts = [];
   late List<Category> categories = [];
-  
+
+  bool _isSubmitting = false;
+
   String _transactionType = 'Expense';
   String? _selectedCategory;
   String? _selectedAccount;
   DateTime _selectedDate = DateTime.now();
+  double _setAmount = 0.0;
 
 
   @override
   void initState(){
     super.initState();
-    _getAccountData();
-    _getCategoriesData();
+    _loadData();
   }
 
-  void _getAccountData() async {
-    accounts = (await AccountService().getAccounts());
-    Future.delayed(const Duration(seconds: 1)).then((value) => setState(() {}));
-  }
-
-  void _getCategoriesData() async {
-    categories = (await CategoryService().getAllCategories());
-    Future.delayed(const Duration(seconds: 1)).then((value) => setState(() {}));
+  Future<void> _loadData() async {
+    try {
+      final accountsData = await AccountService().getAccounts();
+      final categoriesData = await CategoryService().getAllCategories();
+      if (mounted) {
+        setState(() {
+          accounts = accountsData;
+          categories = categoriesData;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to load accounts and categories'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -54,11 +71,11 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         elevation: 0,
         actions: [
           TextButton(
-            onPressed: _submitTransaction,
-            child: const Text(
-              'Save',
+            onPressed: _isSubmitting ? null : _submitTransaction,
+            child: Text(
+              _isSubmitting ? 'Saving...' : 'Save',
               style: TextStyle(
-                color: Colors.blue,
+                color: _isSubmitting ? Colors.grey : Colors.blue,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -147,21 +164,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   }
 
   Widget _buildAmountField() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
+    return _buildContainer(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -175,21 +179,31 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           const SizedBox(height: 8),
           TextFormField(
             controller: _amountController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
+            ],
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             decoration: const InputDecoration(
               prefixText: '₹ ',
               prefixStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               border: InputBorder.none,
-              hintText: '0',
+              hintText: '0.00',
               hintStyle: TextStyle(color: Colors.grey),
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter an amount';
               }
+              final amount = double.tryParse(value);
+              if (amount == null || amount <= 0) {
+                return 'Please enter a valid amount';
+              }
               return null;
+            },
+            onChanged: (text) {
+              final amount = double.tryParse(text) ?? 0.0;
+              setState(() => _setAmount = amount);
             },
           ),
         ],
@@ -197,45 +211,54 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     );
   }
 
+  Widget _buildContainer(Widget child) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
   Widget _buildCategoryField() {
-    return _buildDropdownFieldForCategory(
+    return _buildDropdownField<Category>(
       'Category',
       _selectedCategory,
       categories,
+      (category) => category.label,
       (value) => setState(() => _selectedCategory = value),
     );
   }
 
   Widget _buildAccountField() {
-    return _buildDropdownFieldForAccount(
+    return _buildDropdownField<Account>(
       'Account',
       _selectedAccount,
       accounts,
-      (value) {
-        setState(() {
-          print(value);
-          _selectedAccount = value;
-        });
-      }
+      (account) => account.accountName,
+      (value) => setState(() => _selectedAccount = value),
     );
   }
 
-  Widget _buildDropdownFieldForAccount(String label, String? value, List<Account> items, Function(String?) onChanged) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
+  Widget _buildDropdownField<T>(
+    String label,
+    String? value,
+    List<T> items,
+    String Function(T) getDisplayText,
+    Function(String?) onChanged,
+  ) {
+    return _buildContainer(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -255,8 +278,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             ),
             hint: Text('Select $label'),
             items: items.map((item) => DropdownMenuItem(
-              value: item.id,
-              child: Text(item.accountName),
+              value: _getItemId(item),
+              child: Text(getDisplayText(item)),
             )).toList(),
             onChanged: onChanged,
             validator: (value) {
@@ -271,73 +294,15 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     );
   }
 
-  Widget _buildDropdownFieldForCategory(String label, String? value, List<Category> items, Function(String?) onChanged) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: value,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-            hint: Text('Select $label'),
-            items: items.map((item) => DropdownMenuItem(
-              value: item.id,
-              child: Text(item.label),
-            )).toList(),
-            onChanged: onChanged,
-            validator: (value) {
-              if (value == null) {
-                return 'Please select a $label';
-              }
-              return null;
-            },
-          ),
-        ],
-      ),
-    );
+  String _getItemId(dynamic item) {
+    if (item is Account) return item.id;
+    if (item is Category) return item.id;
+    throw ArgumentError('Unsupported item type');
   }
 
   Widget _buildDateField() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
+    return _buildContainer(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -351,15 +316,21 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           const SizedBox(height: 8),
           GestureDetector(
             onTap: _selectDate,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const Icon(Icons.calendar_today, color: Colors.grey),
-              ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const Icon(Icons.calendar_today, color: Colors.grey),
+                ],
+              ),
             ),
           ),
         ],
@@ -368,21 +339,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   }
 
   Widget _buildNotesField() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
+    return _buildContainer(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -413,17 +371,17 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: _submitTransaction,
+        onPressed: _isSubmitting ? null : _submitTransaction,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
+          backgroundColor: _isSubmitting ? Colors.grey : Colors.blue,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 0,
         ),
-        child: const Text(
-          'Add Transaction',
-          style: TextStyle(
+        child: Text(
+          _isSubmitting ? 'Adding Transaction...' : 'Add Transaction',
+          style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Colors.white,
@@ -447,19 +405,49 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     }
   }
 
-  void _submitTransaction() {
-    if (_formKey.currentState!.validate()) {
-      // Here you would typically save the transaction to your backend
-      // For now, we'll just show a success message and go back
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Transaction added successfully!'),
-          backgroundColor: Colors.green,
-        ),
+  Future<void> _submitTransaction() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      // Create transaction object from form data
+      final transaction = Transaction(
+        transactionName: '${_transactionType} Transaction',
+        amount: _setAmount,
+        type: _transactionType,
+        account: _selectedAccount!,
+        category: _selectedCategory!,
+        occuredAt: _selectedDate,
+        notes: _notesController.text.trim().isEmpty ? '' : _notesController.text.trim(),
       );
-      
-      Navigator.pop(context);
+
+      // Call API to add transaction
+      await TransactionService().addTransaction(transaction);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Transaction added successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add transaction: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 

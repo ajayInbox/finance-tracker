@@ -38,9 +38,9 @@ public record TransactionCreateUpdateRequest(
     public TransactionCreateUpdateRequest {
         var validation = batch();
         validation.check(amount, "amount").notNull().between(1d, 10000d);
-        validation.check(type, "type").notNull().oneOf("INCOME","EXPENSE","income","expense");
-        validation.check(account, "account").notNull();
-        validation.check(category, "category").notNull();
+        validation.check(type, "type").notNull().oneOf("INCOME","EXPENSE","Income","Expense");
+//        validation.check(account, "account").notNull();
+//        validation.check(category, "category").notNull();
         validation.validate();
     }
 }

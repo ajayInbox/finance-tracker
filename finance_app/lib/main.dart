@@ -9,21 +9,17 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  
-  final String title = "title";
 
   @override
   Widget build(BuildContext context) {
-    Color color;
-    Widget chart;
     return MaterialApp(
       title: 'Finance Tracker',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        useMaterial3: true,
       ),
-      home: MyHomePage(title: "Home"),
+      home: MyHomePage(title: "Finance Tracker"),
     );
   }
 }
@@ -43,10 +39,10 @@ class _MyHomePageState extends State<MyHomePage> {
     fontSize: 30,
     fontWeight: FontWeight.bold,
   );
-  static const List<Widget> _widgetOptions = <Widget>[
+  static final List<Widget> _widgetOptions = <Widget>[
     DashboardPage(),
     TransactionsPage(),
-    Text('Index 2: School', style: optionStyle),
+    Text('Accounts Page', style: optionStyle),
   ];
   static const List<Widget> _destinations = <Widget> [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
@@ -65,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-    //    title: Text(widget.title),
+        title: Text(widget.title),
         leading: Builder(
           builder: (context) {
             return IconButton(
@@ -93,7 +89,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Colors.blue),
-              child: Text('Drawer Header'),
+              child: Text('Finance Tracker'),
             ),
             ListTile(
               title: const Text('Home'),
@@ -106,7 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
               },
             ),
             ListTile(
-              title: const Text('Business'),
+              title: const Text('Transactions'),
               selected: _selectedIndex == 1,
               onTap: () {
                 // Update the state of the app
@@ -116,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
               },
             ),
             ListTile(
-              title: const Text('School'),
+              title: const Text('Accounts'),
               selected: _selectedIndex == 2,
               onTap: () {
                 // Update the state of the app

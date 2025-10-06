@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -55,6 +56,16 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Page<TransactionsWithCategoryAndAccount> getTransactionsV2(Pageable pageable) {
         return transactionRepository.fetchTransactions(pageable);
+    }
+
+    @Override
+    public Object search(String from, String to, String account, String category, String query) {
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(7);
+        LocalDateTime toDate = LocalDateTime.now();
+        if (from.isEmpty()){
+
+        }
+        return null;
     }
 
     private Transaction saveTransaction( TransactionCreateUpdateRequest request){
