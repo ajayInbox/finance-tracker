@@ -1,6 +1,5 @@
 package com.finance.tracker.transactions.domain;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,7 +7,6 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 @Data
-//@AllArgsConstructor
 @Builder
 public class TransactionsWithCategoryAndAccount {
 
