@@ -10,9 +10,8 @@ import org.aspectj.apache.bcel.generic.Tag;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
+import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -25,13 +24,16 @@ public final class TransactionQueryBuilder {
             return (root, query, cb) -> cb.equal(root.get("user").get("id"), userId);
         }
 
-        public static Specification<Transaction> occurredBetween(LocalDate from, LocalDate to, ZoneId tz) {
-            if (from == null && to == null) return Specification.where(null);
+        public static Specification<Transaction> occurredBetween(LocalDateTime fromDate, LocalDateTime toDate, ZoneOffset tz) {
             return (root, query, cb) -> {
-                Path<Instant> occurredAt = root.get("occurredAt");
-                Instant start = from != null ? from.atStartOfDay(tz).toInstant() : Instant.EPOCH;
-                Instant end = to != null ? to.plusDays(1).atStartOfDay(tz).toInstant() : Instant.ofEpochMilli(Long.MAX_VALUE);
-                return cb.between(occurredAt, start, end);
+                Path<Instant> occurredAt = root.get("occuredAt");
+                Instant start = fromDate.toInstant(tz);
+                Instant end = toDate.toInstant(tz);
+               // return cb.between(occurredAt, start, end);
+                return cb.and(
+                        cb.greaterThanOrEqualTo(occurredAt, start),
+                        cb.lessThanOrEqualTo(occurredAt, end)
+                );
             };
         }
 

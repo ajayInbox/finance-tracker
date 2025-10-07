@@ -1,8 +1,11 @@
 package com.finance.tracker.transactions.controller;
 
+import com.finance.tracker.transactions.domain.SearchRequest;
 import com.finance.tracker.transactions.domain.TransactionCreateUpdateRequest;
+import com.finance.tracker.transactions.domain.TransactionsAverage;
 import com.finance.tracker.transactions.domain.TransactionsWithCategoryAndAccount;
 import com.finance.tracker.transactions.domain.dtos.TransactionDto;
+import com.finance.tracker.transactions.domain.dtos.TransactionsAverageDto;
 import com.finance.tracker.transactions.domain.entities.Transaction;
 import com.finance.tracker.transactions.mapper.TransactionMapper;
 import com.finance.tracker.transactions.service.TransactionService;
@@ -53,5 +56,11 @@ public class TransactionController {
             return new ResponseEntity<>(transactions.map(transactionMapper::toDto), HttpStatus.OK);
         }
         return ResponseEntity.badRequest();
+    }
+
+    @PostMapping("/avg-daily-expense")
+    public ResponseEntity<TransactionsAverageDto> search(@RequestBody SearchRequest searchRequest) {
+        TransactionsAverage average = transactionService.search(searchRequest);
+        return new ResponseEntity<>(transactionMapper.toDto(average), HttpStatus.OK);
     }
 }
