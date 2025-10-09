@@ -6,11 +6,16 @@ import 'package:finance_app/data/models/transaction.dart';
 import 'package:finance_app/data/services/account_service.dart';
 import 'package:finance_app/data/services/category_service.dart';
 import 'package:finance_app/data/services/transaction_service.dart';
+import 'package:finance_app/utils/message_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:telephony/telephony.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class AddTransactionPage extends StatefulWidget {
-  const AddTransactionPage({super.key});
+  const AddTransactionPage({super.key, this.prefillParsed});
+
+  final ParsedTransaction? prefillParsed;
 
   @override
   State<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -46,6 +51,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         setState(() {
           accounts = accountsData;
           categories = categoriesData;
+          if (widget.prefillParsed != null) {
+            _prefillFromParsed(widget.prefillParsed!);
+          }
         });
       }
     } catch (e) {
@@ -60,6 +68,25 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     }
   }
 
+  void _prefillFromParsed(ParsedTransaction parsed) {
+    _setAmount = parsed.amount ?? 0.0;
+    _amountController.text = parsed.amount?.toString() ?? '';
+    _notesController.text = 'Auto-filled from SMS';  // Or full message, but not available
+
+    if (parsed.categoryHint != null) {
+      final category = categories.firstWhere(
+        (c) => c.label == parsed.categoryHint,
+        orElse: () => categories.first,
+      );
+      _selectedCategory = category.id;
+    }
+    // Assume first account and today's date
+    if (accounts.isNotEmpty) {
+      _selectedAccount = accounts.first.id;
+    }
+    _selectedDate = parsed.date ?? DateTime.now();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,6 +97,16 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
+          TextButton(
+            onPressed: _scanSms,
+            child: const Text(
+              'Scan SMS',
+              style: TextStyle(
+                color: Colors.blue,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
           TextButton(
             onPressed: _isSubmitting ? null : _submitTransaction,
             child: Text(
@@ -447,6 +484,117 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  Future<void> _scanSms() async {
+    final status = await Permission.sms.status;
+    if (!status.isGranted) {
+      final newStatus = await Permission.sms.request();
+      if (!newStatus.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('SMS permission is required to scan messages'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    try {
+      final telephony = Telephony.instance;
+      final messages = await telephony.getInboxSms(
+        filter: SmsFilter.where(SmsColumn.BODY).like('%'),
+        sortOrder: [OrderBy(SmsColumn.DATE)],
+      );
+
+      // Filter to recent messages, say last 30 days
+      final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+      final recentMessages = messages.where(
+        (msg) => msg.date != null && DateTime.fromMillisecondsSinceEpoch(msg.date!).isAfter(thirtyDaysAgo),
+      ).toList();
+
+      final selectedMessage = await showDialog<SmsMessage>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Select SMS Message'),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: recentMessages.isEmpty
+                ? const Center(child: Text('No recent SMS messages found'))
+                : ListView.builder(
+                    itemCount: recentMessages.length,
+                    itemBuilder: (context, index) {
+                      final msg = recentMessages[index];
+                      return ListTile(
+                        title: Text(
+                          msg.address ?? 'Unknown Sender',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          msg.body ?? '',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () => Navigator.pop(context, msg),
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+
+      if (selectedMessage != null) {
+        _processSms(selectedMessage.body ?? '');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to read SMS: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _processSms(String messageBody) {
+    final parsed = MessageParser().parse(messageBody);
+    if (parsed.isValid) {
+      setState(() {
+        _setAmount = parsed.amount ?? 0.0;
+        _amountController.text = parsed.amount?.toString() ?? '';
+        _notesController.text = messageBody;
+
+        // Set category if hint found
+        if (parsed.categoryHint != null) {
+          final category = categories.firstWhere(
+            (c) => c.label == parsed.categoryHint,
+            orElse: () => categories.first,
+          );
+          _selectedCategory = category.id;
+        }
+      });
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not extract transaction details from this message'),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
     }
   }

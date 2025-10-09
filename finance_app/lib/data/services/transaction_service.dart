@@ -1,6 +1,7 @@
 import '../repository/transaction_repository.dart';
 import '../models/transaction_summary.dart';
 import '../models/transaction.dart';
+import '../models/average_daily_expense.dart';
 
 // application/service
 class TransactionService {
@@ -14,6 +15,10 @@ class TransactionService {
 
   Future<void> addTransaction(Transaction transaction) async {
     await _repo.createTransaction(transaction);
+  }
+
+  Future<AverageDailyExpense> getAverageDailyExpense() async {
+    return await _repo.fetchAverageDailyExpense();
   }
 
   // More business rules can live here: filtering, currency conversion, etc.
