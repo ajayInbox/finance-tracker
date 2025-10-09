@@ -68,7 +68,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public TransactionsAverage search(SearchRequest searchRequest) {
-        LocalDateTime fromDate = LocalDateTime.now().minusDays(7);
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(6);
         LocalDateTime toDate = LocalDateTime.now();
         if(searchRequest.fromDate()!=null && searchRequest.toDate()!=null){
             fromDate = LocalDateTime.parse(searchRequest.fromDate(), FORMATTER);

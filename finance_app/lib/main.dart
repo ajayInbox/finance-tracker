@@ -1,7 +1,10 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:finance_app/services/sms_transaction_sync_service.dart';
 import 'pages/transactions_page.dart';
 import 'pages/_dashboard_page.dart';
+import 'pages/accounts_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,21 +38,22 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
-  static const TextStyle optionStyle = TextStyle(
-    fontSize: 30,
-    fontWeight: FontWeight.bold,
-  );
+
   static final List<Widget> _widgetOptions = <Widget>[
     DashboardPage(),
     TransactionsPage(),
-    Text('Accounts Page', style: optionStyle),
+    AccountsPage(),
   ];
-  static const List<Widget> _destinations = <Widget> [
-          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.list_alt_outlined), label: 'Transactions'),
-          NavigationDestination(icon: Icon(Icons.alarm_outlined), label: 'Accounts'),
-        ];
 
+  @override
+  void initState() {
+    super.initState();
+   // _triggerSmsSync();
+  }
+
+  Future<void> _triggerSmsSync() async {
+    await SmsTransactionSyncService().scanForNewTransactions();
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -60,70 +64,296 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        leading: Builder(
-          builder: (context) {
-            return IconButton(
-              icon: const Icon(Icons.menu),
+      appBar: _buildAppBar(),
+      bottomNavigationBar: _buildBottomNavigationBar(),
+      body: _widgetOptions[_selectedIndex],
+      drawer: _buildDrawer(),
+    );
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      elevation: 0,
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black87,
+      title: Text(
+        widget.title,
+        style: GoogleFonts.lato(
+          textStyle: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      ),
+      leading: Builder(
+        builder: (context) {
+          return Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.menu, color: Colors.blue),
               onPressed: () {
                 Scaffold.of(context).openDrawer();
               },
-            );
-          },
+            ),
+          );
+        },
+      ),
+      actions: [
+        _buildNotificationButton(),
+      ],
+    );
+  }
+
+  Widget _buildNotificationButton() {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.notifications_outlined, color: Colors.red),
+        onPressed: () {
+          // TODO: Navigate to notifications page
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Notifications coming soon!')),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSearchButton() {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.search, color: Colors.grey),
+        onPressed: () {
+          // TODO: Open search functionality
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Search coming soon!')),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildProfileButton() {
+    return Container(
+      margin: const EdgeInsets.only(right: 16),
+      child: CircleAvatar(
+        backgroundColor: Colors.blue,
+        child: const Text(
+          'U',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (i) => _onItemTapped(i),
-        destinations: _destinations
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return NavigationBar(
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: (i) => _onItemTapped(i),
+      backgroundColor: Colors.white,
+      elevation: 8,
+      destinations: [
+        NavigationDestination(
+          icon: Icon(
+            _selectedIndex == 0 ? Icons.home : Icons.home_outlined,
+            color: _selectedIndex == 0 ? Colors.blue : Colors.grey,
+          ),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Icon(
+            _selectedIndex == 1 ? Icons.list_alt : Icons.list_alt_outlined,
+            color: _selectedIndex == 1 ? Colors.blue : Colors.grey,
+          ),
+          label: 'Transactions',
+        ),
+        NavigationDestination(
+          icon: Icon(
+            _selectedIndex == 2 ? Icons.account_balance : Icons.account_balance_outlined,
+            color: _selectedIndex == 2 ? Colors.blue : Colors.grey,
+          ),
+          label: 'Accounts',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          _buildDrawerHeader(),
+          const Divider(),
+          _buildDrawerItem(
+            icon: Icons.home,
+            title: 'Home',
+            isSelected: _selectedIndex == 0,
+            onTap: () {
+              _onItemTapped(0);
+              Navigator.pop(context);
+            },
+          ),
+          _buildDrawerItem(
+            icon: Icons.list_alt,
+            title: 'Transactions',
+            isSelected: _selectedIndex == 1,
+            onTap: () {
+              _onItemTapped(1);
+              Navigator.pop(context);
+            },
+          ),
+          _buildDrawerItem(
+            icon: Icons.account_balance,
+            title: 'Accounts',
+            isSelected: _selectedIndex == 2,
+            onTap: () {
+              _onItemTapped(2);
+              Navigator.pop(context);
+            },
+          ),
+          const Divider(),
+          _buildDrawerItem(
+            icon: Icons.settings,
+            title: 'Settings',
+            isSelected: false,
+            onTap: () {
+              // TODO: Navigate to settings
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Settings coming soon!')),
+              );
+            },
+          ),
+          _buildDrawerItem(
+            icon: Icons.help_outline,
+            title: 'Help & Support',
+            isSelected: false,
+            onTap: () {
+              // TODO: Navigate to help
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Help coming soon!')),
+              );
+            },
+          ),
+          _buildDrawerItem(
+            icon: Icons.info_outline,
+            title: 'About',
+            isSelected: false,
+            onTap: () {
+              // TODO: Show about dialog
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('About coming soon!')),
+              );
+            },
+          ),
+        ],
       ),
-      body: Center(child: _widgetOptions[_selectedIndex]),
-      drawer: Drawer(
-        // Add a ListView to the drawer. This ensures the user can scroll
-        // through the options in the drawer if there isn't enough vertical
-        // space to fit everything.
-        child: ListView(
-          // Important: Remove any padding from the ListView.
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text('Finance Tracker'),
-            ),
-            ListTile(
-              title: const Text('Home'),
-              selected: _selectedIndex == 0,
-              onTap: () {
-                // Update the state of the app
-                _onItemTapped(0);
-                // Then close the drawer
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('Transactions'),
-              selected: _selectedIndex == 1,
-              onTap: () {
-                // Update the state of the app
-                _onItemTapped(1);
-                // Then close the drawer
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('Accounts'),
-              selected: _selectedIndex == 2,
-              onTap: () {
-                // Update the state of the app
-                _onItemTapped(2);
-                // Then close the drawer
-                Navigator.pop(context);
-              },
-            ),
-          ],
+    );
+  }
+
+  Widget _buildDrawerHeader() {
+    final now = DateTime.now();
+    final hour = now.hour;
+    String timeOfDay;
+
+    if (hour < 12) {
+      timeOfDay = 'Morning';
+    } else if (hour < 17) {
+      timeOfDay = 'Afternoon';
+    } else {
+      timeOfDay = 'Evening';
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue, Colors.blueAccent],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.white,
+            child: Text(
+              'U',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Good $timeOfDay!',
+            style: GoogleFonts.lato(
+              textStyle: const TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          Text(
+            'User',
+            style: GoogleFonts.lato(
+              textStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isSelected ? Colors.blue : Colors.grey[600],
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isSelected ? Colors.blue : Colors.black87,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        ),
+      ),
+      selected: isSelected,
+      selectedTileColor: Colors.blue.withOpacity(0.1),
+      onTap: onTap,
     );
   }
 }
