@@ -6,5 +6,6 @@ class ApiConstants {
   static String createTransaction = "/api/v1/transaction";
   static String getAccounts = "/api/v1/accounts";
   static String getCategories = "/api/v1/categories";
+  static String avgDaily = "/api/v1/avg-daily-expense";
 
 }
