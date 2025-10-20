@@ -9,7 +9,7 @@ import 'package:finance_app/data/services/transaction_service.dart';
 import 'package:finance_app/utils/message_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:telephony/telephony.dart';
+import 'package:another_telephony/telephony.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class AddTransactionPage extends StatefulWidget {

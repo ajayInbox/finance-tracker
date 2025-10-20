@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:finance_app/services/sms_transaction_sync_service.dart';
 import 'pages/transactions_page.dart';
-import 'pages/_dashboard_page.dart';
+import 'pages/dashboard_page.dart';
 import 'pages/accounts_page.dart';
 
 void main() {

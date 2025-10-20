@@ -601,7 +601,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
           ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 160,
+            height: 130,
             child: FutureBuilder<AverageDailyExpense>(
               future: _averageDailyExpenseFuture,
               builder: (context, snapshot) {
@@ -618,86 +618,104 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                   return _buildEnhancedEmptyState('No spending data available');
                 }
 
-                return BarChart(
-                  BarChartData(
-                    barGroups: dailyData.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final data = entry.value;
-                      final isHighest = data.totalExpense == dailyData.map((e) => e.totalExpense).reduce((a, b) => a > b ? a : b);
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: BarChart(
+                    BarChartData(
+                      barGroups: dailyData.asMap().entries
+                          .where((entry) => entry.value.totalExpense > 0) // Filter out zero expenses
+                          .map((entry) {
+                        final index = entry.key;
+                        final data = entry.value;
+                        final filteredData = dailyData.where((e) => e.totalExpense > 0).toList();
+                        final isHighest = data.totalExpense == filteredData.map((e) => e.totalExpense).reduce((a, b) => a > b ? a : b);
 
-                      return BarChartGroupData(
-                        x: index,
-                        barRods: [
-                          BarChartRodData(
-                            toY: data.totalExpense.toDouble(),
-                            color: isHighest ? Colors.orange : Colors.blue,
-                            width: 18,
-                            borderRadius: BorderRadius.circular(6),
-                            gradient: LinearGradient(
-                              colors: isHighest
-                                  ? [Colors.orange, Colors.orangeAccent]
-                                  : [Colors.blue, Colors.blueAccent],
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
+                        return BarChartGroupData(
+                          x: filteredData.indexOf(data),
+                          barRods: [
+                            BarChartRodData(
+                              toY: data.totalExpense.toDouble(),
+                              color: isHighest ? Colors.orange : Colors.blue,
+                              width: 20,
+                              borderRadius: BorderRadius.circular(8),
+                              gradient: LinearGradient(
+                                colors: isHighest
+                                    ? [Colors.orange, Colors.orangeAccent]
+                                    : [Colors.blue, Colors.blueAccent],
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                              ),
                             ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                    titlesData: FlTitlesData(
-                      show: true,
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            if (value.toInt() >= 0 && value.toInt() < dailyData.length) {
-                              final dateStr = dailyData[value.toInt()].date;
-                              final isToday = value.toInt() == dailyData.length - 1;
+                          ],
+                        );
+                      }).toList(),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              final filteredData = dailyData.where((e) => e.totalExpense > 0).toList();
+                              if (value.toInt() >= 0 && value.toInt() < filteredData.length) {
+                                final data = filteredData[value.toInt()];
+                                final originalIndex = dailyData.indexOf(data);
+                                final isToday = originalIndex == dailyData.length - 1;
 
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      width: 24,
-                                      height: 2,
-                                      color: isToday ? Colors.blue : Colors.grey[300],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      dateStr,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 10,
-                                        color: isToday ? Colors.blue : Colors.grey[600],
-                                        fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 1),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: 24,
+                                        height: 2,
+                                        color: isToday ? Colors.blue : Colors.grey[300],
                                       ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        data.date,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10,
+                                          color: isToday ? Colors.blue : Colors.grey[600],
+                                          fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                              return const Text('');
+                            },
+                          ),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: SizedBox(
+                                  width: 45,
+                                  child: Text(
+                                    '₹${value.toInt()}',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 10,
+                                      color: Colors.grey[600],
                                     ),
-                                  ],
+                                    textAlign: TextAlign.right,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               );
-                            }
-                            return const Text('');
-                          },
+                            },
+                            reservedSize: 50,
+                          ),
                         ),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: Text(
-                                '₹${value.toInt()}',
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            );
-                          },
-                          reservedSize: 40,
-                        ),
-                      ),
                       topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                       rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     ),
@@ -715,11 +733,12 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                       drawVerticalLine: false,
                     ),
                   ),
+                ))
                 );
               },
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           FutureBuilder<AverageDailyExpense>(
             future: _averageDailyExpenseFuture,
             builder: (context, snapshot) {
@@ -733,7 +752,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
               final trend = _calculateSpendingTrend(data.dailyList);
 
               return Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: trend > 0
@@ -745,60 +764,67 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                     color: trend > 0 ? Colors.red.withOpacity(0.2) : Colors.green.withOpacity(0.2),
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${data.days} days average',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${data.days} days average',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                trend > 0 ? Icons.trending_up : Icons.trending_down,
-                                color: trend > 0 ? Colors.red : Colors.green,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${trend > 0 ? '+' : ''}${trend.toStringAsFixed(1)}% vs last week',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  trend > 0 ? Icons.trending_up : Icons.trending_down,
                                   color: trend > 0 ? Colors.red : Colors.green,
+                                  size: 16,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    '${trend > 0 ? '+' : ''}${trend.toStringAsFixed(1)}% vs last week',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: trend > 0 ? Colors.red : Colors.green,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.blue, Colors.blueAccent],
                           ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.blue, Colors.blueAccent],
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${currency}${data.averageDailyExpense.toStringAsFixed(2)}',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                        child: Text(
+                          '${currency}${data.averageDailyExpense.toStringAsFixed(0)}',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -1217,6 +1243,8 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                     fontSize: 14,
                     color: Colors.grey[800],
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -1225,6 +1253,8 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                     color: Colors.grey[600],
                     fontSize: 12,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
