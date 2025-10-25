@@ -8,6 +8,7 @@ import 'package:finance_app/data/models/average_daily_expense.dart';
 import 'package:finance_app/data/models/transaction_summary.dart';
 import 'package:finance_app/pages/add_transaction_page.dart';
 import 'package:finance_app/pages/transactions_page.dart';
+import 'dart:math' as math;
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -24,6 +25,16 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   // Animation controllers
   late AnimationController _fadeController;
   late AnimationController _slideController;
+  late AnimationController _scaleController;
+
+  // State for time period selection
+  String _selectedTimePeriod = 'This Month';
+
+  // State for popover
+  String? _selectedCategory;
+
+  // Bottom navigation index
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -53,7 +64,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8FAFC),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         child: SafeArea(
@@ -70,17 +81,16 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 8),
-                    _buildFinancialOverview(),
+                    _buildTopSummaryCards(),
                     const SizedBox(height: 24),
-                    _buildQuickActions(),
+                    _buildQuickActionsGrid(),
+                    const SizedBox(height: 12),
+                    _buildInsightsCard(),
                     const SizedBox(height: 24),
                     _buildExpenseBreakdownCard(),
                     const SizedBox(height: 24),
-                    _buildDailySummaryCard(),
-                    const SizedBox(height: 24),
                     _buildRecentTransactions(),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -97,6 +107,388 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       _recentTransactionsFuture = TransactionService().getFeed();
     });
     await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  // Enhanced Top Summary Cards with Sparklines
+  Widget _buildTopSummaryCards() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildSummaryCard(
+            title: 'This Month',
+            amount: '₹45,250',
+            trend: '+12.5%',
+            trendUp: true,
+            subtitle: 'vs last month',
+            gradient: const LinearGradient(
+              colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            sparklineData: [20, 35, 25, 45, 30, 40, 45],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildSummaryCard(
+            title: 'Total Balance',
+            amount: '₹1,25,750',
+            trend: '+8.2%',
+            trendUp: true,
+            subtitle: 'all accounts',
+            gradient: const LinearGradient(
+              colors: [Color(0xFF28A745), Color(0xFF20C997)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            sparklineData: [80, 85, 90, 95, 100, 110, 125],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard({
+    required String title,
+    required String amount,
+    required String trend,
+    required bool trendUp,
+    required String subtitle,
+    required Gradient gradient,
+    required List<double> sparklineData,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.colors.first.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  title == 'This Month' ? Icons.trending_up : Icons.account_balance_wallet,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            amount,
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(
+                trendUp ? Icons.arrow_upward : Icons.arrow_downward,
+                color: Colors.white,
+                size: 14,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                trend,
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                subtitle,
+                style: GoogleFonts.inter(
+                  color: Colors.white70,
+                  fontSize: 10,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 30,
+            child: _buildSparklineChart(sparklineData, trendUp ? Colors.white : Colors.white70),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSparklineChart(List<double> data, Color color) {
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(show: false),
+        titlesData: FlTitlesData(show: false),
+        borderData: FlBorderData(show: false),
+        minX: 0,
+        maxX: (data.length - 1).toDouble(),
+        minY: data.reduce(math.min) * 0.8,
+        maxY: data.reduce(math.max) * 1.2,
+        lineBarsData: [
+          LineChartBarData(
+            spots: data.asMap().entries.map((e) {
+              return FlSpot(e.key.toDouble(), e.value);
+            }).toList(),
+            isCurved: true,
+            color: color,
+            barWidth: 2,
+            isStrokeCapRound: true,
+            dotData: FlDotData(show: false),
+            belowBarData: BarAreaData(show: false),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Enhanced Quick Actions Grid (2x2)
+  Widget _buildQuickActionsGrid() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        const SizedBox(height: 16),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.2,
+          children: [
+            _buildQuickActionCard(
+              '📩',
+              'Scan SMS',
+              'Auto-detect transactions',
+              const Color(0xFFE3F2FD),
+              const Color(0xFF2196F3),
+              () => _showSMSModal(),
+            ),
+            _buildQuickActionCard(
+              '➕',
+              'Add Expense',
+              'Record new expense',
+              const Color(0xFFFFEBEE),
+              const Color(0xFFF44336),
+              () => _navigateToAddTransaction('expense'),
+            ),
+            _buildQuickActionCard(
+              '💰',
+              'Add Income',
+              'Record new income',
+              const Color(0xFFE8F5E8),
+              const Color(0xFF4CAF50),
+              () => _navigateToAddTransaction('income'),
+            ),
+            _buildQuickActionCard(
+              '📋',
+              'View All',
+              'See all transactions',
+              const Color(0xFFF3E5F5),
+              const Color(0xFF9C27B0),
+              () => _navigateToTransactions(),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActionCard(
+    String emoji,
+    String title,
+    String subtitle,
+    Color bgColor,
+    Color iconColor,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              emoji,
+              style: TextStyle(fontSize: 28),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Smart Insights Card
+  Widget _buildInsightsCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.white, Colors.grey[50]!],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFF3CD),
+              shape: BoxShape.circle,
+            ),
+            child: const Text('💡', style: TextStyle(fontSize: 20)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Smart Insights',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'You spent 20% more on Food this week than last week.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+        ],
+      ),
+    );
+  }
+
+  void _showSMSModal() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'SMS Transaction Scanner',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            'Scan your SMS messages to automatically detect and add transactions.',
+            style: GoogleFonts.inter(color: Colors.grey[600]),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.inter(color: Colors.grey[600]),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // TODO: Implement SMS scanning
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('SMS scanning feature coming soon!'),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A90E2),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text('Start Scan'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildWelcomeHeader() {
@@ -382,13 +774,13 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -406,47 +798,213 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                   color: Colors.grey[800],
                 ),
               ),
+              // Time Period Toggle
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(
-                  'This Month',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                child: Row(
+                  children: [
+                    _buildTimePeriodButton('This Month'),
+                    _buildTimePeriodButton('Last Month'),
+                    _buildTimePeriodButton('Custom'),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 30),
           SizedBox(
-            height: 180,
+            height: 200,
             child: PieChart(
               PieChartData(
                 sections: _getPieChartSections(),
-                centerSpaceRadius: 50,
-                sectionsSpace: 2,
+                centerSpaceRadius: 60,
+                sectionsSpace: 3,
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 35),
           _buildExpenseLegend(),
         ],
       ),
     );
   }
 
+  Widget _buildTimePeriodButton(String period) {
+    final isSelected = _selectedTimePeriod == period;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedTimePeriod = period;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        margin: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isSelected ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          period,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: isSelected ? Colors.white : Colors.grey[600],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCategoryPopover(String category) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          contentPadding: const EdgeInsets.all(20),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: _getCategoryColor(category),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    category,
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+              _buildMerchantItem('Swiggy', '₹2,500', '5 transactions'),
+              _buildMerchantItem('Zomato', '₹1,800', '3 transactions'),
+              _buildMerchantItem('Local Restaurant', '₹1,200', '2 transactions'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4A90E2),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text('View All Details'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMerchantItem(String merchant, String amount, String transactions) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: Colors.grey[200],
+            child: Text(
+              merchant[0],
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  merchant,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                Text(
+                  transactions,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            amount,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Food & Dining':
+        return const Color(0xFF4A90E2);
+      case 'Transport':
+        return const Color(0xFF28A745);
+      case 'Shopping':
+        return const Color(0xFFFFA726);
+      case 'Others':
+        return const Color(0xFFAB47BC);
+      default:
+        return Colors.grey;
+    }
+  }
+
   List<PieChartSectionData> _getPieChartSections() {
-    return [
+    final sections = [
       PieChartSectionData(
-        color: Colors.blue,
+        color: const Color(0xFF4A90E2),
         value: 35,
         title: '₹12,250',
-        radius: 60,
+        radius: 70,
         titleStyle: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.bold,
@@ -454,10 +1012,10 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
         ),
       ),
       PieChartSectionData(
-        color: Colors.green,
+        color: const Color(0xFF28A745),
         value: 25,
         title: '₹8,750',
-        radius: 60,
+        radius: 70,
         titleStyle: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.bold,
@@ -465,10 +1023,10 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
         ),
       ),
       PieChartSectionData(
-        color: Colors.orange,
+        color: const Color(0xFFFFA726),
         value: 20,
         title: '₹7,000',
-        radius: 60,
+        radius: 70,
         titleStyle: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.bold,
@@ -476,10 +1034,10 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
         ),
       ),
       PieChartSectionData(
-        color: Colors.purple,
+        color: const Color(0xFFAB47BC),
         value: 20,
         title: '₹7,000',
-        radius: 60,
+        radius: 70,
         titleStyle: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.bold,
@@ -487,53 +1045,85 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
         ),
       ),
     ];
+
+    return sections;
   }
 
   Widget _buildExpenseLegend() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildLegendItem(Colors.blue, 'Food & Dining', '35%'),
-        _buildLegendItem(Colors.green, 'Transport', '25%'),
-        _buildLegendItem(Colors.orange, 'Shopping', '20%'),
-        _buildLegendItem(Colors.purple, 'Others', '20%'),
-      ],
+    final categories = [
+      {'color': Color(0xFF4A90E2), 'name': 'Food & Dining', 'percentage': '35%', 'amount': '₹12,250'},
+      {'color': Color(0xFF28A745), 'name': 'Transport', 'percentage': '25%', 'amount': '₹8,750'},
+      {'color': Color(0xFFFFA726), 'name': 'Shopping', 'percentage': '20%', 'amount': '₹7,000'},
+      {'color': Color(0xFFAB47BC), 'name': 'Others', 'percentage': '20%', 'amount': '₹7,000'},
+    ];
+
+    return Column(
+      children: categories.map((category) {
+        return _buildLegendItem(
+          category['color'] as Color,
+          category['name'] as String,
+          category['percentage'] as String,
+          category['amount'] as String,
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildLegendItem(Color color, String category, String percentage) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-          ),
+  Widget _buildLegendItem(Color color, String category, String percentage, String amount) {
+    return GestureDetector(
+      onTap: () => _showCategoryPopover(category),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
         ),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              category,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  Text(
+                    amount,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
             ),
             Text(
               percentage,
               style: GoogleFonts.inter(
-                fontSize: 10,
-                color: Colors.grey[500],
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
               ),
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 

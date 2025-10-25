@@ -110,57 +110,43 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildNotificationButton() {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: IconButton(
-        icon: const Icon(Icons.notifications_outlined, color: Colors.red),
-        onPressed: () {
-          // TODO: Navigate to notifications page
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Notifications coming soon!')),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildSearchButton() {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: IconButton(
-        icon: const Icon(Icons.search, color: Colors.grey),
-        onPressed: () {
-          // TODO: Open search functionality
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Search coming soon!')),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildProfileButton() {
-    return Container(
-      margin: const EdgeInsets.only(right: 16),
-      child: CircleAvatar(
-        backgroundColor: Colors.blue,
-        child: const Text(
-          'U',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
+    // Notification Icon with Badge
+              return Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    const Icon(
+                      Icons.notifications_outlined,
+                      color: Color(0xFF4A90E2),
+                      size: 24,
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
   }
 
   Widget _buildBottomNavigationBar() {
