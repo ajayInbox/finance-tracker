@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:finance_app/data/models/expense_report.dart';
 import 'package:http/http.dart' as http;
 import '../models/transaction_summary.dart';
 import '../models/transaction.dart';
@@ -71,5 +72,24 @@ class TransactionRepository {
 
     final body = jsonDecode(res.body);
     return AverageDailyExpense.fromJson(body);
+  }
+
+  Future<ExpenseReport> fetchExpenseReport() async {
+    Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
+      path: ApiConstants.expenseReport,
+      queryParameters: {"duration":null}
+    );
+
+    final res = await http.get(
+      uri,
+      headers: {'Accept': 'application/json'},
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Failed to load average daily expense: ${res.statusCode}');
+    }
+
+    final body = jsonDecode(res.body);
+    return ExpenseReport.fromJson(body);
   }
 }

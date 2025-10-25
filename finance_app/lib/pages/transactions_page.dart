@@ -146,50 +146,6 @@ class _TransactionsPageState extends State<TransactionsPage>
     });
   }
 
-  void _showFilterBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.7,
-        maxChildSize: 0.9,
-        builder: (context, scrollController) => FilterBottomSheet(
-          selectedTimeFilter: _selectedTimeFilter,
-          selectedAccountFilter: _selectedAccountFilter,
-          selectedCategoryFilter: _selectedCategoryFilter,
-          selectedStatusFilter: _selectedStatusFilter,
-          minAmount: _minAmount,
-          maxAmount: _maxAmount,
-          onFiltersChanged: (time, account, category, status, min, max) {
-            setState(() {
-              _selectedTimeFilter = time;
-              _selectedAccountFilter = account;
-              _selectedCategoryFilter = category;
-              _selectedStatusFilter = status;
-              _minAmount = min;
-              _maxAmount = max;
-            });
-          },
-          onClearAll: _clearAllFilters,
-        ),
-      ),
-    );
-  }
-
-  void _showAddTransactionSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => const AddTransactionBottomSheet(),
-    );
-  }
-
   void _showFilterDialog() {
     showModalBottomSheet(
       context: context,

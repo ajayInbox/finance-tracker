@@ -1,4 +1,6 @@
 // lib/pages/dashboard_page.dart
+import 'package:finance_app/data/models/expense_report.dart';
+import 'package:finance_app/data/models/category_breakdown.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,6 +20,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> with TickerProviderStateMixin {
   late Future<List<TransactionSummary>> _recentTransactionsFuture;
+  late Future<ExpenseReport> _expenseAnalysis;
   final String currency = '₹';
 
   // Animation controllers
@@ -31,6 +34,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   void initState() {
     super.initState();
     _recentTransactionsFuture = TransactionService().getFeed();
+    _expenseAnalysis = TransactionService().fetchExpenseReport();
 
     // Initialize animations
     _fadeController = AnimationController(
@@ -100,40 +104,95 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
 
   // Enhanced Top Summary Cards with Sparklines
   Widget _buildTopSummaryCards() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildSummaryCard(
-            title: 'This Month',
-            amount: '₹45,250',
-            trend: '+12.5%',
-            trendUp: true,
-            subtitle: 'vs last month',
-            gradient: const LinearGradient(
-              colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return FutureBuilder<ExpenseReport>(
+      future: _expenseAnalysis,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Row(
+            children: [
+              Expanded(child: _buildLoadingSummaryCard()),
+              const SizedBox(width: 16),
+              Expanded(child: _buildLoadingSummaryCard()),
+            ],
+          );
+        }
+        if (snapshot.hasError) {
+          return Row(
+            children: [
+              Expanded(child: _buildErrorSummaryCard()),
+              const SizedBox(width: 16),
+              Expanded(child: _buildErrorSummaryCard()),
+            ],
+          );
+        }
+        final report = snapshot.data!;
+        return Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'This Month',
+                amount: '${report.currency} ${report.total.toStringAsFixed(2)}',
+                trend: '+12.5%', // TODO: Calculate actual trend
+                trendUp: true,
+                subtitle: 'vs last month',
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                sparklineData: [20, 35, 25, 45, 30, 40, 45], // TODO: Use real data
+              ),
             ),
-            sparklineData: [20, 35, 25, 45, 30, 40, 45],
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildSummaryCard(
-            title: 'Total Balance',
-            amount: '₹1,25,750',
-            trend: '+8.2%',
-            trendUp: true,
-            subtitle: 'all accounts',
-            gradient: const LinearGradient(
-              colors: [Color(0xFF28A745), Color(0xFF20C997)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Total Balance',
+                amount: '${report.currency} 1,25,750', // TODO: Fetch actual balance
+                trend: '+8.2%',
+                trendUp: true,
+                subtitle: 'all accounts',
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF28A745), Color(0xFF20C997)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                sparklineData: [80, 85, 90, 95, 100, 110, 125],
+              ),
             ),
-            sparklineData: [80, 85, 90, 95, 100, 110, 125],
-          ),
-        ),
-      ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingSummaryCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(width: 80, height: 12, color: Colors.grey[300]),
+          const SizedBox(height: 12),
+          Container(width: 100, height: 24, color: Colors.grey[300]),
+          const SizedBox(height: 8),
+          Container(width: 60, height: 12, color: Colors.grey[300]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorSummaryCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Center(child: Text('Error loading data')),
     );
   }
 
@@ -153,7 +212,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: gradient.colors.first.withOpacity(0.3),
+            color: gradient.colors.first.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -176,7 +235,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -338,7 +397,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -502,7 +561,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 12,
             offset: const Offset(0, 4),
@@ -540,18 +599,48 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
             ],
           ),
           const SizedBox(height: 30),
-          SizedBox(
-            height: 200,
-            child: PieChart(
-              PieChartData(
-                sections: _getPieChartSections(),
-                centerSpaceRadius: 60,
-                sectionsSpace: 3,
-              ),
-            ),
+          FutureBuilder<ExpenseReport>(
+            future: _expenseAnalysis,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return SizedBox(
+                  height: 200,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (snapshot.hasError) {
+                return SizedBox(
+                  height: 200,
+                  child: Center(child: Text('Error loading chart data')),
+                );
+              }
+              final report = snapshot.data!;
+              return SizedBox(
+                height: 200,
+                child: PieChart(
+                  PieChartData(
+                    sections: _getPieChartSections(report.categoryBreakdown),
+                    centerSpaceRadius: 60,
+                    sectionsSpace: 3,
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 35),
-          _buildExpenseLegend(),
+          FutureBuilder<ExpenseReport>(
+            future: _expenseAnalysis,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return _buildLoadingLegend();
+              }
+              if (snapshot.hasError) {
+                return Text('Error loading legend');
+              }
+              final report = snapshot.data!;
+              return _buildExpenseLegend(report.categoryBreakdown);
+            },
+          ),
         ],
       ),
     );
@@ -723,74 +812,64 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
     }
   }
 
-  List<PieChartSectionData> _getPieChartSections() {
-    final sections = [
-      PieChartSectionData(
-        color: const Color(0xFF4A90E2),
-        value: 35,
-        title: '₹12,250',
+  List<PieChartSectionData> _getPieChartSections(List<CategoryBreakdown> categories) {
+    return categories.map((category) {
+      return PieChartSectionData(
+        color: _getCategoryColor(category.categoryName),
+        value: category.total,
+        title: '${currency}${category.total.toStringAsFixed(0)}',
         radius: 70,
         titleStyle: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
-      ),
-      PieChartSectionData(
-        color: const Color(0xFF28A745),
-        value: 25,
-        title: '₹8,750',
-        radius: 70,
-        titleStyle: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      PieChartSectionData(
-        color: const Color(0xFFFFA726),
-        value: 20,
-        title: '₹7,000',
-        radius: 70,
-        titleStyle: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      PieChartSectionData(
-        color: const Color(0xFFAB47BC),
-        value: 20,
-        title: '₹7,000',
-        radius: 70,
-        titleStyle: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-    ];
-
-    return sections;
+      );
+    }).toList();
   }
 
-  Widget _buildExpenseLegend() {
-    final categories = [
-      {'color': Color(0xFF4A90E2), 'name': 'Food & Dining', 'percentage': '35%', 'amount': '₹12,250'},
-      {'color': Color(0xFF28A745), 'name': 'Transport', 'percentage': '25%', 'amount': '₹8,750'},
-      {'color': Color(0xFFFFA726), 'name': 'Shopping', 'percentage': '20%', 'amount': '₹7,000'},
-      {'color': Color(0xFFAB47BC), 'name': 'Others', 'percentage': '20%', 'amount': '₹7,000'},
-    ];
-
+  Widget _buildExpenseLegend(List<CategoryBreakdown> categories) {
     return Column(
       children: categories.map((category) {
         return _buildLegendItem(
-          category['color'] as Color,
-          category['name'] as String,
-          category['percentage'] as String,
-          category['amount'] as String,
+          _getCategoryColor(category.categoryName),
+          category.categoryName,
+          '${category.percentage.toStringAsFixed(1)}%',
+          '${currency}${category.total.toStringAsFixed(2)}',
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildLoadingLegend() {
+    return Column(
+      children: List.generate(3, (index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(width: 16, height: 16, color: Colors.grey[300]),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(width: 100, height: 14, color: Colors.grey[300]),
+                    const SizedBox(height: 4),
+                    Container(width: 60, height: 12, color: Colors.grey[300]),
+                  ],
+                ),
+              ),
+              Container(width: 40, height: 12, color: Colors.grey[300]),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -1031,7 +1110,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 2,
             offset: const Offset(0, 1),
@@ -1044,8 +1123,8 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: transaction.type.toLowerCase() == "income"
-                  ? Colors.green.withOpacity(0.1)
-                  : Colors.red.withOpacity(0.1),
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : Colors.red.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(

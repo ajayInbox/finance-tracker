@@ -1,4 +1,3 @@
-
 class ApiConstants {
 
   static String baseUrl = "http://localhost:8080/";
@@ -7,5 +6,6 @@ class ApiConstants {
   static String getAccounts = "/api/v1/accounts";
   static String getCategories = "/api/v1/categories";
   static String avgDaily = "/api/v1/avg-daily-expense";
+  static String expenseReport = "/api/v1/avg-expense-analysis";
 
 }
