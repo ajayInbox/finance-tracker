@@ -18,10 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -119,6 +116,36 @@ public class TransactionServiceImpl implements TransactionService {
                 .build();
     }
 
+    @Override
+    public MonthlyExpenseResponse getExpenseReport(String duration) {
+        LocalDateTime toDate = LocalDateTime.now();
+        LocalDateTime fromDate = getFromDate(toDate, duration);
+
+        Instant start = fromDate.toInstant(ZoneOffset.UTC);
+        Instant end = toDate.toInstant(ZoneOffset.UTC);
+
+        List<CategoryExpenseSummary> summaries = transactionRepository.findCategorySummary(null, start, end);
+
+        BigDecimal total = summaries.stream()
+                .map(s -> BigDecimal.valueOf(s.total()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<CategoryBreakdown> breakdown = summaries.stream()
+                .map(s -> new CategoryBreakdown(
+                        s.categoryId(),
+                        s.categoryName(),
+                        BigDecimal.valueOf(s.total()),
+                        total.compareTo(BigDecimal.ZERO) > 0
+                                ? BigDecimal.valueOf(s.total()).divide(total, 4, RoundingMode.HALF_UP)
+                                .multiply(BigDecimal.valueOf(100)).setScale(1, RoundingMode.HALF_UP)
+                                : BigDecimal.ZERO,
+                        Math.toIntExact(s.transactionCount())
+                ))
+                .toList();
+
+        return new MonthlyExpenseResponse(toDate.toLocalDate().toString(), "INR", total, breakdown);
+    }
+
     private Transaction saveTransaction( TransactionCreateUpdateRequest request){
         Transaction newTransaction = Transaction.builder()
                 .type(TransactionType.fromValueIgnoreCase(request.type()))
@@ -150,5 +177,20 @@ public class TransactionServiceImpl implements TransactionService {
 
         categoryService.validateCategoryForTransaction(userId, request.category(),
                 TransactionType.fromValueIgnoreCase(request.type()));
+    }
+
+    private LocalDateTime getFromDate(LocalDateTime toDate, String duration){
+        LocalDateTime fromDate = LocalDateTime.now();
+        if("weekly".equalsIgnoreCase(duration)){
+            fromDate = LocalDateTime.now().minusDays(6);
+        } else if("yearly".equalsIgnoreCase(duration)){
+            int year = toDate.getYear();
+            fromDate = LocalDateTime.of(LocalDate.of(year, 1, 1), LocalTime.MIN);
+        }else{
+            int month = toDate.getMonthValue();
+            int year = toDate.getYear();
+            fromDate = LocalDateTime.of(LocalDate.of(year, month, 1), LocalTime.MIN);
+        }
+        return fromDate;
     }
 }

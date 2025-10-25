@@ -1,9 +1,6 @@
 package com.finance.tracker.transactions.controller;
 
-import com.finance.tracker.transactions.domain.SearchRequest;
-import com.finance.tracker.transactions.domain.TransactionCreateUpdateRequest;
-import com.finance.tracker.transactions.domain.TransactionsAverage;
-import com.finance.tracker.transactions.domain.TransactionsWithCategoryAndAccount;
+import com.finance.tracker.transactions.domain.*;
 import com.finance.tracker.transactions.domain.dtos.TransactionDto;
 import com.finance.tracker.transactions.domain.dtos.TransactionsAverageDto;
 import com.finance.tracker.transactions.domain.entities.Transaction;
@@ -62,5 +59,13 @@ public class TransactionController {
     public ResponseEntity<TransactionsAverageDto> search(@RequestBody SearchRequest searchRequest) {
         TransactionsAverage average = transactionService.search(searchRequest);
         return new ResponseEntity<>(transactionMapper.toDto(average), HttpStatus.OK);
+    }
+
+    @GetMapping("/avg-expense-analysis")
+    public ResponseEntity<MonthlyExpenseResponse> getExpenseReport(
+            @RequestParam(value = "duration", required = false) String duration
+    ){
+        MonthlyExpenseResponse monthlyExpenseResponse = transactionService.getExpenseReport(duration);
+        return new ResponseEntity<>(monthlyExpenseResponse, HttpStatus.OK);
     }
 }

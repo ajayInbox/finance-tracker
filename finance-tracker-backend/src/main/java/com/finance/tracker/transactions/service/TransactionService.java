@@ -1,9 +1,6 @@
 package com.finance.tracker.transactions.service;
 
-import com.finance.tracker.transactions.domain.SearchRequest;
-import com.finance.tracker.transactions.domain.TransactionCreateUpdateRequest;
-import com.finance.tracker.transactions.domain.TransactionsAverage;
-import com.finance.tracker.transactions.domain.TransactionsWithCategoryAndAccount;
+import com.finance.tracker.transactions.domain.*;
 import com.finance.tracker.transactions.domain.entities.Transaction;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,4 +18,6 @@ public interface TransactionService {
     Page<TransactionsWithCategoryAndAccount> getTransactionsV2(Pageable pageable);
 
     TransactionsAverage search(SearchRequest searchRequest);
+
+    MonthlyExpenseResponse getExpenseReport(String duration);
 }
