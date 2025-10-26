@@ -1,5 +1,4 @@
 
-
 class TransactionSummary {
 
   late final String id;
@@ -40,8 +39,8 @@ class TransactionSummary {
         accountName: (j['accountName'] ?? '') as String,
         balanceCached: (j['balanceCached'] ?? 0.0) as double,
         categoryName: (j['categoryName'] ?? "") as String,
-        occuredAt: (DateTime.now()),
-        postedAt: (DateTime.now()),
+        occuredAt: (DateTime.parse(j['occuredAt'])),
+        postedAt: (DateTime.parse(j['postedAt'])),
         currency: (j['currency'] ?? 'INR') as String,
   );
 

@@ -80,16 +80,16 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
             const SizedBox(height: 16),
             _buildHideOptions(),
             const SizedBox(height: 32),
-            _buildSubmitButton(),
+            _buildStickyBottomAction(),
           ],
       )
       ),
-      Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _buildStickyBottomAction(),
-          ),
+      // Positioned(
+      //       left: 0,
+      //       right: 0,
+      //       bottom: 0,
+      //       child: _buildStickyBottomAction(),
+      //     ),
         ])
     );
   }
@@ -449,31 +449,6 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
             contentPadding: EdgeInsets.zero,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        onPressed: _isSubmitting ? null : _saveAccount,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _isSubmitting ? Colors.grey : Colors.blue,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
-        ),
-        child: Text(
-          _isSubmitting ? 'Adding Account...' : 'Add Account',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
       ),
     );
   }

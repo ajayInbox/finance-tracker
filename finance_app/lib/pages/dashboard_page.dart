@@ -817,7 +817,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       return PieChartSectionData(
         color: _getCategoryColor(category.categoryName),
         value: category.total,
-        title: '${currency}${category.total.toStringAsFixed(0)}',
+        title: '$currency${category.total.toStringAsFixed(0)}',
         radius: 70,
         titleStyle: GoogleFonts.inter(
           fontSize: 12,

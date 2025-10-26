@@ -25,6 +25,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
+  final _transactionNameController = TextEditingController();
   final _notesController = TextEditingController();
   late List<Account> accounts = [];
   late List<Category> categories = [];
@@ -163,6 +164,10 @@ class _AddTransactionPageState extends State<AddTransactionPage>
 
                 // Large Amount Field with Quick Chips
                 _buildAmountField(),
+                const SizedBox(height: 16),
+
+                // Transaction Name Field
+                _buildTransactionNameField(),
                 const SizedBox(height: 16),
 
                 // Essentials Stack (compact cards)
@@ -437,6 +442,39 @@ class _AddTransactionPageState extends State<AddTransactionPage>
     );
   }
 
+  Widget _buildTransactionNameField() {
+    return _buildContainer(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Transaction Name',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _transactionNameController,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              hintText: 'Enter transaction name...',
+              hintStyle: TextStyle(color: Colors.grey),
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter a transaction name';
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEssentialsStack() {
     return Column(
       children: [
@@ -549,7 +587,12 @@ class _AddTransactionPageState extends State<AddTransactionPage>
   }
 
   String _getFormattedDate() {
-    return '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+    // Format as ISO 8601 with timezone (Asia/Calcutta is UTC+5:30)
+    final timeFormat = _selectedDate.hour > 12
+        ? '${_selectedDate.hour - 12}:${_selectedDate.minute.toString().padLeft(2, '0')} PM'
+        : '${_selectedDate.hour}:${_selectedDate.minute.toString().padLeft(2, '0')} AM';
+    return '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year} $timeFormat';
+
   }
 
   Future<void> _showCategoryPicker() async {
@@ -585,7 +628,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
   }
 
   Future<void> _showDatePicker() async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
@@ -604,9 +647,35 @@ class _AddTransactionPageState extends State<AddTransactionPage>
       },
     );
 
-    if (picked != null && picked != _selectedDate) {
-      setState(() => _selectedDate = picked);
-      HapticFeedback.lightImpact();
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDate),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.light(
+                primary: Theme.of(context).colorScheme.primary,
+                onPrimary: Colors.white,
+                onSurface: Colors.black,
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (pickedTime != null) {
+        final DateTime combinedDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+        setState(() => _selectedDate = combinedDateTime);
+        HapticFeedback.lightImpact();
+      }
     }
   }
 
@@ -812,7 +881,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
     try {
       // Create transaction object from form data
       final transaction = Transaction(
-        transactionName: '${_transactionType} Transaction',
+        transactionName: _transactionNameController.text.trim(),
         amount: _setAmount,
         type: _transactionType,
         account: _selectedAccount!,
@@ -962,6 +1031,19 @@ class _AddTransactionPageState extends State<AddTransactionPage>
   }
 
   Widget _buildCategoryBottomSheet() {
+    // Filter categories based on transaction type
+    final filteredCategories = categories.where((c) {
+      if (_transactionType == 'Expense') {
+        return c.isExpense;
+      } else if (_transactionType == 'Income') {
+        return c.isIncome;
+      }
+      return true; // Show all if neither
+    }).toList();
+
+    // Initialize _filteredCategories with all filtered categories
+    _filteredCategories = filteredCategories;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
       padding: const EdgeInsets.all(16),
@@ -992,7 +1074,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
             ),
             onChanged: (value) {
               setState(() {
-                _filteredCategories = categories
+                _filteredCategories = filteredCategories
                     .where((c) => c.label.toLowerCase().contains(value.toLowerCase()))
                     .toList();
               });
@@ -1001,9 +1083,9 @@ class _AddTransactionPageState extends State<AddTransactionPage>
           const SizedBox(height: 16),
           Expanded(
             child: ListView.builder(
-              itemCount: categories.length,
+              itemCount: _filteredCategories.length,
               itemBuilder: (context, index) {
-                final category = categories[index];
+                final category = _filteredCategories[index];
                 final isSelected = _selectedCategory == category.id;
 
                 return ListTile(
@@ -1021,6 +1103,9 @@ class _AddTransactionPageState extends State<AddTransactionPage>
   }
 
   Widget _buildAccountBottomSheet() {
+    // Initialize _filteredAccounts with all accounts
+    _filteredAccounts = accounts;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
       padding: const EdgeInsets.all(16),
@@ -1060,9 +1145,9 @@ class _AddTransactionPageState extends State<AddTransactionPage>
           const SizedBox(height: 16),
           Expanded(
             child: ListView.builder(
-              itemCount: accounts.length,
+              itemCount: _filteredAccounts.length,
               itemBuilder: (context, index) {
-                final account = accounts[index];
+                final account = _filteredAccounts[index];
                 final isSelected = _selectedAccount == account.id;
 
                 return ListTile(
@@ -1222,7 +1307,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
                   size: 20,
                 ),
                 label: Text(
-                  'Save ${_transactionType} ${_setAmount > 0 ? '₹${_setAmount.toStringAsFixed(2)}' : ''}',
+                  'Save $_transactionType ${_setAmount > 0 ? '₹${_setAmount.toStringAsFixed(2)}' : ''}',
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _transactionType == 'Expense' ? Colors.red : Colors.green,
@@ -1255,7 +1340,11 @@ class _AddTransactionPageState extends State<AddTransactionPage>
   }
 
   bool _canSubmit() {
-    return !_isSubmitting && _setAmount > 0 && _selectedCategory != null && _selectedAccount != null;
+    return !_isSubmitting &&
+           _setAmount > 0 &&
+           _selectedCategory != null &&
+           _selectedAccount != null &&
+           _transactionNameController.text.trim().isNotEmpty;
   }
 
   Future<void> _submitAndNew() async {
@@ -1264,6 +1353,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
       // Reset form for new transaction
       setState(() {
         _amountController.clear();
+        _transactionNameController.clear();
         _notesController.clear();
         _setAmount = 0.0;
         _selectedCategory = null;
@@ -1277,6 +1367,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
   @override
   void dispose() {
     _amountController.dispose();
+    _transactionNameController.dispose();
     _notesController.dispose();
     _amountAnimationController.dispose();
     _saveAnimationController.dispose();
