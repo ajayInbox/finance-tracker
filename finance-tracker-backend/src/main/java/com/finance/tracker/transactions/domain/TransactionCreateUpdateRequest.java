@@ -1,46 +1,42 @@
 package com.finance.tracker.transactions.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+
 import java.util.List;
 
-import static io.github.validcheck.Check.batch;
+@Data
+@AllArgsConstructor
+@Builder
+public class TransactionCreateUpdateRequest {
 
-public record TransactionCreateUpdateRequest(
-        Double amount,
-        String type,
-        String merchant,
-        String notes,
-        String transactionName,
+        private Double amount;
+        private String type;
+        private String merchant;
+        private String notes;
+        private String transactionName;
 
-        // account for example: bank, credit, loan acc etc.
+        // account for example: bank; credit; loan acc etc.
         //TODO need to create seperate entity for account
-        String account,
+        private String account;
 
-        // categories for example: Shopping, food, Housing, Income
+        // categories for example: Shopping; food; Housing; Income
         //TODO need to create seperate entity for category
-        String category,
-        List<String>tags,
+        private String category;
+        private List<String>tags;
         // ISO DATE TIME FORMAT :: YYYY-MM-DDThh:mm:ss
-        String occuredAt,
+        private String occuredAt;
         // ISO DATE TIME FORMAT :: YYYY-MM-DDThh:mm:ss
-        String postedAt,
-        String currency,
+        private String postedAt;
+        private String currency;
 
         // attachments can be images
         //TODO need to create seperate entity for attachment
-        String attachments,
+        private String attachments;
 
         // source of data like added from form or added through sms notification etc.
         //TODO need to add seperate entity for external ref
-        String externalRef
+        private String externalRef;
 
-) 
-{
-    public TransactionCreateUpdateRequest {
-        var validation = batch();
-        validation.check(amount, "amount").notNull().between(1d, 10000d);
-        validation.check(type, "type").notNull().oneOf("INCOME","EXPENSE","Income","Expense");
-//        validation.check(account, "account").notNull();
-//        validation.check(category, "category").notNull();
-        validation.validate();
-    }
 }

@@ -9,6 +9,7 @@ import com.finance.tracker.transactions.exceptions.CurrencyMismatchException;
 import com.finance.tracker.transactions.repository.TransactionQueryBuilder;
 import com.finance.tracker.transactions.repository.TransactionRepository;
 import com.finance.tracker.transactions.service.TransactionService;
+import com.finance.tracker.transactions.utilities.Regex;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -20,9 +21,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,6 +36,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final CategoryService categoryService;
     private final ApplicationEventPublisher eventPublisher;
     private final static DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    private final static List<String> banks = Arrays.asList("HDFC", "SBI", "ICICI", "Axis");
 
     @Override
     public Transaction createNewTransaction(TransactionCreateUpdateRequest request) {
@@ -146,23 +148,22 @@ public class TransactionServiceImpl implements TransactionService {
         return new MonthlyExpenseResponse(toDate.toLocalDate().toString(), "INR", total, breakdown);
     }
 
+    @Override
+    public void exportMessages(List<SmsMessage> messageList) {
+        for(SmsMessage message : messageList){
+            String bank = checkBank(message.getMessageHeader());
+            List<Pattern> patterns = getTransactionRegex(bank);
+            Map<String, String> parsedObject = parse(patterns, message.getMessageBody());
+            String accountId = accountService.getAccountByLastFour(parsedObject.get("CardLast4"));
+            parsedObject.put("accountId", accountId);
+            TransactionCreateUpdateRequest request = buildTransactionCreateUpdateRequest(parsedObject);
+            Transaction transaction = buildTransactionEntity(request);
+            transactionRepository.save(transaction);
+        }
+    }
+
     private Transaction saveTransaction( TransactionCreateUpdateRequest request){
-        Transaction newTransaction = Transaction.builder()
-                .type(TransactionType.fromValueIgnoreCase(request.type()))
-                .transactionName(request.transactionName())
-                .currency(request.currency())
-                .account(request.account())
-                .amount(request.amount())
-                .category(request.category())
-                .merchant(request.merchant())
-                .occuredAt(LocalDateTime.parse(request.occuredAt(), DateTimeFormatter.ISO_DATE_TIME))
-                .postedAt(LocalDateTime.parse(request.occuredAt(), DateTimeFormatter.ISO_DATE_TIME))
-                .notes(request.notes())
-                .attachments(request.attachments())
-                .externalRef(request.externalRef())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
+        Transaction newTransaction = buildTransactionEntity(request);
         return transactionRepository.save(newTransaction);
     }
 
@@ -170,13 +171,13 @@ public class TransactionServiceImpl implements TransactionService {
         // TODO fix this
         String userId = null;
 
-        Account account = accountService.getAccountByIdAndUser(request.account(), userId);
+        Account account = accountService.getAccountByIdAndUser(request.getAccount(), userId);
         if(!account.getCurrency().equalsIgnoreCase("INR")){
             throw new CurrencyMismatchException();
         }
 
-        categoryService.validateCategoryForTransaction(userId, request.category(),
-                TransactionType.fromValueIgnoreCase(request.type()));
+        categoryService.validateCategoryForTransaction(userId, request.getCategory(),
+                TransactionType.fromValueIgnoreCase(request.getType()));
     }
 
     private LocalDateTime getFromDate(LocalDateTime toDate, String duration){
@@ -192,5 +193,81 @@ public class TransactionServiceImpl implements TransactionService {
             fromDate = LocalDateTime.of(LocalDate.of(year, month, 1), LocalTime.MIN);
         }
         return fromDate;
+    }
+
+    private String checkBank(String header){
+        for(String bank : banks){
+
+            if(header.toUpperCase().contains(bank.toUpperCase())){
+                return bank.toUpperCase();
+            }
+        }
+        //TODO if not able to get bank than need to think how we can identify bank name for patterns
+        return null;
+    }
+
+    private List<Pattern> getTransactionRegex(String bankName){
+        return switch (bankName) {
+            case "AXIS" -> Regex.AXIS_PATTERNS;
+            case "SBI" -> Regex.SBI_PATTERNS;
+            case "ICICI" -> Regex.ICICI_PATTERNS;
+            case "KOTAK" -> Regex.KOTAK_PATTERNS;
+            case "CBI" -> Regex.CBI_PATTERNS;
+            default -> null;
+        };
+    }
+
+    private Map<String, String> parse(List<Pattern> patterns, String messageBody){
+        for (Pattern pattern : patterns) {
+            Matcher m = pattern.matcher(messageBody);
+            if (m.find()) {
+                Map<String, String> result = new HashMap<>();
+                for (String group : new String[]{"Amount", "Merchant", "CardLast4", "AvailableLimit", "DateTime"}) {
+                    try {
+                        String value = m.group(group);
+                        if (value != null) value = value.trim(); // remove extra spaces/newlines
+                        result.put(group, value);
+                    } catch (Exception ignored) {}
+                }
+                return result;
+            }
+        }
+        return null; // No match
+    }
+
+    private Transaction buildTransactionEntity(TransactionCreateUpdateRequest request) {
+        return Transaction.builder()
+                .type(TransactionType.fromValueIgnoreCase(request.getType()))
+                .transactionName(request.getTransactionName())
+                .currency(request.getCurrency())
+                .account(request.getAccount())
+                .amount(request.getAmount())
+                .category(request.getCategory())
+                .merchant(request.getMerchant())
+                .occuredAt(LocalDateTime.parse(request.getOccuredAt(), DateTimeFormatter.ISO_DATE_TIME))
+                .postedAt(LocalDateTime.parse(request.getOccuredAt(), DateTimeFormatter.ISO_DATE_TIME))
+                .notes(request.getNotes())
+                .attachments(request.getAttachments())
+                .externalRef(request.getExternalRef())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    private TransactionCreateUpdateRequest buildTransactionCreateUpdateRequest(Map<String, String> object){
+        return TransactionCreateUpdateRequest.builder()
+                .transactionName("New Expense Transaction")
+                .merchant(object.get("Merchant"))
+                .currency("INR")
+                .account("acc")
+                .amount(Double.valueOf(object.get("Amount")))
+                .type("expense")
+                .attachments("")
+                .tags(List.of())
+                .notes("")
+                .occuredAt(object.get("DateTime"))
+                .postedAt(object.get("DateTime"))
+                .category("default")
+                .build();
     }
 }

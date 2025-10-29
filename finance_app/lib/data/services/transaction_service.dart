@@ -1,4 +1,6 @@
+import 'package:another_telephony/telephony.dart';
 import 'package:finance_app/data/models/expense_report.dart';
+import 'package:finance_app/data/models/sms_message.dart';
 
 import '../repository/transaction_repository.dart';
 import '../models/transaction_summary.dart';
@@ -36,6 +38,29 @@ class TransactionService {
   Future<ExpenseReport> fetchExpenseReport() async {
     try {
       return await _repo.fetchExpenseReport();
+    } catch (e) {
+      throw Error();
+    }
+  }
+
+  static Future<void> sendMessagesToBackend(List<SmsMessage> messages) async {
+    print("inside sendMessagesToBackend method");
+    await TransactionService().exportMessage(messages);
+  }
+
+  Future<void> exportMessage(List<SmsMessage> smsMessages) async {
+    print("inside exportMessage method");
+    try {
+      List<SmsMessageObject> messages = smsMessages.map((msg) => SmsMessageObject(
+        address: msg.address!,
+        messageHeader: msg.address!,
+        messageBody: msg.body!,
+        messageDate: DateTime.fromMillisecondsSinceEpoch(msg.date!).toString()
+      )).toList();
+
+      print(messages);
+
+      await _repo.exportSmsMessages(messages);
     } catch (e) {
       throw Error();
     }

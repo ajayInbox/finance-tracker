@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TransactionService {
@@ -20,4 +21,6 @@ public interface TransactionService {
     TransactionsAverage search(SearchRequest searchRequest);
 
     MonthlyExpenseResponse getExpenseReport(String duration);
+
+    void exportMessages(List<SmsMessage> messageList);
 }

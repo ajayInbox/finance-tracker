@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:finance_app/data/models/expense_report.dart';
+import 'package:finance_app/data/models/sms_message.dart';
 import 'package:http/http.dart' as http;
 import '../models/transaction_summary.dart';
 import '../models/transaction.dart';
@@ -91,5 +92,26 @@ class TransactionRepository {
 
     final body = jsonDecode(res.body);
     return ExpenseReport.fromJson(body);
+  }
+
+  Future<void> exportSmsMessages(List<SmsMessageObject> smsMessages) async {
+    print("inside exportSmsMessages method");
+    String jsonBody = jsonEncode(smsMessages.map((msg) => msg.toJson()).toList());
+    Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
+      path: ApiConstants.exportMessages,
+    );
+
+    final res = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: jsonBody,
+    );
+
+    if (res.statusCode != 201 && res.statusCode != 200) {
+      throw Exception('Failed to create transaction: ${res.statusCode} - ${res.body}');
+    }
   }
 }

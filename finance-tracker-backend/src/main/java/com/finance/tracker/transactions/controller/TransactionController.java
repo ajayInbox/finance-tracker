@@ -1,6 +1,7 @@
 package com.finance.tracker.transactions.controller;
 
 import com.finance.tracker.transactions.domain.*;
+import com.finance.tracker.transactions.domain.dtos.TransactionCreateUpdateRequestDto;
 import com.finance.tracker.transactions.domain.dtos.TransactionDto;
 import com.finance.tracker.transactions.domain.dtos.TransactionsAverageDto;
 import com.finance.tracker.transactions.domain.entities.Transaction;
@@ -27,7 +28,8 @@ public class TransactionController {
 
 
     @PostMapping("/transaction")
-    public ResponseEntity<TransactionDto> createTransaction(@RequestBody TransactionCreateUpdateRequest request){
+    public ResponseEntity<TransactionDto> createTransaction(@RequestBody TransactionCreateUpdateRequestDto dto){
+        TransactionCreateUpdateRequest request = transactionMapper.toTransactionCreateUpdateRequest(dto);
         Transaction createdTransaction = transactionService.createNewTransaction(request);
         return new ResponseEntity<>(transactionMapper.toDto(createdTransaction), HttpStatus.CREATED);
     }
@@ -67,5 +69,11 @@ public class TransactionController {
     ){
         MonthlyExpenseResponse monthlyExpenseResponse = transactionService.getExpenseReport(duration);
         return new ResponseEntity<>(monthlyExpenseResponse, HttpStatus.OK);
+    }
+
+    @PostMapping("/export-messages")
+    public Object exportMessages(@RequestBody List<SmsMessage> messageList){
+        transactionService.exportMessages(messageList);
+        return ResponseEntity.ok();
     }
 }

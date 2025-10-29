@@ -20,4 +20,5 @@ public interface TransactionMapper {
     TransactionWithCategoryAndAccountDto toDto(TransactionsWithCategoryAndAccount transactionsWithCategoryAndAccount);
 
     TransactionsAverageDto toDto(TransactionsAverage average);
+
 }

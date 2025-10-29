@@ -2,11 +2,64 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:finance_app/services/sms_transaction_sync_service.dart';
+import 'package:another_telephony/telephony.dart';
+import 'package:finance_app/data/services/account_service.dart';
+import 'package:finance_app/data/services/category_service.dart';
+import 'package:finance_app/data/services/transaction_service.dart';
+import 'package:finance_app/utils/message_parser.dart';
+import 'package:finance_app/data/models/transaction.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/transactions_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/accounts_page.dart';
+import 'pages/settings_page.dart';
 
-void main() {
+Future<void> _onBackgroundSmsReceived(SmsMessage message) async {
+  // Handle incoming SMS in background
+  // Parse and add transaction similar to SmsTransactionSyncService
+  final parsed = MessageParser().parse(message.body ?? '');
+  if (parsed.isValid) {
+    final accounts = await AccountService().getAccounts();
+    final categories = await CategoryService().getAllCategories();
+    if (accounts.isEmpty || categories.isEmpty) return;
+
+    String accountId = accounts.first.id;
+    String categoryId = categories.first.id;
+    if (parsed.categoryHint != null) {
+      final matchedCat = categories.firstWhere(
+        (c) => c.label.toLowerCase() == parsed.categoryHint!.toLowerCase(),
+        orElse: () => categories.first,
+      );
+      categoryId = matchedCat.id;
+    }
+
+    final transaction = Transaction(
+      transactionName: '${parsed.merchant ?? 'SMS Transaction'} Transaction',
+      amount: parsed.amount!,
+      type: 'Expense',
+      account: accountId,
+      category: categoryId,
+      occuredAt: parsed.date ?? DateTime.now(),
+      notes: 'Auto-added from SMS: ${message.body ?? ''}',
+    );
+    await TransactionService().addTransaction(transaction);
+  }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load SMS listening preference
+  final prefs = await SharedPreferences.getInstance();
+  final smsListeningEnabled = prefs.getBool('sms_listening_enabled') ?? false;
+
+  // Only start listening for SMS if user has enabled it
+  if (smsListeningEnabled) {
+    Telephony.instance.listenIncomingSms(
+      onNewMessage: _onBackgroundSmsReceived,
+    );
+  }
+
   runApp(const MyApp());
 }
 
@@ -221,10 +274,10 @@ class _MyHomePageState extends State<MyHomePage> {
             title: 'Settings',
             isSelected: false,
             onTap: () {
-              // TODO: Navigate to settings
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings coming soon!')),
+              Navigator.pop(context); // Close drawer
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
               );
             },
           ),

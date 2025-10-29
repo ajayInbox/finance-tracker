@@ -1,6 +1,7 @@
 // lib/pages/dashboard_page.dart
 import 'package:finance_app/data/models/expense_report.dart';
 import 'package:finance_app/data/models/category_breakdown.dart';
+import 'package:finance_app/widgets/sms_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +10,8 @@ import 'package:finance_app/data/services/transaction_service.dart';
 import 'package:finance_app/data/models/transaction_summary.dart';
 import 'package:finance_app/pages/add_transaction_page.dart';
 import 'package:finance_app/pages/transactions_page.dart';
+import 'package:another_telephony/telephony.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:math' as math;
 
 class DashboardPage extends StatefulWidget {
@@ -273,11 +276,13 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                 ),
               ),
               const SizedBox(width: 6),
-              Text(
-                subtitle,
-                style: GoogleFonts.inter(
-                  color: Colors.white70,
-                  fontSize: 10,
+              Flexible(
+                child: Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    color: Colors.white70,
+                    fontSize: 10,
+                  ),
                 ),
               ),
             ],
@@ -489,52 +494,14 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   }
 
   void _showSMSModal() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(
-            'SMS Transaction Scanner',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-          ),
-          content: Text(
-            'Scan your SMS messages to automatically detect and add transactions.',
-            style: GoogleFonts.inter(color: Colors.grey[600]),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.inter(color: Colors.grey[600]),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // TODO: Implement SMS scanning
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('SMS scanning feature coming soon!'),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A90E2),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text('Start Scan'),
-            ),
-          ],
-        );
+        return SMSModal();
       },
     );
   }
@@ -574,26 +541,30 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Expense Breakdown',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
+              Expanded(
+                child: Text(
+                  'Expense Breakdown',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
                 ),
               ),
               // Time Period Toggle
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    _buildTimePeriodButton('This Month'),
-                    _buildTimePeriodButton('Last Month'),
-                    _buildTimePeriodButton('Custom'),
-                  ],
+              Flexible(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      Flexible(child: _buildTimePeriodButton('This Month')),
+                      Flexible(child: _buildTimePeriodButton('Last Month')),
+                      Flexible(child: _buildTimePeriodButton('Custom')),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -835,7 +806,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
           _getCategoryColor(category.categoryName),
           category.categoryName,
           '${category.percentage.toStringAsFixed(1)}%',
-          '${currency}${category.total.toStringAsFixed(2)}',
+          '$currency${category.total.toStringAsFixed(2)}',
         );
       }).toList(),
     );
