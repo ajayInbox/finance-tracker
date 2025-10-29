@@ -15,4 +15,6 @@ public interface AccountService {
     Account createAccount(AccountCreateUpdateRequest request);
 
     List<Account> getAccounts();
+
+    String getAccountByLastFour(String lastFour);
 }

@@ -95,4 +95,11 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
+    @Override
+    public String getAccountByLastFour(String lastFour){
+        Account account = accountRepository.findByLastFour(lastFour)
+                .orElseThrow(() -> new AccountNotFoundException("not found"));
+        return account.getId();
+    }
+
 }

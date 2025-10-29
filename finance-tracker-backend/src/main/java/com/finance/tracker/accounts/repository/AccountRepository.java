@@ -24,4 +24,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
             @Param("accountId") String accountId,
             @Param("userId") String userId);
 
+    @Query(value = "SELECT * FROM Account WHERE last_four= :lastFour", nativeQuery = true)
+    Optional<Account> findByLastFour(@Param("lastFour") String lastFour);
+
 }
