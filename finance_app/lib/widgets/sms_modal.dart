@@ -92,16 +92,13 @@ class _SMSModalState extends State<SMSModal> {
     setState(() => _isExporting = true);
 
     try {
-      // Fire and forget to avoid blocking UI
-      print(_selectedMessages);
-      compute(TransactionService.sendMessagesToBackend, _selectedMessages);
+      
+      await TransactionService().exportMessage(_selectedMessages);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export initiated!'), backgroundColor: Colors.green),
-        );
-        Navigator.pop(context);
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Export started...')),
+      );
+      Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
