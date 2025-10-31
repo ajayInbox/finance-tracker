@@ -8,9 +8,11 @@ import com.finance.tracker.transactions.domain.entities.Transaction;
 import com.finance.tracker.transactions.exceptions.CurrencyMismatchException;
 import com.finance.tracker.transactions.repository.TransactionQueryBuilder;
 import com.finance.tracker.transactions.repository.TransactionRepository;
+import com.finance.tracker.transactions.service.MessageProducer;
 import com.finance.tracker.transactions.service.TransactionService;
-import com.finance.tracker.transactions.utilities.Regex;
+import com.finance.tracker.transactions.utilities.SmsParser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,8 +24,6 @@ import java.math.RoundingMode;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,6 +37,10 @@ public class TransactionServiceImpl implements TransactionService {
     private final ApplicationEventPublisher eventPublisher;
     private final static DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private final static List<String> banks = Arrays.asList("HDFC", "SBI", "ICICI", "Axis");
+    private final SmsParser smsParser;
+    private final MessageProducer messageProducer;
+    @Value("${transaction.default-category-id}")
+    private String defaultCategoryId;
 
     @Override
     public Transaction createNewTransaction(TransactionCreateUpdateRequest request) {
@@ -150,16 +154,32 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public void exportMessages(List<SmsMessage> messageList) {
+        System.out.println(messageList);
         for(SmsMessage message : messageList){
-            String bank = checkBank(message.getMessageHeader());
-            List<Pattern> patterns = getTransactionRegex(bank);
-            Map<String, String> parsedObject = parse(patterns, message.getMessageBody());
-            String accountId = accountService.getAccountByLastFour(parsedObject.get("CardLast4"));
-            parsedObject.put("accountId", accountId);
-            TransactionCreateUpdateRequest request = buildTransactionCreateUpdateRequest(parsedObject);
-            Transaction transaction = buildTransactionEntity(request);
-            transactionRepository.save(transaction);
+            createTransactionFromMessage(message);
         }
+    }
+
+    @Override
+    public void exportMessagesSendToQueue(List<SmsMessage> messageList) {
+        for(SmsMessage message : messageList){
+            messageProducer.sendMessage(message);
+        }
+    }
+
+    @Override
+    public void createTransactionFromQueueMsg(SmsMessage message) {
+        createTransactionFromMessage(message);
+    }
+
+    private void createTransactionFromMessage(SmsMessage message){
+        String bank = checkBank(message.getMessageHeader());
+        Map<String, String> parsedObject = smsParser.parse(bank, message.getMessageBody());
+        String accountId = accountService.getAccountByLastFour(parsedObject.get("CardLast4"));
+        parsedObject.put("accountId", accountId);
+        TransactionCreateUpdateRequest request = buildTransactionCreateUpdateRequest(parsedObject);
+        Transaction transaction = buildTransactionEntity(request);
+        transactionRepository.save(transaction);
     }
 
     private Transaction saveTransaction( TransactionCreateUpdateRequest request){
@@ -206,35 +226,6 @@ public class TransactionServiceImpl implements TransactionService {
         return null;
     }
 
-    private List<Pattern> getTransactionRegex(String bankName){
-        return switch (bankName) {
-            case "AXIS" -> Regex.AXIS_PATTERNS;
-            case "SBI" -> Regex.SBI_PATTERNS;
-            case "ICICI" -> Regex.ICICI_PATTERNS;
-            case "KOTAK" -> Regex.KOTAK_PATTERNS;
-            case "CBI" -> Regex.CBI_PATTERNS;
-            default -> null;
-        };
-    }
-
-    private Map<String, String> parse(List<Pattern> patterns, String messageBody){
-        for (Pattern pattern : patterns) {
-            Matcher m = pattern.matcher(messageBody);
-            if (m.find()) {
-                Map<String, String> result = new HashMap<>();
-                for (String group : new String[]{"Amount", "Merchant", "CardLast4", "AvailableLimit", "DateTime"}) {
-                    try {
-                        String value = m.group(group);
-                        if (value != null) value = value.trim(); // remove extra spaces/newlines
-                        result.put(group, value);
-                    } catch (Exception ignored) {}
-                }
-                return result;
-            }
-        }
-        return null; // No match
-    }
-
     private Transaction buildTransactionEntity(TransactionCreateUpdateRequest request) {
         return Transaction.builder()
                 .type(TransactionType.fromValueIgnoreCase(request.getType()))
@@ -259,15 +250,15 @@ public class TransactionServiceImpl implements TransactionService {
                 .transactionName("New Expense Transaction")
                 .merchant(object.get("Merchant"))
                 .currency("INR")
-                .account("acc")
+                .account(String.valueOf(object.get("AccountId")))
                 .amount(Double.valueOf(object.get("Amount")))
                 .type("expense")
                 .attachments("")
                 .tags(List.of())
                 .notes("")
-                .occuredAt(object.get("DateTime"))
-                .postedAt(object.get("DateTime"))
-                .category("default")
+                .occuredAt(String.valueOf(LocalDateTime.parse(object.get("DateTime"), DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss"))))
+                .postedAt(String.valueOf(LocalDateTime.parse(object.get("DateTime"), DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss"))))
+                .category(defaultCategoryId)
                 .build();
     }
 }

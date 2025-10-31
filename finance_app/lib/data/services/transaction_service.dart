@@ -43,22 +43,14 @@ class TransactionService {
     }
   }
 
-  static Future<void> sendMessagesToBackend(List<SmsMessage> messages) async {
-    print("inside sendMessagesToBackend method");
-    await TransactionService().exportMessage(messages);
-  }
-
   Future<void> exportMessage(List<SmsMessage> smsMessages) async {
-    print("inside exportMessage method");
     try {
       List<SmsMessageObject> messages = smsMessages.map((msg) => SmsMessageObject(
-        address: msg.address!,
+        messageAddress: msg.address!,
         messageHeader: msg.address!,
         messageBody: msg.body!,
         messageDate: DateTime.fromMillisecondsSinceEpoch(msg.date!).toString()
       )).toList();
-
-      print(messages);
 
       await _repo.exportSmsMessages(messages);
     } catch (e) {

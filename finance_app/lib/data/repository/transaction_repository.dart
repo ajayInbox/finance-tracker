@@ -95,8 +95,6 @@ class TransactionRepository {
   }
 
   Future<void> exportSmsMessages(List<SmsMessageObject> smsMessages) async {
-    print("inside exportSmsMessages method");
-    String jsonBody = jsonEncode(smsMessages.map((msg) => msg.toJson()).toList());
     Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
       path: ApiConstants.exportMessages,
     );
@@ -107,7 +105,7 @@ class TransactionRepository {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: jsonBody,
+      body: jsonEncode(smsMessages.map((msg) => msg.toJson()).toList()),
     );
 
     if (res.statusCode != 201 && res.statusCode != 200) {

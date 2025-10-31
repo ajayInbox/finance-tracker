@@ -23,4 +23,8 @@ public interface TransactionService {
     MonthlyExpenseResponse getExpenseReport(String duration);
 
     void exportMessages(List<SmsMessage> messageList);
+
+    void exportMessagesSendToQueue(List<SmsMessage> messageList);
+
+    void createTransactionFromQueueMsg(SmsMessage message);
 }

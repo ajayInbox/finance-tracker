@@ -72,8 +72,8 @@ public class TransactionController {
     }
 
     @PostMapping("/export-messages")
-    public Object exportMessages(@RequestBody List<SmsMessage> messageList){
-        transactionService.exportMessages(messageList);
-        return ResponseEntity.ok();
+    public ResponseEntity<Void> exportMessages(@RequestBody List<SmsMessage> messageList){
+        transactionService.exportMessagesSendToQueue(messageList);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
