@@ -1,7 +1,6 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:finance_app/services/sms_transaction_sync_service.dart';
 import 'package:another_telephony/telephony.dart';
 import 'package:finance_app/data/services/account_service.dart';
 import 'package:finance_app/data/services/category_service.dart';
@@ -101,11 +100,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-   // _triggerSmsSync();
-  }
-
-  Future<void> _triggerSmsSync() async {
-    await SmsTransactionSyncService().scanForNewTransactions();
   }
 
   void _onItemTapped(int index) {

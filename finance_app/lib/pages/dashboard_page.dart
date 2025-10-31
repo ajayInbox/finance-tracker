@@ -10,8 +10,6 @@ import 'package:finance_app/data/services/transaction_service.dart';
 import 'package:finance_app/data/models/transaction_summary.dart';
 import 'package:finance_app/pages/add_transaction_page.dart';
 import 'package:finance_app/pages/transactions_page.dart';
-import 'package:another_telephony/telephony.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:math' as math;
 
 class DashboardPage extends StatefulWidget {

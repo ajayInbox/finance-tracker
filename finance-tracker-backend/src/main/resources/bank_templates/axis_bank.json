@@ -1,0 +1,10 @@
+[
+  {
+    "pattern": "(?s)Spent\\s.*?Card no\\.\\s*XX(?<CardLast4>\\d{4})\\s*INR\\s*(?<Amount>[\\d,.]+)\\s*(?<DateTime>\\d{2}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2})(?:\\s*\\w+)?\\s*(?<Merchant>.+?)\\s*Avl\\s*Lim(?:it|t)[:\\s]*INR\\s*(?<AvailableLimit>[\\d,.]+)\n",
+    "fields": ["CardLast4", "Amount", "DateTime", "Merchant", "AvailableLimit"]
+  },
+  {
+    "pattern": "(?s)Spent\\s*INR\\s*(?<Amount>[\\d,.]+).*?Card\\s*no\\.\\s*XX(?<CardLast4>\\d{4}).*?(?<DateTime>\\d{2}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}).*?(?<Merchant>[A-Za-z ]+)\\s*Avl\\s*Limit[:\\s]*INR\\s*(?<AvailableLimit>[\\d,.]+)",
+    "fields": ["Amount", "CardLast4", "DateTime", "Merchant", "AvailableLimit"]
+  }
+]
