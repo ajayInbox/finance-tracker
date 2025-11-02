@@ -3,8 +3,8 @@ import 'package:finance_app/utils/category_icon.dart';
 import 'package:finance_app/widgets/filter_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../data/services/transaction_service.dart';
-import '../data/models/transaction_summary.dart';
+import 'package:finance_app/data/services/transaction_service.dart';
+import 'package:finance_app/data/models/transaction_summary.dart';
 
 class TransactionsPage extends StatefulWidget {
   const TransactionsPage({super.key});
@@ -320,7 +320,7 @@ class _TransactionsPageState extends State<TransactionsPage>
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: _selectedTransactions.contains(transaction.id)
-              ? Colors.blue.withOpacity(0.1)
+              ? Colors.blue.withValues(alpha: 0.1)
               : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: _selectedTransactions.contains(transaction.id)
@@ -328,7 +328,7 @@ class _TransactionsPageState extends State<TransactionsPage>
               : null,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.08),
+              color: Colors.grey.withValues(alpha: 0.08),
               spreadRadius: 2,
               blurRadius: 8,
               offset: const Offset(0, 2),
@@ -360,8 +360,8 @@ class _TransactionsPageState extends State<TransactionsPage>
                     height: 48,
                     decoration: BoxDecoration(
                       color: transaction.type.toLowerCase() == "income"
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: Icon(

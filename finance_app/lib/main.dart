@@ -8,10 +8,10 @@ import 'package:finance_app/data/services/transaction_service.dart';
 import 'package:finance_app/utils/message_parser.dart';
 import 'package:finance_app/data/models/transaction.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'pages/transactions_page.dart';
-import 'pages/dashboard_page.dart';
-import 'pages/accounts_page.dart';
-import 'pages/settings_page.dart';
+import 'package:finance_app/pages/transactions_page.dart';
+import 'package:finance_app/pages/dashboard_page.dart';
+import 'package:finance_app/pages/accounts_page.dart';
+import 'package:finance_app/pages/settings_page.dart';
 
 Future<void> _onBackgroundSmsReceived(SmsMessage message) async {
   // Handle incoming SMS in background

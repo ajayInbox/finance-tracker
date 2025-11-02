@@ -1,5 +1,4 @@
 import 'package:finance_app/data/services/transaction_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:another_telephony/telephony.dart';
@@ -51,9 +50,9 @@ class _SMSModalState extends State<SMSModal> {
       );
 
       // Filter date + detect transaction keywords
-      final transactionPattern = RegExp(
-          r"(credited|debited|UPI|spent|received|payment|withdrawn|rs\.|inr)",
-          caseSensitive: false);
+      // final transactionPattern = RegExp(
+      //     r"(credited|debited|UPI|spent|received|payment|withdrawn|rs\.|inr)",
+      //     caseSensitive: false);
 
       final filtered = inbox.where((msg) {
         final ts = msg.date;
@@ -92,13 +91,15 @@ class _SMSModalState extends State<SMSModal> {
     setState(() => _isExporting = true);
 
     try {
-      
+
       await TransactionService().exportMessage(_selectedMessages);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Export started...')),
-      );
-      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Export started...')),
+        );
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
