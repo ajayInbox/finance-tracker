@@ -1,8 +1,8 @@
 // lib/pages/transactions_page.dart
 import 'package:finance_app/utils/category_icon.dart';
+import 'package:finance_app/widgets/filter_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'add_transaction_page.dart';
 import '../data/services/transaction_service.dart';
 import '../data/models/transaction_summary.dart';
 
@@ -23,9 +23,6 @@ class _TransactionsPageState extends State<TransactionsPage>
   String _selectedTimeFilter = 'All';
   String _selectedAccountFilter = 'All';
   String _selectedCategoryFilter = 'All';
-  String _selectedStatusFilter = 'All';
-  double _minAmount = 0;
-  double _maxAmount = 10000;
 
   // UI state
   bool _isRefreshing = false;
@@ -106,13 +103,7 @@ class _TransactionsPageState extends State<TransactionsPage>
       final matchesCategory = _selectedCategoryFilter == 'All' ||
           transaction.categoryName.toLowerCase().contains(_selectedCategoryFilter.toLowerCase());
 
-      // Status filter (simplified for now)
-      final matchesStatus = _selectedStatusFilter == 'All';
-
-      // Amount range filter
-      final matchesAmount = transaction.amount >= _minAmount && transaction.amount <= _maxAmount;
-
-      return matchesSearch && matchesTime && matchesAccount && matchesCategory && matchesStatus && matchesAmount;
+      return matchesSearch && matchesTime && matchesAccount && matchesCategory;
     }).toList();
   }
 
@@ -121,9 +112,6 @@ class _TransactionsPageState extends State<TransactionsPage>
       _selectedTimeFilter = 'All';
       _selectedAccountFilter = 'All';
       _selectedCategoryFilter = 'All';
-      _selectedStatusFilter = 'All';
-      _minAmount = 0;
-      _maxAmount = 10000;
     });
   }
 
@@ -161,20 +149,14 @@ class _TransactionsPageState extends State<TransactionsPage>
           selectedTimeFilter: _selectedTimeFilter,
           selectedAccountFilter: _selectedAccountFilter,
           selectedCategoryFilter: _selectedCategoryFilter,
-          selectedStatusFilter: _selectedStatusFilter,
-          minAmount: _minAmount,
-          maxAmount: _maxAmount,
-          onFiltersChanged: (time, account, category, status, min, max) {
+          onFiltersChanged: (time, account, category) {
             setState(() {
               _selectedTimeFilter = time;
               _selectedAccountFilter = account;
               _selectedCategoryFilter = category;
-              _selectedStatusFilter = status;
-              _minAmount = min;
-              _maxAmount = max;
             });
           },
-          onClearAll: _clearAllFilters,
+          onClearAll: _clearAllFilters
         ),
       ),
     );
@@ -267,7 +249,7 @@ class _TransactionsPageState extends State<TransactionsPage>
                     _searchQuery.isNotEmpty
                         ? 'No transactions found for "$_searchQuery"'
                         : (_selectedTimeFilter != 'All' || _selectedAccountFilter != 'All' ||
-                           _selectedCategoryFilter != 'All' || _selectedStatusFilter != 'All')
+                           _selectedCategoryFilter != 'All')
                             ? 'No transactions match the selected filters'
                             : 'No transactions yet',
                     style: TextStyle(color: Colors.grey[600], fontSize: 16),
@@ -295,22 +277,12 @@ class _TransactionsPageState extends State<TransactionsPage>
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddTransactionPage()),
-          );
-        },
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
   Widget _buildTransactionCard(TransactionSummary transaction) {
     final formattedDate = DateFormat('MMM dd, yyyy').format(transaction.occuredAt);
-    final formattedTime = DateFormat('hh:mm a').format(transaction.occuredAt);
+  //  final formattedTime = DateFormat('hh:mm a').format(transaction.occuredAt);
 
     return Dismissible(
       key: Key(transaction.id),
@@ -430,7 +402,7 @@ class _TransactionsPageState extends State<TransactionsPage>
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '$formattedDate at $formattedTime',
+                              formattedDate,
                               style: TextStyle(
                                 color: Colors.grey[500],
                                 fontSize: 12,
@@ -531,373 +503,6 @@ class _TransactionsPageState extends State<TransactionsPage>
           ],
         );
       },
-    );
-  }
-}
-
-// Filter Bottom Sheet Widget
-class FilterBottomSheet extends StatefulWidget {
-  final String selectedTimeFilter;
-  final String selectedAccountFilter;
-  final String selectedCategoryFilter;
-  final String selectedStatusFilter;
-  final double minAmount;
-  final double maxAmount;
-  final Function(String, String, String, String, double, double) onFiltersChanged;
-  final VoidCallback onClearAll;
-
-  const FilterBottomSheet({
-    super.key,
-    required this.selectedTimeFilter,
-    required this.selectedAccountFilter,
-    required this.selectedCategoryFilter,
-    required this.selectedStatusFilter,
-    required this.minAmount,
-    required this.maxAmount,
-    required this.onFiltersChanged,
-    required this.onClearAll,
-  });
-
-  @override
-  State<FilterBottomSheet> createState() => _FilterBottomSheetState();
-}
-
-class _FilterBottomSheetState extends State<FilterBottomSheet> {
-  late String _timeFilter;
-  late String _accountFilter;
-  late String _categoryFilter;
-  late String _statusFilter;
-  late double _minAmount;
-  late double _maxAmount;
-
-  @override
-  void initState() {
-    super.initState();
-    _timeFilter = widget.selectedTimeFilter;
-    _accountFilter = widget.selectedAccountFilter;
-    _categoryFilter = widget.selectedCategoryFilter;
-    _statusFilter = widget.selectedStatusFilter;
-    _minAmount = widget.minAmount;
-    _maxAmount = widget.maxAmount;
-  }
-
-  void _applyFilters() {
-    widget.onFiltersChanged(_timeFilter, _accountFilter, _categoryFilter, _statusFilter, _minAmount, _maxAmount);
-    Navigator.of(context).pop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Filters',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextButton(
-                onPressed: widget.onClearAll,
-                child: const Text('Clear all'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Time Period Filter
-          const Text(
-            'Time Period',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              'All',
-              'Today',
-              'Yesterday',
-              'This Week',
-              'This Month',
-              'Custom Range'
-            ].map((filter) {
-              final isSelected = _timeFilter == filter;
-              return FilterChip(
-                label: Text(filter),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _timeFilter = filter;
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 16),
-
-          // Account Filter
-          const Text(
-            'Account',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              'All',
-              'Main Account',
-              'Savings',
-              'Credit Card'
-            ].map((filter) {
-              final isSelected = _accountFilter == filter;
-              return FilterChip(
-                label: Text(filter),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _accountFilter = filter;
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 16),
-
-          // Category Filter
-          const Text(
-            'Category',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              'All',
-              'Food',
-              'Transport',
-              'Shopping',
-              'Entertainment'
-            ].map((filter) {
-              final isSelected = _categoryFilter == filter;
-              return FilterChip(
-                label: Text(filter),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _categoryFilter = filter;
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 16),
-
-          // Amount Range
-          Row(
-            children: [
-              const Text(
-                'Amount Range',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '₹${_minAmount.toStringAsFixed(0)} - ₹${_maxAmount.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-          RangeSlider(
-            values: RangeValues(_minAmount, _maxAmount),
-            min: 0,
-            max: 10000,
-            divisions: 100,
-            labels: RangeLabels(
-              '₹${_minAmount.toStringAsFixed(0)}',
-              '₹${_maxAmount.toStringAsFixed(0)}',
-            ),
-            onChanged: (values) {
-              setState(() {
-                _minAmount = values.start;
-                _maxAmount = values.end;
-              });
-            },
-          ),
-          const SizedBox(height: 24),
-
-          // Apply Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _applyFilters,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Apply Filters'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Add Transaction Bottom Sheet Widget
-class AddTransactionBottomSheet extends StatelessWidget {
-  const AddTransactionBottomSheet({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          Row(
-            children: [
-              const Text(
-                'Add Transaction',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Quick Actions
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuickActionButton(
-                  context,
-                  'Add Expense',
-                  Icons.remove_circle_outline,
-                  Colors.red,
-                  () {
-                    Navigator.of(context).pop();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AddTransactionPage(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildQuickActionButton(
-                  context,
-                  'Add Income',
-                  Icons.add_circle_outline,
-                  Colors.green,
-                  () {
-                    Navigator.of(context).pop();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AddTransactionPage(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Transfer Button
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AddTransactionPage(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.swap_horiz),
-              label: const Text('Transfer'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionButton(
-    BuildContext context,
-    String title,
-    IconData icon,
-    Color color,
-    VoidCallback onPressed,
-  ) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color.withOpacity(0.1),
-        foregroundColor: color,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

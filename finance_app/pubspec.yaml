@@ -40,6 +40,7 @@ dependencies:
   another_telephony: 0.4.1
   permission_handler: ^12.0.0
   shared_preferences: ^2.2.2
+  lottie: ^3.1.2  # For animations
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
