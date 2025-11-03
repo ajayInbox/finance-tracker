@@ -2,6 +2,7 @@ package com.finance.tracker.transactions.service;
 
 import com.finance.tracker.transactions.domain.*;
 import com.finance.tracker.transactions.domain.entities.Transaction;
+import com.finance.tracker.transactions.exceptions.TransactionNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,4 +28,6 @@ public interface TransactionService {
     void exportMessagesSendToQueue(List<SmsMessage> messageList);
 
     void createTransactionFromQueueMsg(SmsMessage message);
+
+    String deleteTransaction(Transaction transaction);
 }

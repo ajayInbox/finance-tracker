@@ -9,6 +9,7 @@ import com.finance.tracker.transactions.exceptions.CurrencyMismatchException;
 import com.finance.tracker.transactions.repository.TransactionQueryBuilder;
 import com.finance.tracker.transactions.repository.TransactionRepository;
 import com.finance.tracker.transactions.service.MessageProducer;
+import com.finance.tracker.transactions.service.ReconciliationService;
 import com.finance.tracker.transactions.service.TransactionService;
 import com.finance.tracker.transactions.utilities.SmsParser;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final MessageProducer messageProducer;
     @Value("${transaction.default-category-id}")
     private String defaultCategoryId;
+    private final ReconciliationService reconciliationService;
 
     @Override
     public Transaction createNewTransaction(TransactionCreateUpdateRequest request) {
@@ -48,8 +50,7 @@ public class TransactionServiceImpl implements TransactionService {
         validateTransactionRequest(request);
 
         Transaction transaction = saveTransaction(request);
-        eventPublisher.publishEvent(new TransactionCreateEvent(this, transaction.getId(),
-                transaction.getAccount(), transaction.getAmount(), transaction.getType(), transaction.getOccuredAt()));
+        accountEventPublisher(transaction);
 
         return transaction;
     }
@@ -172,6 +173,33 @@ public class TransactionServiceImpl implements TransactionService {
         createTransactionFromMessage(message);
     }
 
+    @Override
+    public String deleteTransaction(Transaction transaction) {
+
+        if(transaction.getLastAction().equalsIgnoreCase("DELETED") ||
+                transaction.getLastAction().equalsIgnoreCase("PARTIAL_DELETED")){
+            return "Transaction already Deleted";
+        }
+
+        Transaction reversal = new Transaction(transaction);
+        reversal.setCreatedAt(LocalDateTime.now());
+        reversal.setUpdatedAt(LocalDateTime.now());
+
+        // 1. Mark original as partially deleted
+        transaction.setLastAction("PARTIAL_DELETED");
+        transaction.setTransactionName(transaction.getTransactionName()+" (Deleted)");
+        var savedOriginal = transactionRepository.save(transaction);
+
+        // 2. Create reversal transaction
+        var savedReversal = transactionRepository.save(reversal);
+        accountEventPublisher(savedReversal);
+
+        //add new record in reconciliation table
+        reconciliationService.addEntry(Map.of("reversalTxnId", savedReversal.getId(), "originalTxnId", savedOriginal.getId()));
+
+        return "Transaction Deleted Successfully";
+    }
+
     private void createTransactionFromMessage(SmsMessage message){
         String bank = checkBank(message.getMessageHeader());
         Map<String, String> parsedObject = smsParser.parse(bank, message.getMessageBody());
@@ -260,5 +288,10 @@ public class TransactionServiceImpl implements TransactionService {
                 .postedAt(String.valueOf(LocalDateTime.parse(object.get("DateTime"), DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss"))))
                 .category(defaultCategoryId)
                 .build();
+    }
+
+    private void accountEventPublisher(Transaction newTransaction){
+        eventPublisher.publishEvent(new TransactionCreateEvent(this, newTransaction.getId(),
+                newTransaction.getAccount(), newTransaction.getAmount(), newTransaction.getType(), newTransaction.getOccuredAt()));
     }
 }

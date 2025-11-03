@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -44,7 +45,7 @@ public class TransactionController {
     @GetMapping("/transactions")
     public Object getTransactions(
             @RequestParam(value = "page", defaultValue = "1", required = false) int page,
-            @RequestParam(value = "size", defaultValue = "20", required = false) int size,
+            @RequestParam(value = "size", defaultValue = "50", required = false) int size,
             @RequestParam(value = "version", defaultValue = "1", required = false) int version
     ){
         if(version==1){
@@ -75,5 +76,15 @@ public class TransactionController {
     public ResponseEntity<Void> exportMessages(@RequestBody List<SmsMessage> messageList){
         transactionService.exportMessagesSendToQueue(messageList);
         return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @DeleteMapping("/transaction/{id}")
+    public ResponseEntity<String> deleteTransaction(@PathVariable("id") String transactionId){
+        Optional<Transaction> transaction = transactionService.getTransaction(transactionId);
+        if(transaction.isEmpty()){
+            return ResponseEntity.notFound().build();
+        }
+        String msg = transactionService.deleteTransaction(transaction.get());
+        return ResponseEntity.ok(msg);
     }
 }

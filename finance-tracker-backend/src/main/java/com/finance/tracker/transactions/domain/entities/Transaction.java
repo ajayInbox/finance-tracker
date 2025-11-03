@@ -54,5 +54,33 @@ public class Transaction {
 
     //TODO need to add seperate entity for user
     private String userId;
+    private String lastAction;
+
+    public Transaction(Transaction original){
+        this.transactionName=original.getTransactionName()+" (Reversal)";
+        this.amount=original.getAmount();
+        this.currency=original.getCurrency();
+        this.type=getReversalType(original.getType());
+        this.account=original.getAccount();
+        this.category=original.getCategory();
+        this.attachments=original.getAttachments();
+        this.merchant=original.getMerchant();
+        this.occuredAt=original.getOccuredAt();
+        this.notes=original.getNotes();
+        this.postedAt=original.getPostedAt();
+        this.tags=original.getTags();
+        this.userId=original.getUserId();
+        this.lastAction="REVERSAL";
+    }
+
+    private TransactionType getReversalType(TransactionType originalType) {
+        if (originalType == null) return TransactionType.UNKNOWN;
+        return switch (originalType) {
+            case TransactionType.EXPENSE -> TransactionType.INCOME;
+            case TransactionType.INCOME -> TransactionType.EXPENSE;
+            default -> originalType;
+        };
+    }
+
 
 }
