@@ -3,14 +3,17 @@ package com.finance.tracker.transactions.domain;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
 @AllArgsConstructor
 @Builder
+@NoArgsConstructor
 public class TransactionCreateUpdateRequest {
 
+        private String id;
         private Double amount;
         private String type;
         private String merchant;

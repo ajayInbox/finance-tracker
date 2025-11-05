@@ -87,4 +87,10 @@ public class TransactionController {
         String msg = transactionService.deleteTransaction(transaction.get());
         return ResponseEntity.ok(msg);
     }
+
+    @PutMapping("/transaction/update")
+    public ResponseEntity<TransactionDto> updateTransaction(@RequestBody TransactionCreateUpdateRequest request){
+        Transaction updatedTransaction = transactionService.updateTransaction(request);
+        return new ResponseEntity<>(transactionMapper.toDto(updatedTransaction), HttpStatus.OK);
+    }
 }

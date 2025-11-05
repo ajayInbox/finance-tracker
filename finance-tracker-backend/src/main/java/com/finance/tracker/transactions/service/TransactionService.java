@@ -30,4 +30,6 @@ public interface TransactionService {
     void createTransactionFromQueueMsg(SmsMessage message);
 
     String deleteTransaction(Transaction transaction);
+
+    Transaction updateTransaction(TransactionCreateUpdateRequest request);
 }

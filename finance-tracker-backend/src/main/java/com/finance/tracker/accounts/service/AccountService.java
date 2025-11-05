@@ -3,6 +3,7 @@ package com.finance.tracker.accounts.service;
 import com.finance.tracker.accounts.domain.AccountCreateUpdateRequest;
 import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
 import com.finance.tracker.accounts.domain.entities.Account;
+import com.finance.tracker.transactions.domain.entities.Transaction;
 
 import java.util.List;
 
@@ -17,4 +18,6 @@ public interface AccountService {
     List<Account> getAccounts();
 
     String getAccountByLastFour(String lastFour);
+
+    void updateAccountBalance(Transaction accountId, double delta);
 }

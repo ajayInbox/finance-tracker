@@ -6,6 +6,7 @@ import com.finance.tracker.category.service.CategoryService;
 import com.finance.tracker.transactions.domain.*;
 import com.finance.tracker.transactions.domain.entities.Transaction;
 import com.finance.tracker.transactions.exceptions.CurrencyMismatchException;
+import com.finance.tracker.transactions.exceptions.TransactionNotFoundException;
 import com.finance.tracker.transactions.repository.TransactionQueryBuilder;
 import com.finance.tracker.transactions.repository.TransactionRepository;
 import com.finance.tracker.transactions.service.MessageProducer;
@@ -181,7 +182,7 @@ public class TransactionServiceImpl implements TransactionService {
             return "Transaction already Deleted";
         }
 
-        Transaction reversal = new Transaction(transaction);
+        Transaction reversal = buildTransactionEntity(transaction, "Delete");
         reversal.setCreatedAt(LocalDateTime.now());
         reversal.setUpdatedAt(LocalDateTime.now());
 
@@ -198,6 +199,50 @@ public class TransactionServiceImpl implements TransactionService {
         reconciliationService.addEntry(Map.of("reversalTxnId", savedReversal.getId(), "originalTxnId", savedOriginal.getId()));
 
         return "Transaction Deleted Successfully";
+    }
+
+    @Override
+    public Transaction updateTransaction(TransactionCreateUpdateRequest request) {
+        Transaction transaction = getTransaction(request.getId()).orElseThrow(
+                () -> new TransactionNotFoundException("not found")
+        );
+        boolean amountChanged = !Objects.equals(transaction.getAmount(), request.getAmount());
+        double oldAmount = transaction.getAmount();
+        validateTransactionRequest(request);
+        transaction.setTransactionName(request.getTransactionName());
+        transaction.setAmount(request.getAmount());
+        transaction.setLastAction("UPDATED");
+        transaction.setAccount(request.getAccount());
+        transaction.setAttachments(request.getAttachments());
+        transaction.setCategory(request.getCategory());
+        transaction.setCurrency(request.getCurrency());
+        transaction.setMerchant(request.getMerchant());
+        transaction.setExternalRef(request.getExternalRef());
+        transaction.setUpdatedAt(LocalDateTime.now());
+        transaction.setNotes(request.getNotes());
+        transaction.setOccuredAt(LocalDateTime.parse(request.getOccuredAt(), DateTimeFormatter.ISO_DATE_TIME));
+        transaction.setPostedAt(LocalDateTime.parse(request.getPostedAt(), DateTimeFormatter.ISO_DATE_TIME));
+        transaction.setTags(request.getTags());
+        transaction.setType(TransactionType.fromValueIgnoreCase(request.getType()));
+        transaction.setUserId("NULL");
+        transactionRepository.save(transaction);
+
+        if(amountChanged){
+            double delta = request.getAmount() - oldAmount;
+            Transaction adjustment = buildTransactionEntity(transaction, "Update");
+            if (delta > 0) {
+                adjustment.setAmount(Math.abs(delta));
+                adjustment.setType(TransactionType.fromValueIgnoreCase("EXPENSE"));
+            } else if (delta < 0) {
+                adjustment.setAmount(Math.abs(delta));
+                adjustment.setType(TransactionType.fromValueIgnoreCase("INCOME"));
+            }
+            var savedAdjustment = transactionRepository.save(adjustment);
+            accountService.updateAccountBalance(savedAdjustment, delta);
+            //add new record in reconciliation table
+            reconciliationService.addEntry(Map.of("reversalTxnId", savedAdjustment.getId(), "originalTxnId", transaction.getId()));
+        }
+        return transaction;
     }
 
     private void createTransactionFromMessage(SmsMessage message){
@@ -294,4 +339,31 @@ public class TransactionServiceImpl implements TransactionService {
         eventPublisher.publishEvent(new TransactionCreateEvent(this, newTransaction.getId(),
                 newTransaction.getAccount(), newTransaction.getAmount(), newTransaction.getType(), newTransaction.getOccuredAt()));
     }
-}
+
+    private Transaction buildTransactionEntity(Transaction transaction, String type){
+        Transaction buildTransaction = new Transaction(transaction);
+        if(type.equalsIgnoreCase("Delete")){
+            buildTransaction.setType(getReversalType(transaction.getType()));
+        }
+        var mapObject = updatedTransactionName(type, transaction.getTransactionName());
+        buildTransaction.setTransactionName(mapObject.get("transactionName"));
+        buildTransaction.setLastAction(mapObject.get("lastAction"));
+        return buildTransaction;
+    }
+
+    private TransactionType getReversalType(TransactionType originalType) {
+        if (originalType == null) return TransactionType.UNKNOWN;
+        return switch (originalType) {
+            case TransactionType.EXPENSE -> TransactionType.INCOME;
+            case TransactionType.INCOME -> TransactionType.EXPENSE;
+            default -> originalType;
+        };
+    }
+
+    private Map<String, String> updatedTransactionName(String type, String oldTransactionName){
+        return switch (type) {
+            case "Delete" -> Map.of("transactionName", oldTransactionName + " (Reversal)", "lastAction", "REVERSAL");
+            case "Update" -> Map.of("transactionName", oldTransactionName + " (Adjustment)", "lastAction", "ADJUSTMENT");
+            default -> Map.of("transactionName", oldTransactionName + " (Reversal)", "lastAction", "REVERSAL");
+        };
+    }}

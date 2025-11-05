@@ -10,6 +10,7 @@ import com.finance.tracker.accounts.repository.AccountRepository;
 import com.finance.tracker.accounts.service.AccountService;
 import com.finance.tracker.accounts.service.AccountTransactionSnapshotService;
 import com.finance.tracker.transactions.domain.TransactionType;
+import com.finance.tracker.transactions.domain.entities.Transaction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -100,6 +101,28 @@ public class AccountServiceImpl implements AccountService {
         Account account = accountRepository.findByLastFour(lastFour)
                 .orElseThrow(() -> new AccountNotFoundException("not found"));
         return account.getId();
+    }
+
+    @Override
+    public void updateAccountBalance(Transaction transaction, double delta) {
+        Account account = accountRepository.findById(transaction.getAccount())
+                .orElseThrow(() -> new AccountNotFoundException("not found"));
+        BigDecimal previousBalance = account.getBalanceCached();
+        double newBalance = previousBalance.doubleValue();
+
+        if (delta > 0) newBalance -= delta;   // extra expense → reduce balance
+        else if (delta < 0) newBalance += Math.abs(delta);  // reduced expense → increase balance
+
+        account.setBalanceCached(BigDecimal.valueOf(newBalance));
+        accountRepository.save(account);
+
+        accountTransactionSnapshotService.createSnapshot(new SnapshotCreateRequest(
+                account.getId(),
+                transaction.getId(),
+                previousBalance,
+                BigDecimal.valueOf(newBalance),
+                transaction.getAmount()
+        ));
     }
 
 }

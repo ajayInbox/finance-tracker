@@ -1,6 +1,5 @@
 package com.finance.tracker.transactions.domain.entities;
 
-import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.transactions.domain.TransactionType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Data
@@ -57,10 +57,10 @@ public class Transaction {
     private String lastAction;
 
     public Transaction(Transaction original){
-        this.transactionName=original.getTransactionName()+" (Reversal)";
+        this.transactionName=original.getTransactionName();
         this.amount=original.getAmount();
         this.currency=original.getCurrency();
-        this.type=getReversalType(original.getType());
+        this.type=original.getType();
         this.account=original.getAccount();
         this.category=original.getCategory();
         this.attachments=original.getAttachments();
@@ -70,17 +70,9 @@ public class Transaction {
         this.postedAt=original.getPostedAt();
         this.tags=original.getTags();
         this.userId=original.getUserId();
-        this.lastAction="REVERSAL";
+        this.lastAction=original.getLastAction();
+        this.userId=original.getUserId();
+        this.externalRef=original.getExternalRef();
     }
-
-    private TransactionType getReversalType(TransactionType originalType) {
-        if (originalType == null) return TransactionType.UNKNOWN;
-        return switch (originalType) {
-            case TransactionType.EXPENSE -> TransactionType.INCOME;
-            case TransactionType.INCOME -> TransactionType.EXPENSE;
-            default -> originalType;
-        };
-    }
-
 
 }
