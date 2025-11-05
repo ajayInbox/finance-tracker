@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -196,23 +197,45 @@ public class TransactionServiceImpl implements TransactionService {
         accountEventPublisher(savedReversal);
 
         //add new record in reconciliation table
-        reconciliationService.addEntry(Map.of("reversalTxnId", savedReversal.getId(), "originalTxnId", savedOriginal.getId()));
+        ReconciliationEventPublisher(savedOriginal, savedReversal, null);
 
         return "Transaction Deleted Successfully";
     }
 
+    @Transactional
     @Override
     public Transaction updateTransaction(TransactionCreateUpdateRequest request) {
         Transaction transaction = getTransaction(request.getId()).orElseThrow(
                 () -> new TransactionNotFoundException("not found")
         );
-        boolean amountChanged = !Objects.equals(transaction.getAmount(), request.getAmount());
-        double oldAmount = transaction.getAmount();
         validateTransactionRequest(request);
+        boolean amountChanged = !Objects.equals(transaction.getAmount(), request.getAmount());
+        boolean typeChanged = !Objects.equals(transaction.getType(), TransactionType.fromValueIgnoreCase(request.getType()));
+        boolean accountChanged = !Objects.equals(transaction.getAccount(), request.getAccount());
+
+        if(amountChanged || typeChanged || accountChanged){
+            var savedReversalTransaction = createReversalTransaction(transaction);
+            accountService.updateAccountBalance(savedReversalTransaction);
+            Transaction newTransaction = buildTransactionEntity(request);
+            var savedNewTransaction = transactionRepository.save(newTransaction);
+            accountService.updateAccountBalance(savedNewTransaction);
+            transaction.setLastAction("UPDATED");
+            transaction.setUpdatedAt(LocalDateTime.now());
+            transaction.setStatus("INACTIVE");
+            var savedOriginalTxn = transactionRepository.save(transaction);
+            eventPublisher.publishEvent(
+                    new ReconciliationCreateEvent(
+                            this,
+                            savedOriginalTxn.getId(),
+                            savedReversalTransaction.getId(),
+                            savedNewTransaction.getId()
+                    )
+            );
+            return savedNewTransaction;
+        }
+
         transaction.setTransactionName(request.getTransactionName());
-        transaction.setAmount(request.getAmount());
         transaction.setLastAction("UPDATED");
-        transaction.setAccount(request.getAccount());
         transaction.setAttachments(request.getAttachments());
         transaction.setCategory(request.getCategory());
         transaction.setCurrency(request.getCurrency());
@@ -223,25 +246,8 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setOccuredAt(LocalDateTime.parse(request.getOccuredAt(), DateTimeFormatter.ISO_DATE_TIME));
         transaction.setPostedAt(LocalDateTime.parse(request.getPostedAt(), DateTimeFormatter.ISO_DATE_TIME));
         transaction.setTags(request.getTags());
-        transaction.setType(TransactionType.fromValueIgnoreCase(request.getType()));
         transaction.setUserId("NULL");
         transactionRepository.save(transaction);
-
-        if(amountChanged){
-            double delta = request.getAmount() - oldAmount;
-            Transaction adjustment = buildTransactionEntity(transaction, "Update");
-            if (delta > 0) {
-                adjustment.setAmount(Math.abs(delta));
-                adjustment.setType(TransactionType.fromValueIgnoreCase("EXPENSE"));
-            } else if (delta < 0) {
-                adjustment.setAmount(Math.abs(delta));
-                adjustment.setType(TransactionType.fromValueIgnoreCase("INCOME"));
-            }
-            var savedAdjustment = transactionRepository.save(adjustment);
-            accountService.updateAccountBalance(savedAdjustment, delta);
-            //add new record in reconciliation table
-            reconciliationService.addEntry(Map.of("reversalTxnId", savedAdjustment.getId(), "originalTxnId", transaction.getId()));
-        }
         return transaction;
     }
 
@@ -315,6 +321,8 @@ public class TransactionServiceImpl implements TransactionService {
                 .externalRef(request.getExternalRef())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
+                .lastAction("CREATED")
+                .status("ACTIVE")
                 .build();
     }
 
@@ -348,6 +356,10 @@ public class TransactionServiceImpl implements TransactionService {
         var mapObject = updatedTransactionName(type, transaction.getTransactionName());
         buildTransaction.setTransactionName(mapObject.get("transactionName"));
         buildTransaction.setLastAction(mapObject.get("lastAction"));
+        buildTransaction.setCreatedAt(LocalDateTime.now());
+        buildTransaction.setUpdatedAt(LocalDateTime.now());
+        buildTransaction.setStatus("REVERSAL");
+        buildTransaction.setReversalOf(transaction.getId());
         return buildTransaction;
     }
 
@@ -366,4 +378,21 @@ public class TransactionServiceImpl implements TransactionService {
             case "Update" -> Map.of("transactionName", oldTransactionName + " (Adjustment)", "lastAction", "ADJUSTMENT");
             default -> Map.of("transactionName", oldTransactionName + " (Reversal)", "lastAction", "REVERSAL");
         };
-    }}
+    }
+
+    private Transaction createReversalTransaction(Transaction transaction){
+        Transaction reversalTransaction = buildTransactionEntity(transaction, "Delete");
+        return transactionRepository.save(reversalTransaction);
+    }
+
+    private void ReconciliationEventPublisher(Transaction original, Transaction reversal, Transaction updated){
+        eventPublisher.publishEvent(
+                new ReconciliationCreateEvent(
+                        this,
+                        original.getId(),
+                        reversal.getId(),
+                        Objects.isNull(updated) ? null : updated.getId()
+                )
+        );
+    }
+}

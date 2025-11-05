@@ -1,6 +1,5 @@
 package com.finance.tracker.transactions.domain;
 
-import com.finance.tracker.accounts.domain.AccountType;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 

@@ -55,6 +55,8 @@ public class Transaction {
     //TODO need to add seperate entity for user
     private String userId;
     private String lastAction;
+    private String status;
+    private String reversalOf;
 
     public Transaction(Transaction original){
         this.transactionName=original.getTransactionName();
@@ -73,6 +75,8 @@ public class Transaction {
         this.lastAction=original.getLastAction();
         this.userId=original.getUserId();
         this.externalRef=original.getExternalRef();
+        this.status=original.getStatus();
+        this.reversalOf=original.getReversalOf();
     }
 
 }
