@@ -7,6 +7,7 @@ import com.finance.tracker.accounts.service.AccountTransactionSnapshotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Service
@@ -21,8 +22,8 @@ public class AccountTransactionSnapshotServiceImpl implements AccountTransaction
         AccountTransactionSnapshot newSnapshot = AccountTransactionSnapshot.builder()
                 .accountId(snapshotCreateRequest.getAccountId())
                 .transactionId(snapshotCreateRequest.getTransactionId())
-                .balanceBefore(snapshotCreateRequest.getPreviousBalance())
-                .balanceAfter(snapshotCreateRequest.getNewBalance())
+                .balanceBefore(BigDecimal.valueOf(snapshotCreateRequest.getPreviousBalance()))
+                .balanceAfter(BigDecimal.valueOf(snapshotCreateRequest.getNewBalance()))
                 .transactionAmount(snapshotCreateRequest.getTransactionAmount())
                 .createdAt(LocalDateTime.now())
                 .build();

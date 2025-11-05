@@ -1,9 +1,6 @@
 package com.finance.tracker.accounts.service.impl;
 
-import com.finance.tracker.accounts.domain.AccountCreateUpdateRequest;
-import com.finance.tracker.accounts.domain.AccountType;
-import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
-import com.finance.tracker.accounts.domain.SnapshotCreateRequest;
+import com.finance.tracker.accounts.domain.*;
 import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.accounts.exceptions.AccountNotFoundException;
 import com.finance.tracker.accounts.repository.AccountRepository;
@@ -12,6 +9,7 @@ import com.finance.tracker.accounts.service.AccountTransactionSnapshotService;
 import com.finance.tracker.transactions.domain.TransactionType;
 import com.finance.tracker.transactions.domain.entities.Transaction;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,6 +23,7 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
     private final AccountTransactionSnapshotService accountTransactionSnapshotService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public Account getAccountByIdAndUser(String accountId, String userId) {
@@ -52,8 +51,8 @@ public class AccountServiceImpl implements AccountService {
         accountTransactionSnapshotService.createSnapshot(new SnapshotCreateRequest(
                 lockedAccount.getId(),
                 request.getTransactionId(),
-                previousBalance,
-                newBalance,
+                previousBalance.doubleValue(),
+                newBalance.doubleValue(),
                 request.getAmount()
         ));
 
@@ -104,25 +103,41 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public void updateAccountBalance(Transaction transaction, double delta) {
+    public void updateAccountBalance(Transaction transaction) {
         Account account = accountRepository.findById(transaction.getAccount())
                 .orElseThrow(() -> new AccountNotFoundException("not found"));
-        BigDecimal previousBalance = account.getBalanceCached();
-        double newBalance = previousBalance.doubleValue();
 
-        if (delta > 0) newBalance -= delta;   // extra expense → reduce balance
-        else if (delta < 0) newBalance += Math.abs(delta);  // reduced expense → increase balance
+        var previousBalance = account.getBalanceCached();
+        applyTransactionEffect(account, transaction);
+        account.setBalanceAsOf(LocalDateTime.now());
 
-        account.setBalanceCached(BigDecimal.valueOf(newBalance));
-        accountRepository.save(account);
+        Account savedAccount = accountRepository.save(account);
 
-        accountTransactionSnapshotService.createSnapshot(new SnapshotCreateRequest(
-                account.getId(),
-                transaction.getId(),
-                previousBalance,
-                BigDecimal.valueOf(newBalance),
-                transaction.getAmount()
-        ));
+        eventPublisher.publishEvent(
+                new ATSnapshotCreateEvent(
+                        this,
+                        account.getId(),
+                        transaction.getId(),
+                        previousBalance.doubleValue(),
+                        savedAccount.getBalanceCached().doubleValue(),
+                        transaction.getAmount()
+                )
+        );
     }
+
+
+    private void applyTransactionEffect(Account account, Transaction txn) {
+        double balance = account.getBalanceCached().doubleValue();
+        double amount = txn.getAmount();
+
+        if (txn.getType()==TransactionType.EXPENSE) {
+            balance -= amount;
+        } else if (txn.getType()==TransactionType.INCOME) {
+            balance += amount;
+        }
+
+        account.setBalanceCached(BigDecimal.valueOf(balance));
+    }
+
 
 }

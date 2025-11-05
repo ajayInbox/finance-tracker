@@ -19,5 +19,5 @@ public interface AccountService {
 
     String getAccountByLastFour(String lastFour);
 
-    void updateAccountBalance(Transaction accountId, double delta);
+    void updateAccountBalance(Transaction transaction);
 }
