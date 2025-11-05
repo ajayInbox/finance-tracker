@@ -21,7 +21,8 @@ public class ReconciliationServiceImpl implements ReconciliationService {
         Reconciliation newEntry = Reconciliation.builder()
                 .originalTxnId(object.get("originalTxnId"))
                 .reversalTxnId(object.get("reversalTxnId"))
-                .startedAt(LocalDateTime.now())
+                .updatedTxnId(object.get("updatedTxnId"))
+                .createdAt(LocalDateTime.now())
                 .status("PENDING")
                 .build();
 

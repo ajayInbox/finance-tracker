@@ -18,9 +18,11 @@ public class Reconciliation {
 
     private String originalTxnId;
     private String reversalTxnId;
+    private String updatedTxnId;
 
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
+    private LocalDateTime createdAt;
     private String status;
     private String remarks;
 
