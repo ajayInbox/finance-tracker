@@ -71,7 +71,8 @@ class MyApp extends StatelessWidget {
       title: 'Finance Tracker',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+      //  primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
       home: MyHomePage(title: "Finance Tracker"),
@@ -138,7 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
           return Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: IconButton(
@@ -166,7 +167,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.grey.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -385,7 +386,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       selected: isSelected,
-      selectedTileColor: Colors.blue.withOpacity(0.1),
+      selectedTileColor: Colors.blue.withValues(alpha: 0.1),
       onTap: onTap,
     );
   }

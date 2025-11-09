@@ -175,6 +175,7 @@ public class TransactionServiceImpl implements TransactionService {
         createTransactionFromMessage(message);
     }
 
+    @Transactional
     @Override
     public String deleteTransaction(Transaction transaction) {
 
@@ -189,15 +190,25 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 1. Mark original as partially deleted
         transaction.setLastAction("PARTIAL_DELETED");
+        transaction.setStatus("INACTIVE");
         transaction.setTransactionName(transaction.getTransactionName()+" (Deleted)");
         var savedOriginal = transactionRepository.save(transaction);
 
         // 2. Create reversal transaction
         var savedReversal = transactionRepository.save(reversal);
-        accountEventPublisher(savedReversal);
+        accountService.updateAccountBalance(savedReversal);
+        //accountEventPublisher(savedReversal);
 
         //add new record in reconciliation table
-        ReconciliationEventPublisher(savedOriginal, savedReversal, null);
+        eventPublisher.publishEvent(
+                new ReconciliationCreateEvent(
+                        this,
+                        savedOriginal.getId(),
+                        savedReversal.getId(),
+                        null
+                )
+        );
+        //ReconciliationEventPublisher(savedOriginal, savedReversal, null);
 
         return "Transaction Deleted Successfully";
     }

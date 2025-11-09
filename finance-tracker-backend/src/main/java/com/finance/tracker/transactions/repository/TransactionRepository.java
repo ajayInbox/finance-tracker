@@ -23,7 +23,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
                     "c._id AS categoryId, c.label AS categoryName, t.occured_at AS occuredAt," +
                     "t.posted_at AS postedAt, t.currency AS currency FROM transaction t " +
                     "INNER JOIN category c ON t.category=c._id INNER JOIN account a ON t.account=a._id INNER JOIN " +
-                    "account_transaction_snapshot ats ON t._id=ats.transaction_id and a._id=ats.account_id",
+                    "account_transaction_snapshot ats ON t._id=ats.transaction_id and a._id=ats.account_id " +
+                    "WHERE t.status='ACTIVE'",
             nativeQuery = true
     )
     Page<TransactionsWithCategoryAndAccount> fetchTransactions(Pageable pageable);

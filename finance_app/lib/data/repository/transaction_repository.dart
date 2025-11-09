@@ -53,6 +53,21 @@ class TransactionRepository {
     }
   }
 
+  Future<void> deleteTransaction(String transactionId) async {
+    Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
+      path: '${ApiConstants.deleteTransaction}/$transactionId',
+    );
+
+    final res = await http.delete(
+      uri,
+      headers: {'Accept': 'application/json'},
+    );
+
+    if (res.statusCode != 200 && res.statusCode != 204) {
+      throw Exception('Failed to delete transaction: ${res.statusCode} - ${res.body}');
+    }
+  }
+
   Future<AverageDailyExpense> fetchAverageDailyExpense() async {
     Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
       path: ApiConstants.avgDaily,

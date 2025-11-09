@@ -23,7 +23,7 @@ public class ReconciliationEventListener {
                 Map.of(
                         "reversalTxnId", event.getReversalTxnId(),
                         "originalTxnId", event.getOriginalTxnId(),
-                        "updatedTxnId", event.getUpdatedTxnId()
+                        "updatedTxnId", null != event.getUpdatedTxnId() ? event.getUpdatedTxnId() : null
                 )
         );
     }

@@ -26,6 +26,10 @@ class TransactionService {
     await _repo.createTransaction(transaction);
   }
 
+  Future<void> deleteTransaction(String transactionId) async {
+    await _repo.deleteTransaction(transactionId);
+  }
+
   Future<AverageDailyExpense> getAverageDailyExpense() async {
     try {
       return await _repo.fetchAverageDailyExpense();

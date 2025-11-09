@@ -1,6 +1,8 @@
 // lib/pages/dashboard_page.dart
+import 'package:chart_sparkline/chart_sparkline.dart';
 import 'package:finance_app/data/models/expense_report.dart';
 import 'package:finance_app/data/models/category_breakdown.dart';
+import 'package:finance_app/utils/glassmorphic_container.dart';
 import 'package:finance_app/widgets/sms_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -11,6 +13,7 @@ import 'package:finance_app/data/models/transaction_summary.dart';
 import 'package:finance_app/pages/add_transaction_page.dart';
 import 'package:finance_app/pages/transactions_page.dart';
 import 'dart:math' as math;
+import 'package:shimmer/shimmer.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -76,7 +79,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildTopSummaryCards(),
+                    _buildTopSummaryCards2(),
                     const SizedBox(height: 24),
                     _buildQuickActionsGrid(),
                     const SizedBox(height: 12),
@@ -1161,4 +1164,126 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       ),
     );
   }
+
+Widget _buildLoadingSummaryCard2() {
+  return Shimmer.fromColors(
+    baseColor: Colors.grey[800]!,
+    highlightColor: Colors.grey[700]!,
+    child: Container(
+      height: 160, // Match the height of your actual summary card
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(24.0),
+      ),
+    ),
+  );
+}
+
+// Your _buildSummaryCard implementation needs to be updated to include the sparkline
+Widget _buildSummaryCard2({
+  required String title,
+  required String amount,
+  required String trend,
+  required bool trendUp,
+  required String subtitle,
+  required Gradient gradient,
+  required List<double> sparklineData,
+}) {
+  return GlassmorphicContainer(
+    gradient: gradient,
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+          const SizedBox(height: 8),
+          Text(amount, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(trendUp ? Icons.arrow_upward : Icons.arrow_downward, color: trendUp ? Colors.greenAccent : Colors.redAccent, size: 16),
+              const SizedBox(width: 4),
+              Text(trend, style: TextStyle(color: trendUp ? Colors.greenAccent : Colors.redAccent)),
+              const SizedBox(width: 4),
+              Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.7))),
+            ],
+          ),
+          const Spacer(),
+          SizedBox(
+            height: 30,
+            child: Sparkline(
+              data: sparklineData,
+              lineColor: Colors.white.withOpacity(0.8),
+              pointsMode: PointsMode.none,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+// Your main widget, now refactored
+Widget _buildTopSummaryCards2() {
+  return FutureBuilder<ExpenseReport>(
+    future: _expenseAnalysis,
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Row(
+          children: [
+            Expanded(child: _buildLoadingSummaryCard()),
+            const SizedBox(width: 16),
+            Expanded(child: _buildLoadingSummaryCard()),
+          ],
+        );
+      }
+      if (snapshot.hasError) {
+        // You can create a more descriptive error card
+        return const Center(child: Text('Failed to load data', style: TextStyle(color: Colors.white)));
+      }
+      final report = snapshot.data!;
+      return SizedBox(
+        height: 200, // Give the row a fixed height to ensure cards are the same size
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'This Month',
+                amount: '₹ ${report.total.toStringAsFixed(2)}',
+                trend: '+12.5%', // TODO: Calculate actual trend
+                trendUp: true,
+                subtitle: 'vs last month',
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6A11CB), Color(0xFF2575FC)], // Modern purple-to-blue gradient
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                sparklineData: [20, 35, 25, 45, 30, 40, 45].map((e) => e.toDouble()).toList(), // TODO: Use real data
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Total Balance',
+                amount: '₹ 1,25,750', // TODO: Fetch actual balance
+                trend: '+8.2%',
+                trendUp: true,
+                subtitle: 'all accounts',
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF20BF55), Color(0xFF01BAEF)], // Modern green-to-cyan gradient
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                sparklineData: [80, 85, 90, 95, 100, 110, 125].map((e) => e.toDouble()).toList(),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+
 }

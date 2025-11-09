@@ -302,19 +302,39 @@ class _TransactionsPageState extends State<TransactionsPage>
       confirmDismiss: (direction) async {
         return await _showDeleteConfirmationDialog(context);
       },
-      onDismissed: (direction) {
-        // TODO: Delete transaction
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Transaction deleted'),
-            action: SnackBarAction(
-              label: 'Undo',
-              onPressed: () {
-                // TODO: Undo delete
-              },
-            ),
-          ),
-        );
+      onDismissed: (direction) async {
+        try {
+          final svc = TransactionService();
+          await svc.deleteTransaction(transaction.id);
+
+          // Refresh the transactions list
+          setState(() {
+            transactions = svc.getFeed();
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Transaction deleted successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          // If deletion fails, show error and refresh to restore the item
+          setState(() {
+            transactions = TransactionService().getFeed();
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to delete transaction: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
