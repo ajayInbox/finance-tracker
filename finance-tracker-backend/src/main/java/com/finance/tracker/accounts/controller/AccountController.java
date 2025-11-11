@@ -1,6 +1,7 @@
 package com.finance.tracker.accounts.controller;
 
 import com.finance.tracker.accounts.domain.AccountCreateUpdateRequest;
+import com.finance.tracker.accounts.domain.NetworthSummary;
 import com.finance.tracker.accounts.domain.dto.AccountDto;
 import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.accounts.mapper.AccountMapper;
@@ -32,5 +33,11 @@ public class AccountController {
         List<Account> accounts = accountService.getAccounts();
         List<AccountDto> res = accounts.stream().map(accountMapper::toDto).toList();
         return ResponseEntity.ok(res);
+    }
+
+    @GetMapping("/networth")
+    public ResponseEntity<NetworthSummary> getNetWorth(@RequestParam(required = false, name = "userId") String userId){
+        NetworthSummary netWorth = accountService.getNetWorth(null);
+        return ResponseEntity.ok(netWorth);
     }
 }

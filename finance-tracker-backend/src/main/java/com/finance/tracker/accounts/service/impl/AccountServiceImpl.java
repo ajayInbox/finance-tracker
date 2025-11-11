@@ -24,12 +24,17 @@ public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
     private final AccountTransactionSnapshotService accountTransactionSnapshotService;
     private final ApplicationEventPublisher eventPublisher;
+    private final static List<String> ASSET_TYPE = List.of("bank", "wallet", "cash");
 
     @Override
     public Account getAccountByIdAndUser(String accountId, String userId) {
         Optional<Account> optionalAccount = accountRepository.findAccountByIdForUser(accountId, userId);
 
         return optionalAccount.orElseThrow(() -> new AccountNotFoundException("not found"));
+    }
+
+    private List<Account> getAccountByUserId(String userId){
+        return accountRepository.findByUserIdAndIsActive(userId);
     }
 
     @Override
@@ -75,6 +80,8 @@ public class AccountServiceImpl implements AccountService {
                 .lastFour(request.lastFour())
                 .readOnly(false)
                 .type(AccountType.valueOf(request.accountType()))
+                .isAsset(ASSET_TYPE.contains(request.accountType().toLowerCase()))
+                .isLiability(!ASSET_TYPE.contains(request.accountType().toLowerCase()))
                 .build();
 
         return accountRepository.save(newAccount);
@@ -123,6 +130,35 @@ public class AccountServiceImpl implements AccountService {
                         transaction.getAmount()
                 )
         );
+    }
+
+    @Override
+    public NetworthSummary getNetWorth(String userId) {
+        List<Account> accounts = getAccountByUserId(userId);
+        BigDecimal assetValue = BigDecimal.ZERO;
+        BigDecimal liabilityValue = BigDecimal.ZERO;
+        int assetAccounts = 0;
+        int liabilityAccounts = 0;
+
+        for (Account account : accounts){
+            BigDecimal balance = account.getBalanceCached() != null
+                    ? account.getBalanceCached()
+                    : account.getOpeningBalance() != null ? account.getOpeningBalance() : BigDecimal.ZERO;
+            if (account.isAsset()) {
+                assetAccounts+=1;
+                assetValue = assetValue.add(balance);
+            } else {
+                liabilityAccounts+=1;
+                liabilityValue = liabilityValue.add(balance);
+            }
+        }
+
+        BigDecimal totalNetWorth = assetValue.subtract(liabilityValue);
+        return NetworthSummary.builder()
+                .assets(new NetworthSummary.ValueNumber(assetValue.doubleValue(), assetAccounts))
+                .liabilities(new NetworthSummary.ValueNumber(liabilityValue.doubleValue(), liabilityAccounts))
+                .netWorth(totalNetWorth.doubleValue())
+                .build();
     }
 
 

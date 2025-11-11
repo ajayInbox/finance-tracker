@@ -2,6 +2,7 @@ package com.finance.tracker.accounts.service;
 
 import com.finance.tracker.accounts.domain.AccountCreateUpdateRequest;
 import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
+import com.finance.tracker.accounts.domain.NetworthSummary;
 import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.transactions.domain.entities.Transaction;
 
@@ -20,4 +21,6 @@ public interface AccountService {
     String getAccountByLastFour(String lastFour);
 
     void updateAccountBalance(Transaction transaction);
+
+    NetworthSummary getNetWorth(String userId);
 }

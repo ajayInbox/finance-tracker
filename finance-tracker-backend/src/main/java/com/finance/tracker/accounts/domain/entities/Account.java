@@ -25,9 +25,9 @@ public class Account {
     @Enumerated(EnumType.STRING)
     private AccountType type;
     private String currency;
-    private Boolean active;
+    private boolean active;
     private LocalDateTime closedAt;
-    private Boolean readOnly;
+    private boolean readOnly;
 
     // if credit card
     private String cardNetwork;
@@ -41,6 +41,8 @@ public class Account {
 
     private LocalDateTime createdAt;
     private LocalDateTime balanceAsOf;
+    private boolean isAsset;
+    private boolean isLiability;
 
     private String userId;
 

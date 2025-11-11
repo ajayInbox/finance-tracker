@@ -4,12 +4,11 @@ import com.finance.tracker.accounts.domain.entities.Account;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -27,4 +26,6 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     @Query(value = "SELECT * FROM Account WHERE last_four= :lastFour", nativeQuery = true)
     Optional<Account> findByLastFour(@Param("lastFour") String lastFour);
 
+    @Query(value = "SELECT * FROM Account WHERE (user_id= :userId OR user_id IS NULL) AND active=true", nativeQuery = true)
+    List<Account> findByUserIdAndIsActive(@Param("userId") String userId);
 }
