@@ -97,11 +97,8 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddAccountDialog,
-        backgroundColor: AppColors.primaryBlue,
-        elevation: 6,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xlarge),
-        ),
+        backgroundColor: const Color(0xFF6C63FF),
+        elevation: 8,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -116,10 +113,18 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
+        // gradient: LinearGradient(
+        //   colors: [
+        //     AppColors.primaryGradientStart,
+        //     AppColors.primaryGradientEnd,
+        //   ],
+        //   begin: Alignment.topLeft,
+        //   end: Alignment.bottomRight,
+        // ),
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryGradientStart,
-            AppColors.primaryGradientEnd,
+            Color(0xFF6C63FF), // Purple
+            Color(0xFF00B4DB), // Teal Blue
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -127,7 +132,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
         borderRadius: BorderRadius.circular(20.0),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryBlue.withOpacity(0.15),
+            color: AppColors.primaryBlue.withValues(alpha: 0.15),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -143,7 +148,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
               Text(
                 'Total Net Worth',
                 style: GoogleFonts.inter(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Color(0xFFF9FAFB),
                   fontSize: 14.0,
                   fontWeight: AppTypography.weightRegular,
                 ),
@@ -157,7 +162,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                 child: Text(
                   '${accounts.length} Accounts',
                   style: GoogleFonts.inter(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Color(0xFFF9FAFB),
                     fontSize: 12.0,
                     fontWeight: AppTypography.weightRegular,
                   ),
@@ -171,7 +176,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
           Text(
             '₹${NumberFormat('#,##,###').format(totalBalance)}',
             style: GoogleFonts.inter(
-              color: Colors.white,
+              color: Color(0xFFF9FAFB),
               fontSize: AppTypography.h1,
               fontWeight: AppTypography.weightBold,
             ),
@@ -189,7 +194,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
               Text(
                 '↑ 0% from last month',
                 style: GoogleFonts.inter(
-                  color: AppColors.success,
+                  color: Color(0xFFF9FAFB),
                   fontSize: 13.0,
                   fontWeight: AppTypography.weightRegular,
                 ),
@@ -218,7 +223,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                         Text(
                           'Assets',
                           style: GoogleFonts.inter(
-                            color: Colors.white.withOpacity(0.7),
+                            color: Color(0xFFF9FAFB),
                             fontSize: 12.0,
                             fontWeight: AppTypography.weightRegular,
                           ),
@@ -226,7 +231,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                         Text(
                           '₹${NumberFormat('#,##,###').format(assetsTotal)}',
                           style: GoogleFonts.inter(
-                            color: Colors.white,
+                            color: Color(0xFFF9FAFB),
                             fontSize: 18.0,
                             fontWeight: AppTypography.weightSemibold,
                           ),
@@ -253,7 +258,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                         Text(
                           'Liabilities',
                           style: GoogleFonts.inter(
-                            color: Colors.white.withOpacity(0.7),
+                            color: Color(0xFFF9FAFB),
                             fontSize: 12.0,
                             fontWeight: AppTypography.weightRegular,
                           ),
@@ -261,7 +266,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                         Text(
                           '₹${NumberFormat('#,##,###').format(liabilitiesTotal)}',
                           style: GoogleFonts.inter(
-                            color: Colors.white,
+                            color: Color(0xFFF9FAFB),
                             fontSize: 18.0,
                             fontWeight: AppTypography.weightSemibold,
                           ),
@@ -553,16 +558,36 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
     final accountColor = _getAccountColor(account);
 
     return Container(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
       decoration: BoxDecoration(
-        color: AppColors.lightSurface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20.0)),
+        color: AppColors.lightSurface.withValues(alpha: 0.95),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Account Header
+          // ─── Drag Handle ───────────────────────────────────────────
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppColors.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          ),
+
+          // ─── Header ───────────────────────────────────────────────
           Row(
             children: [
               Container(
@@ -570,7 +595,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                 height: 48.0,
                 padding: const EdgeInsets.all(12.0),
                 decoration: BoxDecoration(
-                  color: accountColor.withOpacity(0.1),
+                  color: accountColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppBorderRadius.medium),
                 ),
                 child: Icon(
@@ -604,20 +629,23 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
               ),
             ],
           ),
+
           const SizedBox(height: 20.0),
 
-          // Balance Card
+          // ─── Balance Card ───────────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: isAsset
-                    ? [AppColors.success.withOpacity(0.1), AppColors.success.withOpacity(0.05)]
-                    : [AppColors.error.withOpacity(0.1), AppColors.error.withOpacity(0.05)],
+                    ? [AppColors.success.withValues(alpha: 0.1), AppColors.success.withValues(alpha: 0.05)]
+                    : [AppColors.error.withValues(alpha: 0.1), AppColors.error.withValues(alpha: 0.05)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(AppBorderRadius.medium),
               border: Border.all(
-                color: (isAsset ? AppColors.success : AppColors.error).withOpacity(0.2),
+                color: (isAsset ? AppColors.success : AppColors.error).withValues(alpha: 0.2),
               ),
             ),
             child: Row(
@@ -630,20 +658,38 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                     color: AppColors.textSecondary,
                   ),
                 ),
-                Text(
-                  '₹${NumberFormat('#,##,###').format(balance.abs())}',
-                  style: GoogleFonts.inter(
-                    fontSize: 18.0,
-                    fontWeight: AppTypography.weightSemibold,
-                    color: isAsset ? AppColors.success : AppColors.error,
-                  ),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: balance.toDouble()),
+                  duration: const Duration(milliseconds: 800),
+                  builder: (context, value, _) {
+                    return Text(
+                      '₹${NumberFormat('#,##,###').format(value)}',
+                      style: GoogleFonts.inter(
+                        fontSize: 18.0,
+                        fontWeight: AppTypography.weightSemibold,
+                        color: isAsset ? AppColors.success : AppColors.error,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
           ),
+
+          const SizedBox(height: 16.0),
+
+          // Optional insight / last transaction
+          Text(
+            'Last transaction: +₹500 on Nov 10',
+            style: GoogleFonts.inter(
+              fontSize: 13.0,
+              color: AppColors.textSecondary.withValues(alpha: 0.7),
+            ),
+          ),
+
           const SizedBox(height: 24.0),
 
-          // Action Buttons
+          // ─── Action Buttons ─────────────────────────────────────────
           Row(
             children: [
               Expanded(
@@ -694,6 +740,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
     );
   }
 
+
   Widget _buildLoadingState() {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -714,7 +761,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                 width: 48.0,
                 height: 48.0,
                 decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withOpacity(0.1),
+                  color: AppColors.textSecondary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppBorderRadius.medium),
                 ),
               ),
@@ -727,7 +774,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                       width: 120.0,
                       height: 18.0,
                       decoration: BoxDecoration(
-                        color: AppColors.textSecondary.withOpacity(0.1),
+                        color: AppColors.textSecondary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4.0),
                       ),
                     ),
@@ -736,7 +783,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                       width: 80.0,
                       height: 14.0,
                       decoration: BoxDecoration(
-                        color: AppColors.textSecondary.withOpacity(0.1),
+                        color: AppColors.textSecondary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4.0),
                       ),
                     ),
@@ -747,7 +794,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                 width: 80.0,
                 height: 18.0,
                 decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withOpacity(0.1),
+                  color: AppColors.textSecondary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4.0),
                 ),
               ),
@@ -766,7 +813,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
           Container(
             padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.1),
+              color: AppColors.error.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(50.0),
             ),
             child: Icon(
@@ -846,7 +893,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
           Text(
             'Add your first account to start tracking',
             style: GoogleFonts.inter(
-              color: AppColors.textSecondary.withOpacity(0.8),
+              color: AppColors.textSecondary.withValues(alpha: 0.8),
               fontSize: AppTypography.body,
             ),
           ),
