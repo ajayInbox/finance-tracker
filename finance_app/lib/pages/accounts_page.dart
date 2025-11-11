@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:finance_app/data/models/account.dart';
+import 'package:finance_app/data/models/networth_summary.dart';
 import 'package:finance_app/data/services/account_service.dart';
 import 'package:finance_app/utils/app_style_constants.dart';
 
@@ -15,13 +16,16 @@ class AccountsPage extends StatefulWidget {
 
 class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMixin {
   late Future<List<Account>> _accountsFuture;
+  late Future<NetworthSummary> _networthSummaryFuture;
   late AnimationController _fadeController;
   late AnimationController _slideController;
 
   @override
   void initState() {
     super.initState();
-    _accountsFuture = AccountService().getAccounts();
+    var accountService = AccountService();
+    _accountsFuture = accountService.getAccounts();
+    _networthSummaryFuture = accountService.getNetWorth();
 
     // Initialize animations
     _fadeController = AnimationController(
@@ -44,7 +48,9 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
 
   Future<void> _handleRefresh() async {
     setState(() {
-      _accountsFuture = AccountService().getAccounts();
+      var accountService = AccountService();
+      _accountsFuture = accountService.getAccounts();
+      _networthSummaryFuture = accountService.getNetWorth();
     });
     await Future.delayed(const Duration(milliseconds: 500));
   }
@@ -70,7 +76,20 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                   onRefresh: _handleRefresh,
                   child: Column(
                     children: [
-                      _buildNetWorthCard(),
+                      FutureBuilder<NetworthSummary>(
+                        future: _networthSummaryFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return _buildNetWorthCardLoading();
+                          } else if (snapshot.hasError) {
+                            return _buildNetWorthCardError();
+                          } else if (snapshot.hasData) {
+                            return _buildNetWorthCard(snapshot.data!);
+                          } else {
+                            return _buildNetWorthCardLoading();
+                          }
+                        },
+                      ),
                       const SizedBox(height: 16),
                       FutureBuilder<List<Account>>(
                         future: _accountsFuture,
@@ -104,23 +123,11 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
     );
   }
 
-  Widget _buildNetWorthCard() {
-    final totalBalance = _calculateTotalBalance();
-    final assetsTotal = _calculateAssetsTotal();
-    final liabilitiesTotal = _calculateLiabilitiesTotal();
-
+  Widget _buildNetWorthCard(NetworthSummary summary) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
-        // gradient: LinearGradient(
-        //   colors: [
-        //     AppColors.primaryGradientStart,
-        //     AppColors.primaryGradientEnd,
-        //   ],
-        //   begin: Alignment.topLeft,
-        //   end: Alignment.bottomRight,
-        // ),
         gradient: LinearGradient(
           colors: [
             Color(0xFF6C63FF), // Purple
@@ -160,7 +167,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: Text(
-                  '${accounts.length} Accounts',
+                  '${summary.assets.number + summary.liabilities.number} Accounts',
                   style: GoogleFonts.inter(
                     color: Color(0xFFF9FAFB),
                     fontSize: 12.0,
@@ -172,9 +179,9 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
           ),
           const SizedBox(height: 12.0),
 
-          // Main Amount
+          // Main Amount - Net Worth from API
           Text(
-            '₹${NumberFormat('#,##,###').format(totalBalance)}',
+            summary.formattedNetWorth,
             style: GoogleFonts.inter(
               color: Color(0xFFF9FAFB),
               fontSize: AppTypography.h1,
@@ -186,8 +193,8 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
           Row(
             children: [
               Icon(
-                Icons.trending_up,
-                color: AppColors.success,
+                summary.isPositiveNetWorth ? Icons.trending_up : Icons.trending_down,
+                color: summary.isPositiveNetWorth ? AppColors.success : AppColors.error,
                 size: 16.0,
               ),
               const SizedBox(width: 4.0),
@@ -204,7 +211,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
 
           const SizedBox(height: 20.0),
 
-          // Bottom Row - Assets and Liabilities
+          // Bottom Row - Assets and Liabilities from API
           Row(
             children: [
               // Assets
@@ -229,7 +236,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                           ),
                         ),
                         Text(
-                          '₹${NumberFormat('#,##,###').format(assetsTotal)}',
+                          summary.formattedAssets,
                           style: GoogleFonts.inter(
                             color: Color(0xFFF9FAFB),
                             fontSize: 18.0,
@@ -264,7 +271,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                           ),
                         ),
                         Text(
-                          '₹${NumberFormat('#,##,###').format(liabilitiesTotal)}',
+                          summary.formattedLiabilities,
                           style: GoogleFonts.inter(
                             color: Color(0xFFF9FAFB),
                             fontSize: 18.0,
@@ -280,6 +287,227 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildNetWorthCardLoading() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      padding: const EdgeInsets.all(24.0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF6C63FF).withOpacity(0.7),
+            Color(0xFF00B4DB).withOpacity(0.7),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20.0),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryBlue.withValues(alpha: 0.1),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Total Net Worth',
+                style: GoogleFonts.inter(
+                  color: Color(0xFFF9FAFB),
+                  fontSize: 14.0,
+                  fontWeight: AppTypography.weightRegular,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: Text(
+                  'Loading...',
+                  style: GoogleFonts.inter(
+                    color: Color(0xFFF9FAFB),
+                    fontSize: 12.0,
+                    fontWeight: AppTypography.weightRegular,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12.0),
+          Container(
+            width: 200,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+          const SizedBox(height: 8.0),
+          Container(
+            width: 120,
+            height: 16,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(4.0),
+            ),
+          ),
+          const SizedBox(height: 20.0),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNetWorthCardError() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      padding: const EdgeInsets.all(24.0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.error.withOpacity(0.7),
+            AppColors.error.withOpacity(0.5),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20.0),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.error.withValues(alpha: 0.1),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: Colors.white,
+            size: 48.0,
+          ),
+          const SizedBox(height: 12.0),
+          Text(
+            'Failed to load net worth',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 16.0,
+              fontWeight: AppTypography.weightSemibold,
+            ),
+          ),
+          const SizedBox(height: 8.0),
+          Text(
+            'Using local calculation',
+            style: GoogleFonts.inter(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 14.0,
+            ),
+          ),
+          const SizedBox(height: 16.0),
+          // Fallback to local calculation
+          _buildNetWorthCardFallback(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNetWorthCardFallback() {
+    final totalBalance = _calculateTotalBalance();
+    final assetsTotal = _calculateAssetsTotal();
+    final liabilitiesTotal = _calculateLiabilitiesTotal();
+
+    return Column(
+      children: [
+        Text(
+          '₹${NumberFormat('#,##,###').format(totalBalance)}',
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: AppTypography.h1,
+            fontWeight: AppTypography.weightBold,
+          ),
+        ),
+        const SizedBox(height: 20.0),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  Text(
+                    'Assets',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 12.0,
+                    ),
+                  ),
+                  Text(
+                    '₹${NumberFormat('#,##,###').format(assetsTotal)}',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 18.0,
+                      fontWeight: AppTypography.weightSemibold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  Text(
+                    'Liabilities',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 12.0,
+                    ),
+                  ),
+                  Text(
+                    '₹${NumberFormat('#,##,###').format(liabilitiesTotal)}',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 18.0,
+                      fontWeight: AppTypography.weightSemibold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

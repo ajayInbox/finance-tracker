@@ -10,5 +10,6 @@ class ApiConstants {
   static String avgDaily = "/api/v1/avg-daily-expense";
   static String expenseReport = "/api/v1/avg-expense-analysis";
   static String exportMessages = "/api/v1/export-messages";
+  static String networthSummary = "/api/v1/networth";
 
 }
