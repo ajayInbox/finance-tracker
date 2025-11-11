@@ -37,6 +37,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
              AND t.type = 'EXPENSE'
              AND t.occured_at >= :startTime
             AND t.occured_at <= :endTime
+            AND t.status = 'ACTIVE'
            GROUP BY c._id, c.label
            ORDER BY SUM(t.amount) DESC
         """, nativeQuery = true)
