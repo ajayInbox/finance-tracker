@@ -26,6 +26,10 @@ class TransactionService {
     await _repo.createTransaction(transaction);
   }
 
+  Future<void> updateTransaction(String transactionId, Transaction transaction) async {
+    await _repo.updateTransaction(transactionId, transaction);
+  }
+
   Future<void> deleteTransaction(String transactionId) async {
     await _repo.deleteTransaction(transactionId);
   }

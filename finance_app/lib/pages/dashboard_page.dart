@@ -29,6 +29,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   late AnimationController _slideController;
 
   // State for time period selection
+  final List<String> _options = ['This Month', 'Last Month', 'Custom'];
   String _selectedTimePeriod = 'This Month';
 
   @override
@@ -559,21 +560,19 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                 ),
               ),
               // Time Period Toggle
-              Flexible(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Flexible(child: _buildTimePeriodButton('This Month')),
-                      Flexible(child: _buildTimePeriodButton('Last Month')),
-                      Flexible(child: _buildTimePeriodButton('Custom')),
-                    ],
-                  ),
-                ),
+              DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+              value: _selectedTimePeriod,
+              icon: const Icon(Icons.expand_more, size: 18, color: Colors.grey),
+              items: _options
+                  .map((option) => DropdownMenuItem(
+              value: option,
+              child: Text(option, style: const TextStyle(fontSize: 13)),
+              ))
+                  .toList(),
+              onChanged: (value) => setState(() => _selectedTimePeriod = value!),
               ),
+              )
             ],
           ),
           const SizedBox(height: 30),
@@ -620,42 +619,6 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
             },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTimePeriodButton(String period) {
-    final isSelected = _selectedTimePeriod == period;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedTimePeriod = period;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        margin: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isSelected ? null : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          period,
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : Colors.grey[600],
-          ),
-        ),
       ),
     );
   }
@@ -1184,7 +1147,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, -4),
               ),
@@ -1248,7 +1211,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                     _navigateToTransactions();
                   },
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Color(0xFF1E40AF).withOpacity(0.3)),
+                    side: BorderSide(color: Color(0xFF1E40AF).withValues(alpha: 0.3)),
                     foregroundColor: const Color(0xFF1E40AF),
                     minimumSize: const Size(double.infinity, 48),
                     shape: RoundedRectangleBorder(
@@ -1296,7 +1259,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: gradient.colors.first.withOpacity(0.3),
+              color: gradient.colors.first.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

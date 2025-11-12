@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:finance_app/data/services/transaction_service.dart';
 import 'package:finance_app/data/models/transaction_summary.dart';
+import 'package:finance_app/pages/update_transaction_page.dart';
 
 class TransactionsPage extends StatefulWidget {
   const TransactionsPage({super.key});
@@ -363,7 +364,16 @@ class _TransactionsPageState extends State<TransactionsPage>
               if (_isMultiSelectMode) {
                 _toggleTransactionSelection(transaction.id);
               } else {
-                // TODO: Navigate to transaction details
+                // Navigate to update transaction page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UpdateTransactionPage(transaction: transaction),
+                  ),
+                ).then((_) {
+                  // Refresh transactions when returning from update page
+                  _refreshTransactions();
+                });
               }
             },
             onLongPress: () {

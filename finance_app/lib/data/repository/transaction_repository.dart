@@ -53,6 +53,25 @@ class TransactionRepository {
     }
   }
 
+  Future<void> updateTransaction(String transactionId, Transaction transaction) async {
+    Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
+      path: ApiConstants.updateTransaction,
+    );
+
+    final res = await http.put(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: jsonEncode(transaction.toJson()),
+    );
+
+    if (res.statusCode != 200 && res.statusCode != 204) {
+      throw Exception('Failed to update transaction: ${res.statusCode} - ${res.body}');
+    }
+  }
+
   Future<void> deleteTransaction(String transactionId) async {
     Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
       path: '${ApiConstants.deleteTransaction}/$transactionId',

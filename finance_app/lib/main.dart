@@ -53,7 +53,7 @@ void main() async {
   final smsListeningEnabled = prefs.getBool('sms_listening_enabled') ?? false;
 
   // Only start listening for SMS if user has enabled it
-  if (smsListeningEnabled) {
+  if (false) {
     Telephony.instance.listenIncomingSms(
       onNewMessage: _onBackgroundSmsReceived,
     );
