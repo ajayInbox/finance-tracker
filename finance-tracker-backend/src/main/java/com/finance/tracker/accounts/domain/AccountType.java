@@ -1,5 +1,8 @@
 package com.finance.tracker.accounts.domain;
 
+import lombok.Getter;
+
+@Getter
 public enum AccountType {
 
     BANK("bank"),
@@ -7,6 +10,19 @@ public enum AccountType {
     WALLET("wallet"),
     CASH("cash");
 
-    AccountType(String cash) {
+    private final String value;
+
+    AccountType(String value) {
+        this.value = value;
+    }
+
+    // Convert string to enum safely
+    public static AccountType fromString(String value) {
+        for (AccountType type : AccountType.values()) {
+            if (type.value.equalsIgnoreCase(value)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Invalid account type: " + value);
     }
 }

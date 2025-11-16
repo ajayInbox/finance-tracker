@@ -1,6 +1,8 @@
 // lib/pages/dashboard_page.dart
 import 'package:finance_app/data/models/expense_report.dart';
 import 'package:finance_app/data/models/category_breakdown.dart';
+import 'package:finance_app/data/models/networth_summary.dart';
+import 'package:finance_app/data/services/account_service.dart';
 import 'package:finance_app/widgets/sms_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -22,6 +24,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> with TickerProviderStateMixin {
   late Future<List<TransactionSummary>> _recentTransactionsFuture;
   late Future<ExpenseReport> _expenseAnalysis;
+  late Future<NetworthSummary> _networthSummaryFuture;
   final String currency = '₹';
 
   // Animation controllers
@@ -37,6 +40,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
     super.initState();
     _recentTransactionsFuture = TransactionService().getFeed();
     _expenseAnalysis = TransactionService().fetchExpenseReport();
+    _networthSummaryFuture = AccountService().getNetWorth();
 
     // Initialize animations
     _fadeController = AnimationController(
@@ -106,14 +110,16 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   Future<void> _handleRefresh() async {
     setState(() {
       _recentTransactionsFuture = TransactionService().getFeed();
+      _expenseAnalysis = TransactionService().fetchExpenseReport();
+      _networthSummaryFuture = AccountService().getNetWorth();
     });
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
   // Enhanced Top Summary Cards with Sparklines
   Widget _buildTopSummaryCards() {
-    return FutureBuilder<ExpenseReport>(
-      future: _expenseAnalysis,
+    return FutureBuilder<List<dynamic>>(
+      future: Future.wait([_expenseAnalysis, _networthSummaryFuture]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Row(
@@ -133,7 +139,9 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
             ],
           );
         }
-        final report = snapshot.data!;
+        final results = snapshot.data!;
+        final report = results[0] as ExpenseReport;
+        final networth = results[1] as NetworthSummary;
         return SizedBox(
           height: 200,
          child: Row(
@@ -157,7 +165,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
             Expanded(
               child: _buildSummaryCard(
                 title: 'Total Balance',
-                amount: '₹ 1,25,750', // TODO: Fetch actual balance
+                amount: networth.formattedNetWorth,
                 trend: '+8.2%',
                 trendUp: true,
                 subtitle: 'all accounts',

@@ -24,7 +24,7 @@ class Account {
     id: j['id'] as String,
     accountName: j['label'] as String? ?? j['accountName'] as String? ?? 'Unknown Account',
     accountType: j['type'] as String?,
-    balance: j['balanceCached']?.toDouble() ?? j['balance']?.toDouble(),
+    balance: j['balanceCached']?.toDouble() ?? j['openingBalance']?.toDouble(),
     currency: j['currency'] as String?,
     isActive: j['isActive'] as bool?,
     createdAt: j['createdAt'] != null ? DateTime.parse(j['createdAt']) : null,

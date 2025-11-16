@@ -79,7 +79,7 @@ public class AccountServiceImpl implements AccountService {
                 .currency(request.currency())
                 .lastFour(request.lastFour())
                 .readOnly(false)
-                .type(AccountType.valueOf(request.accountType()))
+                .type(AccountType.fromString(request.accountType()))
                 .isAsset(ASSET_TYPE.contains(request.accountType().toLowerCase()))
                 .isLiability(!ASSET_TYPE.contains(request.accountType().toLowerCase()))
                 .build();
