@@ -24,6 +24,7 @@ class _AddAccountPageState extends State<AddAccountPage>
   final _balanceController = TextEditingController();
   final _creditLimitController = TextEditingController();
   final _notesController = TextEditingController();
+  final _lastFourController = TextEditingController();
 
   // State
   late String _selectedType; // depends on category
@@ -114,6 +115,8 @@ class _AddAccountPageState extends State<AddAccountPage>
               children: [
                 _buildAccountNameField(),
                 const SizedBox(height: 16),
+                _buildLastFourDigitField(),
+                const SizedBox(height: 16),
                 _buildTypeField(),
                 const SizedBox(height: 16),
                 _buildOpeningDateField(),
@@ -176,6 +179,45 @@ class _AddAccountPageState extends State<AddAccountPage>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLastFourDigitField(){
+    return _buildContainer(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+        Text(
+        'Last 4 digits',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Colors.grey[700],
+        ),
+      ),
+      const SizedBox(height: 8),
+      TextFormField(
+        controller: _lastFourController,
+        maxLength: 4,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(
+          counterText: '',
+          hintText: '1234',
+          hintStyle: TextStyle(color: Colors.grey),
+          border: InputBorder.none,
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Enter last 4 digits';
+          }
+          if (value.length != 4 || int.tryParse(value) == null) {
+            return 'Must be exactly 4 digits';
+          }
+          return null;
+        },
+      ),
+      ]
+      )
     );
   }
 
@@ -700,6 +742,7 @@ class _AddAccountPageState extends State<AddAccountPage>
     _balanceController.dispose();
     _creditLimitController.dispose();
     _notesController.dispose();
+    _lastFourController.dispose();
     super.dispose();
   }
 }
