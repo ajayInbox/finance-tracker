@@ -81,9 +81,10 @@ public class TransactionServiceImpl implements TransactionService {
             toDate = LocalDateTime.parse(searchRequest.toDate(), FORMATTER);
         }
 
-        Specification<Transaction> specs = Specification.where(
-                TransactionQueryBuilder.occurredBetween(fromDate, toDate, ZoneOffset.UTC)
-        ).and(TransactionQueryBuilder.type(TransactionType.EXPENSE));
+        Specification<Transaction> specs = Specification.allOf(
+                TransactionQueryBuilder.occurredBetween(fromDate, toDate, ZoneOffset.UTC),
+                TransactionQueryBuilder.type(TransactionType.EXPENSE)
+        );
         List<Transaction> transactions = transactionRepository.findAll(specs);
 
         long days = Duration.between(fromDate, toDate).toDays();
