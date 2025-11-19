@@ -47,6 +47,8 @@ class AppColors {
   static const Color lightTextPrimary = Color(0xFF111827);
   static const Color darkTextPrimary = Color(0xFFF9FAFB);
   static const Color cardBorder = Color(0xFFE5E7EB);
+  static const Color textMuted = Color(0xFF6F6F7A);
+
 }
 
 // Typography Scale

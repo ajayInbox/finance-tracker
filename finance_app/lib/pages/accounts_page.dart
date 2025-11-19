@@ -1,11 +1,13 @@
 import 'package:finance_app/pages/add_account_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:finance_app/data/models/account.dart';
 import 'package:finance_app/data/models/networth_summary.dart';
 import 'package:finance_app/data/services/account_service.dart';
 import 'package:finance_app/utils/app_style_constants.dart';
+import 'package:finance_app/data/models/account_category.dart';
 
 class AccountsPage extends StatefulWidget {
   const AccountsPage({super.key});
@@ -114,14 +116,71 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddAccountDialog,
-        backgroundColor: const Color(0xFF6C63FF),
-        elevation: 8,
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF6C63FF),
+              Color(0xFF9C27B0),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(56),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.20),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: SpeedDial(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          icon: Icons.add,
+          activeIcon: Icons.close,
+          foregroundColor: Colors.white,
+          spacing: 8,
+          spaceBetweenChildren: 8,
+          overlayColor: Colors.black,
+          overlayOpacity: 0.35,
+          children: [
+            SpeedDialChild(
+              child: const Icon(Icons.account_balance_wallet_outlined),
+              label: 'Add asset account',
+              labelBackgroundColor: Colors.black87,
+              labelStyle: const TextStyle(color: Colors.white),
+              onTap: () => _openAddAccountPage(AccountCategory.asset),
+            ),
+            SpeedDialChild(
+              child: const Icon(Icons.credit_card),
+              label: 'Add liability account',
+              labelBackgroundColor: Colors.black87,
+              labelStyle: const TextStyle(color: Colors.white),
+              onTap: () => _openAddAccountPage(AccountCategory.liability),
+            ),
+          ],
+        ),
       ),
     );
   }
+  
+  // When user picks one of the FAB options
+  Future<void> _openAddAccountPage(AccountCategory category) async {
+    final bool? created = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddAccountPage(category: category),
+      ),
+    );
+
+    // If account created, refresh list
+    if (created == true) {
+      _handleRefresh();
+    }
+  }
+  
 
   Widget _buildNetWorthCard(NetworthSummary summary) {
     return Container(
@@ -163,7 +222,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: Text(
@@ -220,7 +279,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                   children: [
                     Icon(
                       Icons.trending_up,
-                      color: AppColors.success.withOpacity(0.8),
+                      color: AppColors.success.withValues(alpha: 0.8),
                       size: 20.0,
                     ),
                     const SizedBox(width: 8.0),
@@ -255,7 +314,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                   children: [
                     Icon(
                       Icons.trending_down,
-                      color: AppColors.error.withOpacity(0.8),
+                      color: AppColors.error.withValues(alpha: 0.8),
                       size: 20.0,
                     ),
                     const SizedBox(width: 8.0),
@@ -297,8 +356,8 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFF6C63FF).withOpacity(0.7),
-            Color(0xFF00B4DB).withOpacity(0.7),
+            Color(0xFF6C63FF).withValues(alpha: 0.7),
+            Color(0xFF00B4DB).withValues(alpha: 0.7),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -329,7 +388,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: Text(
@@ -348,7 +407,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
             width: 200,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8.0),
             ),
           ),
@@ -357,7 +416,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
             width: 120,
             height: 16,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(4.0),
             ),
           ),
@@ -368,7 +427,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                 child: Container(
                   height: 50,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                 ),
@@ -378,7 +437,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                 child: Container(
                   height: 50,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                 ),
@@ -397,8 +456,8 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.error.withOpacity(0.7),
-            AppColors.error.withOpacity(0.5),
+            AppColors.error.withValues(alpha: 0.7),
+            AppColors.error.withValues(alpha: 0.5),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -433,7 +492,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
           Text(
             'Using local calculation',
             style: GoogleFonts.inter(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               fontSize: 14.0,
             ),
           ),
@@ -628,7 +687,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
         border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -649,7 +708,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                   height: 48.0,
                   padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
-                    color: accountColor.withOpacity(0.1),
+                    color: accountColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppBorderRadius.medium),
                   ),
                   child: Icon(
@@ -703,7 +762,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                       decoration: BoxDecoration(
-                        color: (isAsset ? AppColors.success : AppColors.error).withOpacity(0.1),
+                        color: (isAsset ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppBorderRadius.small),
                       ),
                       child: Text(
@@ -1099,7 +1158,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
           Container(
             padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
-              color: AppColors.textSecondary.withOpacity(0.1),
+              color: AppColors.textSecondary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(50.0),
             ),
             child: Icon(
@@ -1157,7 +1216,7 @@ class _AccountsPageState extends State<AccountsPage> with TickerProviderStateMix
   void _showAddAccountDialog() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const AddAccountPage()),
+      MaterialPageRoute(builder: (context) => const AddAccountPage(category: AccountCategory.asset)),
     );
   }
 }

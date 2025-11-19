@@ -1,98 +1,150 @@
 import 'package:finance_app/utils/app_style_constants.dart';
+import 'package:finance_app/data/models/account_category.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class AddAccountPage extends StatefulWidget {
-  const AddAccountPage({super.key});
+  final AccountCategory category;
+
+  const AddAccountPage({
+    super.key,
+    required this.category,
+  });
 
   @override
   State<AddAccountPage> createState() => _AddAccountPageState();
 }
 
-class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStateMixin {
+class _AddAccountPageState extends State<AddAccountPage>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+
+  // Controllers
   final _nameController = TextEditingController();
-  String _selectedType = 'Bank';
-  DateTime _openingDate = DateTime.now();
   final _balanceController = TextEditingController();
+  final _creditLimitController = TextEditingController();
+  final _notesController = TextEditingController();
+
+  // State
+  late String _selectedType; // depends on category
+  DateTime _openingDate = DateTime.now();
   bool _isPositiveBalance = true;
   String _selectedCurrency = 'INR';
-  final _creditLimitController = TextEditingController();
   String _cutoffDay = 'Day 1 of month';
   String _dueDay = 'Day 1 of month';
-  final _notesController = TextEditingController();
   bool _hideFromSelection = false;
   bool _hideFromReports = false;
-
   bool _isSubmitting = false;
 
-  final List<String> _accountTypes = ['Bank', 'Cash', 'Credit Card', 'Investment', 'Loan'];
+  late List<String> _accountTypes; // depends on category
+
   final List<String> _currencies = ['INR', 'USD', 'EUR', 'GBP'];
 
   final List<String> _dayOptions = [
-    'Day 1 of month', 'Day 2 of month', 'Day 3 of month', 'Day 4 of month',
-    'Day 5 of month', 'Day 6 of month', 'Day 7 of month', 'Day 8 of month',
-    'Day 9 of month', 'Day 10 of month', 'Day 11 of month', 'Day 12 of month',
-    'Day 13 of month', 'Day 14 of month', 'Day 15 of month', 'Day 16 of month',
-    'Day 17 of month', 'Day 18 of month', 'Day 19 of month', 'Day 20 of month',
-    'Day 21 of month', 'Day 22 of month', 'Day 23 of month', 'Day 24 of month',
-    'Day 25 of month', 'Day 26 of month', 'Day 27 of month', 'Day 28 of month',
-    'Day 29 of month', 'Day 30 of month', 'Day 31 of month'
+    'Day 1 of month',
+    'Day 2 of month',
+    'Day 3 of month',
+    'Day 4 of month',
+    'Day 5 of month',
+    'Day 6 of month',
+    'Day 7 of month',
+    'Day 8 of month',
+    'Day 9 of month',
+    'Day 10 of month',
+    'Day 11 of month',
+    'Day 12 of month',
+    'Day 13 of month',
+    'Day 14 of month',
+    'Day 15 of month',
+    'Day 16 of month',
+    'Day 17 of month',
+    'Day 18 of month',
+    'Day 19 of month',
+    'Day 20 of month',
+    'Day 21 of month',
+    'Day 22 of month',
+    'Day 23 of month',
+    'Day 24 of month',
+    'Day 25 of month',
+    'Day 26 of month',
+    'Day 27 of month',
+    'Day 28 of month',
+    'Day 29 of month',
+    'Day 30 of month',
+    'Day 31 of month',
   ];
+
+  bool get _isLiability => widget.category == AccountCategory.liability;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 🔧 Configure based on category
+    if (widget.category == AccountCategory.asset) {
+      _accountTypes = ['Bank']; // you can later add 'Cash', 'Investment', etc.
+      _selectedType = 'Bank';
+      _isPositiveBalance = true;
+    } else {
+      _accountTypes = ['Credit Card']; // liability
+      _selectedType = 'Credit Card';
+      _isPositiveBalance = false; // usually you owe here
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final title =
+    _isLiability ? 'Add Liability Account' : 'Add Asset Account';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text("Add Account"),
+        title: Text(title),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
       ),
       body: Stack(
         children: [
-         Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildAccountNameField(),
-            const SizedBox(height: 16),
-            _buildTypeField(),
-            const SizedBox(height: 16),
-            _buildOpeningDateField(),
-            const SizedBox(height: 16),
-            _buildBalanceField(),
-            const SizedBox(height: 16),
-            _buildCurrencyField(),
-            // Credit Card specific fields
-            if (_selectedType == 'Credit Card') ...[
-              const SizedBox(height: 16),
-              _buildCreditLimitField(),
-              const SizedBox(height: 16),
-              _buildCutoffDayField(),
-              const SizedBox(height: 16),
-              _buildDueDayField(),
-            ],
-            const SizedBox(height: 16),
-            _buildNotesField(),
-            const SizedBox(height: 16),
-            _buildHideOptions(),
-            const SizedBox(height: 32),
-            _buildStickyBottomAction(),
-          ],
-      )
+          Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildAccountNameField(),
+                const SizedBox(height: 16),
+                _buildTypeField(),
+                const SizedBox(height: 16),
+                _buildOpeningDateField(),
+                const SizedBox(height: 16),
+                _buildBalanceField(),
+                const SizedBox(height: 16),
+                _buildCurrencyField(),
+                // Credit Card specific fields (liability)
+                if (_selectedType == 'Credit Card') ...[
+                  const SizedBox(height: 16),
+                  _buildCreditLimitField(),
+                  const SizedBox(height: 16),
+                  _buildCutoffDayField(),
+                  const SizedBox(height: 16),
+                  _buildDueDayField(),
+                ],
+                const SizedBox(height: 16),
+                _buildNotesField(),
+                const SizedBox(height: 16),
+                _buildHideOptions(),
+                const SizedBox(height: 32),
+                _buildStickyBottomAction(),
+              ],
+            ),
+          ),
+        ],
       ),
-      // Positioned(
-      //       left: 0,
-      //       right: 0,
-      //       bottom: 0,
-      //       child: _buildStickyBottomAction(),
-      //     ),
-        ])
     );
   }
+
+  // ---------------- FIELDS ----------------
 
   Widget _buildAccountNameField() {
     return _buildContainer(
@@ -148,13 +200,18 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
               contentPadding: EdgeInsets.zero,
             ),
             hint: const Text('Select account type'),
-            items: _accountTypes.map((type) => DropdownMenuItem(
-              value: type,
-              child: Text(type),
-            )).toList(),
+            items: _accountTypes
+                .map(
+                  (type) => DropdownMenuItem(
+                value: type,
+                child: Text(type),
+              ),
+            )
+                .toList(),
             onChanged: (value) {
+              if (value == null) return;
               setState(() {
-                _selectedType = value!;
+                _selectedType = value;
               });
             },
           ),
@@ -182,7 +239,12 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1)),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.grey[300]!,
+                    width: 1,
+                  ),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -202,12 +264,14 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
   }
 
   Widget _buildBalanceField() {
+    final label = _isLiability ? 'Current Outstanding' : 'Starting Balance';
+
     return _buildContainer(
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Starting Balance',
+            label,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -228,7 +292,7 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter balance';
+                      return 'Please enter amount';
                     }
                     return null;
                   },
@@ -236,7 +300,8 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
               ),
               const SizedBox(width: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                 decoration: BoxDecoration(
                   color: _isPositiveBalance ? Colors.green : Colors.red,
                   borderRadius: BorderRadius.circular(4),
@@ -281,13 +346,18 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
-            items: _currencies.map((currency) => DropdownMenuItem(
-              value: currency,
-              child: Text(currency),
-            )).toList(),
+            items: _currencies
+                .map(
+                  (currency) => DropdownMenuItem(
+                value: currency,
+                child: Text(currency),
+              ),
+            )
+                .toList(),
             onChanged: (value) {
+              if (value == null) return;
               setState(() {
-                _selectedCurrency = value!;
+                _selectedCurrency = value;
               });
             },
           ),
@@ -339,18 +409,23 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _cutoffDay,
+            initialValue: _cutoffDay,
             decoration: const InputDecoration(
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
-            items: _dayOptions.map((day) => DropdownMenuItem(
-              value: day,
-              child: Text(day),
-            )).toList(),
+            items: _dayOptions
+                .map(
+                  (day) => DropdownMenuItem(
+                value: day,
+                child: Text(day),
+              ),
+            )
+                .toList(),
             onChanged: (value) {
+              if (value == null) return;
               setState(() {
-                _cutoffDay = value!;
+                _cutoffDay = value;
               });
             },
           ),
@@ -374,18 +449,23 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _dueDay,
+            initialValue: _dueDay,
             decoration: const InputDecoration(
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
-            items: _dayOptions.map((day) => DropdownMenuItem(
-              value: day,
-              child: Text(day),
-            )).toList(),
+            items: _dayOptions
+                .map(
+                  (day) => DropdownMenuItem(
+                value: day,
+                child: Text(day),
+              ),
+            )
+                .toList(),
             onChanged: (value) {
+              if (value == null) return;
               setState(() {
-                _dueDay = value!;
+                _dueDay = value;
               });
             },
           ),
@@ -430,19 +510,22 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
             title: const Text('Hide from account selection'),
             value: _hideFromSelection,
             onChanged: (value) {
+              if (value == null) return;
               setState(() {
-                _hideFromSelection = value!;
+                _hideFromSelection = value;
               });
             },
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
           ),
           CheckboxListTile(
-            title: const Text('Hide from account selection and all reports'),
+            title: const Text(
+                'Hide from account selection and all reports'),
             value: _hideFromReports,
             onChanged: (value) {
+              if (value == null) return;
               setState(() {
-                _hideFromReports = value!;
+                _hideFromReports = value;
               });
             },
             controlAffinity: ListTileControlAffinity.leading,
@@ -461,7 +544,7 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 1),
@@ -472,12 +555,14 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
     );
   }
 
+  // ---------------- ACTIONS ----------------
+
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _openingDate,
       firstDate: DateTime(2000),
-      lastDate: DateTime(2030),
+      lastDate: DateTime(2035),
     );
     if (picked != null && picked != _openingDate) {
       setState(() {
@@ -492,28 +577,33 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
     setState(() => _isSubmitting = true);
 
     try {
-      // TODO: Save account to API
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
+      // TODO: integrate with your API/model layer.
+      // Build payload here using:
+      // - widget.category (asset/liability)
+      // - _selectedType
+      // - _balanceController.text, _isPositiveBalance, etc.
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account added successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      await Future.delayed(const Duration(seconds: 1)); // Simulate API
 
-        Navigator.pop(context);
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account added successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Pop with true => so parent knows to refresh
+      Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add account: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to add account: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -531,7 +621,7 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             offset: const Offset(0, -4),
             blurRadius: 8,
           ),
@@ -543,7 +633,9 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
         child: ElevatedButton(
           onPressed: _isFormValid() ? _saveAccount : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: _isFormValid() ? AppColors.primaryBlue : AppColors.border,
+            backgroundColor: _isFormValid()
+                ? AppColors.primaryBlue
+                : AppColors.border,
             foregroundColor: AppColors.surface,
             elevation: 0,
             shape: RoundedRectangleBorder(
@@ -552,43 +644,45 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
           ),
           child: _isSubmitting
               ? Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.surface),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.space2),
-                    Text(
-                      'Creating account...',
-                      style: TextStyle(
-                        fontSize: AppTypography.textMd,
-                        fontWeight: AppTypography.weightSemibold,
-                      ),
-                    ),
-                  ],
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.add,
-                      size: 20,
-                    ),
-                    const SizedBox(width: AppSpacing.space2),
-                    Text(
-                      'Add Account',
-                      style: TextStyle(
-                        fontSize: AppTypography.textLg,
-                        fontWeight: AppTypography.weightSemibold,
-                      ),
-                    ),
-                  ],
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.surface,
+                  ),
                 ),
+              ),
+              const SizedBox(width: AppSpacing.space2),
+              Text(
+                'Creating account...',
+                style: TextStyle(
+                  fontSize: AppTypography.textMd,
+                  fontWeight: AppTypography.weightSemibold,
+                ),
+              ),
+            ],
+          )
+              : Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.add,
+                size: 20,
+              ),
+              const SizedBox(width: AppSpacing.space2),
+              Text(
+                'Add Account',
+                style: TextStyle(
+                  fontSize: AppTypography.textLg,
+                  fontWeight: AppTypography.weightSemibold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -596,8 +690,8 @@ class _AddAccountPageState extends State<AddAccountPage> with TickerProviderStat
 
   bool _isFormValid() {
     return _nameController.text.length >= 3 &&
-           _selectedType.isNotEmpty &&
-           _balanceController.text.isNotEmpty;
+        _selectedType.isNotEmpty &&
+        _balanceController.text.isNotEmpty;
   }
 
   @override
