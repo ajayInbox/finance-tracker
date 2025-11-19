@@ -89,8 +89,11 @@ public class TransactionController {
     }
 
     @PutMapping("/transaction/update")
-    public ResponseEntity<TransactionDto> updateTransaction(@RequestBody TransactionCreateUpdateRequest request){
-        Transaction updatedTransaction = transactionService.updateTransaction(request);
+    public ResponseEntity<TransactionDto> updateTransaction(
+            @RequestParam(name = "transactionId", required = true) String transactionId,
+            @RequestBody TransactionCreateUpdateRequest request){
+        System.out.println(request);
+        Transaction updatedTransaction = transactionService.updateTransaction(transactionId, request);
         return new ResponseEntity<>(transactionMapper.toDto(updatedTransaction), HttpStatus.OK);
     }
 }

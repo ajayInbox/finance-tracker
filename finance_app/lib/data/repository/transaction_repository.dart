@@ -56,7 +56,9 @@ class TransactionRepository {
   Future<void> updateTransaction(String transactionId, Transaction transaction) async {
     Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
       path: ApiConstants.updateTransaction,
+      queryParameters: {'transactionId': transactionId}
     );
+    print(transactionId);
 
     final res = await http.put(
       uri,

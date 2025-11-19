@@ -31,5 +31,5 @@ public interface TransactionService {
 
     String deleteTransaction(Transaction transaction);
 
-    Transaction updateTransaction(TransactionCreateUpdateRequest request);
+    Transaction updateTransaction(String transactionId, TransactionCreateUpdateRequest request);
 }

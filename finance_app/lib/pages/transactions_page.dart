@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:finance_app/data/services/transaction_service.dart';
 import 'package:finance_app/data/models/transaction_summary.dart';
-import 'package:finance_app/pages/update_transaction_page.dart';
+import 'package:finance_app/pages/transaction_form_page.dart';
 
 class TransactionsPage extends StatefulWidget {
   const TransactionsPage({super.key});
@@ -364,14 +364,14 @@ class _TransactionsPageState extends State<TransactionsPage>
               if (_isMultiSelectMode) {
                 _toggleTransactionSelection(transaction.id);
               } else {
-                // Navigate to update transaction page
+                // Navigate to transaction form page (edit mode)
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => UpdateTransactionPage(transaction: transaction),
+                    builder: (context) => TransactionFormPage(transaction: transaction),
                   ),
                 ).then((_) {
-                  // Refresh transactions when returning from update page
+                  // Refresh transactions when returning from form page
                   _refreshTransactions();
                 });
               }

@@ -215,8 +215,8 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Transactional
     @Override
-    public Transaction updateTransaction(TransactionCreateUpdateRequest request) {
-        Transaction transaction = getTransaction(request.getId()).orElseThrow(
+    public Transaction updateTransaction(String transactionId, TransactionCreateUpdateRequest request) {
+        Transaction transaction = getTransaction(transactionId).orElseThrow(
                 () -> new TransactionNotFoundException("not found")
         );
         validateTransactionRequest(request);
@@ -255,7 +255,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setUpdatedAt(LocalDateTime.now());
         transaction.setNotes(request.getNotes());
         transaction.setOccuredAt(LocalDateTime.parse(request.getOccuredAt(), DateTimeFormatter.ISO_DATE_TIME));
-        transaction.setPostedAt(LocalDateTime.parse(request.getPostedAt(), DateTimeFormatter.ISO_DATE_TIME));
+       // transaction.setPostedAt(LocalDateTime.parse(request.getPostedAt(), DateTimeFormatter.ISO_DATE_TIME));
         transaction.setTags(request.getTags());
         transaction.setUserId("NULL");
         transactionRepository.save(transaction);

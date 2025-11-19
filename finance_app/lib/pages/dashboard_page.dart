@@ -10,8 +10,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:finance_app/data/services/transaction_service.dart';
 import 'package:finance_app/data/models/transaction_summary.dart';
-import 'package:finance_app/pages/add_transaction_page.dart';
+
 import 'package:finance_app/pages/transactions_page.dart';
+import 'transaction_form_page.dart';
 import 'dart:math' as math;
 
 class DashboardPage extends StatefulWidget {
@@ -525,7 +526,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   void _navigateToAddTransaction(String type) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const AddTransactionPage()),
+      MaterialPageRoute(builder: (context) => TransactionFormPage()),
     );
   }
 

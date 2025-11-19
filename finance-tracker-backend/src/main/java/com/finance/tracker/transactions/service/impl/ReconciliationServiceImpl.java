@@ -1,5 +1,6 @@
 package com.finance.tracker.transactions.service.impl;
 
+import com.finance.tracker.transactions.domain.ReconciliationRequest;
 import com.finance.tracker.transactions.domain.entities.Reconciliation;
 import com.finance.tracker.transactions.repository.ReconciliationRepository;
 import com.finance.tracker.transactions.service.ReconciliationService;
@@ -16,12 +17,12 @@ public class ReconciliationServiceImpl implements ReconciliationService {
     private final ReconciliationRepository repository;
 
     @Override
-    public void addEntry(Map<String, String> object) {
+    public void addEntry(ReconciliationRequest request) {
 
         Reconciliation newEntry = Reconciliation.builder()
-                .originalTxnId(object.get("originalTxnId"))
-                .reversalTxnId(object.get("reversalTxnId"))
-                .updatedTxnId(object.get("updatedTxnId"))
+                .originalTxnId(request.getOriginalTxnId())
+                .reversalTxnId(request.getReversalTxnId())
+                .updatedTxnId(request.getUpdatedTxnId())
                 .createdAt(LocalDateTime.now())
                 .status("PENDING")
                 .build();
