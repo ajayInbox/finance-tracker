@@ -1,5 +1,7 @@
 import 'package:finance_app/utils/app_style_constants.dart';
 import 'package:finance_app/data/models/account_category.dart';
+import 'package:finance_app/data/models/account_create_update_request.dart';
+import 'package:finance_app/data/services/account_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -619,13 +621,39 @@ class _AddAccountPageState extends State<AddAccountPage>
     setState(() => _isSubmitting = true);
 
     try {
-      // TODO: integrate with your API/model layer.
-      // Build payload here using:
-      // - widget.category (asset/liability)
-      // - _selectedType
-      // - _balanceController.text, _isPositiveBalance, etc.
+      // Parse balance
+      final balanceAmount = double.tryParse(_balanceController.text) ?? 0.0;
+      final signedBalance = _isPositiveBalance ? balanceAmount : -balanceAmount;
 
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API
+      // For assets: startingBalance = signedBalance, currentOutstanding = 0
+      // For liabilities: startingBalance = 0, currentOutstanding = signedBalance.abs() (since outstanding is always positive)
+      final startingBalance = _isLiability ? 0.0 : signedBalance;
+      final currentOutstanding = _isLiability ? signedBalance.abs() : 0.0;
+
+      // Parse credit limit
+      final creditLimit = double.tryParse(_creditLimitController.text) ?? 0.0;
+
+      // Create request object
+      final request = AccountCreateUpdateRequest(
+        accountName: _nameController.text.trim(),
+        lastFour: int.parse(_lastFourController.text),
+        accountType: _selectedType,
+        openingDate: _openingDate,
+        startingBalance: startingBalance,
+        currentOutstanding: currentOutstanding,
+        currency: _selectedCurrency,
+        creditLimit: creditLimit,
+        cutOffDay: _cutoffDay,
+        dueDate: _dueDay,
+        notes: _notesController.text.trim(),
+        hideFromSelection: _hideFromSelection,
+        hideFromReports: _hideFromReports,
+        category: _isLiability ? 'liability' : 'asset',
+      );
+
+      // Call API
+      final accountService = AccountService();
+      await accountService.createAccount(request);
 
       if (!mounted) return;
 
