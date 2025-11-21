@@ -59,6 +59,12 @@
         </dependency>
 
         <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.1.1</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.github.validcheck</groupId>
             <artifactId>validcheck-core</artifactId>
             <version>0.9.0</version>

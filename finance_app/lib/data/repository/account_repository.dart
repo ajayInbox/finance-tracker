@@ -1,5 +1,6 @@
 
 import 'package:finance_app/data/models/account.dart';
+import 'package:finance_app/data/models/account_create_update_request.dart';
 import 'package:finance_app/data/models/networth_summary.dart';
 import '../../utils/api_constants.dart';
 import 'package:http/http.dart' as http;
@@ -27,6 +28,28 @@ class AccountRepository {
         .cast<Map<String, dynamic>>()
         .map(Account.fromJson)
         .toList();
+  }
+
+  Future<Account> createAccount(AccountCreateUpdateRequest request) async {
+    Uri uri = Uri.parse(ApiConstants.baseUrl).replace(
+      path: ApiConstants.createAccount,
+    );
+
+    final res = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: jsonEncode(request.toJson()),
+    );
+
+    if (res.statusCode != 201 && res.statusCode != 200) {
+      throw Exception('Failed to create account: ${res.statusCode} - ${res.body}');
+    }
+
+    final body = jsonDecode(res.body);
+    return Account.fromJson(body);
   }
 
   Future<NetworthSummary> getNetWorth() async {

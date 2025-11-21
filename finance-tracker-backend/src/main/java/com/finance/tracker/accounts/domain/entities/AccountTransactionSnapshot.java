@@ -24,7 +24,7 @@ public class AccountTransactionSnapshot {
     private String transactionId;
     private BigDecimal balanceBefore;
     private BigDecimal balanceAfter;
-    private Double transactionAmount;
+    private BigDecimal transactionAmount;
     private LocalDateTime createdAt;
 
 }

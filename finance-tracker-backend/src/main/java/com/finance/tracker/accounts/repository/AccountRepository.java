@@ -1,5 +1,6 @@
 package com.finance.tracker.accounts.repository;
 
+import com.finance.tracker.accounts.domain.AccountType;
 import com.finance.tracker.accounts.domain.entities.Account;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,4 +29,13 @@ public interface AccountRepository extends JpaRepository<Account, String> {
 
     @Query(value = "SELECT * FROM Account WHERE (user_id= :userId OR user_id IS NULL) AND active=true", nativeQuery = true)
     List<Account> findByUserIdAndIsActive(@Param("userId") String userId);
+
+    Optional<Account> findByLastFourAndUserIdAndAccountType(
+            String lastFour,
+            String userId,
+            AccountType accountType
+    );
+
+    Optional<Account> findByIdAndUserId(String id, String userId);
+
 }

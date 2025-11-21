@@ -3,6 +3,7 @@ package com.finance.tracker.accounts.service;
 import com.finance.tracker.accounts.domain.AccountCreateUpdateRequest;
 import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
 import com.finance.tracker.accounts.domain.NetworthSummary;
+import com.finance.tracker.accounts.domain.dto.AccountResponse;
 import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.transactions.domain.entities.Transaction;
 
@@ -14,13 +15,13 @@ public interface AccountService {
 
     void updateBalanceForTransaction(BalanceUpdateRequest request);
 
-    Account createAccount(AccountCreateUpdateRequest request);
+    AccountResponse create(String userId, AccountCreateUpdateRequest req);
+
+    AccountResponse update(String userId, String id, AccountCreateUpdateRequest req);
 
     List<Account> getAccounts();
 
     String getAccountByLastFour(String lastFour);
-
-    void updateAccountBalance(Transaction transaction);
 
     NetworthSummary getNetWorth(String userId);
 }

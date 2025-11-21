@@ -1,5 +1,6 @@
 package com.finance.tracker.transactions.service.impl;
 
+import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
 import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.accounts.service.AccountService;
 import com.finance.tracker.category.service.CategoryService;
@@ -197,7 +198,8 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 2. Create reversal transaction
         var savedReversal = transactionRepository.save(reversal);
-        accountService.updateAccountBalance(savedReversal);
+        accountService.updateBalanceForTransaction(new BalanceUpdateRequest(savedReversal.getAccount(), BigDecimal.valueOf(savedReversal.getAmount()),
+                savedReversal.getType(), savedReversal.getId()));
         //accountEventPublisher(savedReversal);
 
         //add new record in reconciliation table
@@ -227,10 +229,12 @@ public class TransactionServiceImpl implements TransactionService {
 
         if(amountChanged || typeChanged || accountChanged){
             var savedReversalTransaction = createReversalTransaction(transaction);
-            accountService.updateAccountBalance(savedReversalTransaction);
+            accountService.updateBalanceForTransaction(new BalanceUpdateRequest(savedReversalTransaction.getAccount(), BigDecimal.valueOf(savedReversalTransaction.getAmount()),
+                    savedReversalTransaction.getType(), savedReversalTransaction.getId()));
             Transaction newTransaction = buildTransactionEntity(request);
             var savedNewTransaction = transactionRepository.save(newTransaction);
-            accountService.updateAccountBalance(savedNewTransaction);
+            accountService.updateBalanceForTransaction(new BalanceUpdateRequest(savedNewTransaction.getAccount(), BigDecimal.valueOf(savedNewTransaction.getAmount()),
+                    savedNewTransaction.getType(), savedNewTransaction.getId()));
             transaction.setLastAction("UPDATED");
             transaction.setUpdatedAt(LocalDateTime.now());
             transaction.setStatus("INACTIVE");
