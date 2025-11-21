@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:another_telephony/telephony.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_app/data/services/account_service.dart';
 import 'package:finance_app/data/services/category_service.dart';
 import 'package:finance_app/data/services/transaction_service.dart';
@@ -59,7 +60,9 @@ void main() async {
     );
   }
 
-  runApp(const MyApp());
+  runApp(const ProviderScope(
+    child: MyApp(),
+  ),);
 }
 
 class MyApp extends StatelessWidget {

@@ -1,5 +1,6 @@
 package com.finance.tracker.accounts.domain;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
@@ -11,6 +12,7 @@ public enum AccountType {
     INVESTMENT(true),
 
     // Liabilities
+    @JsonProperty("CREDIT CARD")
     CREDIT_CARD(false),
     LOAN(false);
 

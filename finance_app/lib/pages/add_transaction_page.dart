@@ -1153,7 +1153,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
                 return ListTile(
                   leading: Icon(Icons.account_balance_wallet, color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey),
                   title: Text(account.accountName),
-                  subtitle: Text('Balance: ₹${account.balance?.toStringAsFixed(2) ?? '0.00'}'),
+                  subtitle: Text('Balance: ₹${account.effectiveBalance}'),
                   trailing: isSelected ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
                   onTap: () => Navigator.pop(context, account.id),
                 );

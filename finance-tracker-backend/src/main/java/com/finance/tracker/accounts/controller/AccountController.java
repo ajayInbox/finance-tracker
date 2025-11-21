@@ -29,9 +29,9 @@ public class AccountController {
     }
 
     @GetMapping("/accounts")
-    public ResponseEntity<List<AccountDto>> getAccounts(){
+    public ResponseEntity<List<AccountResponse>> getAccounts(){
         List<Account> accounts = accountService.getAccounts();
-        List<AccountDto> res = accounts.stream().map(accountMapper::toDto).toList();
+        List<AccountResponse> res = accounts.stream().map(accountMapper::toResponse).toList();
         return ResponseEntity.ok(res);
     }
 

@@ -637,7 +637,7 @@ class _AddAccountPageState extends State<AddAccountPage>
       final request = AccountCreateUpdateRequest(
         accountName: _nameController.text.trim(),
         lastFour: int.parse(_lastFourController.text),
-        accountType: _selectedType,
+        accountType: _selectedType.toUpperCase(),
         openingDate: _openingDate,
         startingBalance: startingBalance,
         currentOutstanding: currentOutstanding,
@@ -648,7 +648,7 @@ class _AddAccountPageState extends State<AddAccountPage>
         notes: _notesController.text.trim(),
         hideFromSelection: _hideFromSelection,
         hideFromReports: _hideFromReports,
-        category: _isLiability ? 'liability' : 'asset',
+        category: _isLiability ? 'LIABILITY' : 'ASSET',
       );
 
       // Call API

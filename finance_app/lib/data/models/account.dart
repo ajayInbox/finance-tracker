@@ -1,61 +1,90 @@
+import 'account_type.dart';
 
 class Account {
   final String id;
   final String accountName;
-  final String? accountType; // e.g., "SAVINGS", "CREDIT_CARD", "CASH", etc.
-  final double? balance;
-  final String? currency;
-  final bool? isActive;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+  final AccountType accountType;
+  final String? lastFour;
+  final String currency;
+  final DateTime? openingDate;
+  final double? startingBalance;
+  final double? currentOutstanding;
+  final int? cutoffDayOfMonth;
+  final int? dueDayOfMonth;
+  final double? creditLimit;
+  final double? currentBalance;
+  final bool active;
+  final bool readOnly;
+  final DateTime createdAt;
+  final DateTime? closedAt;
+  final String? notes;
+  final bool isAsset;     // ASSET / LIABILITY converted to bool
 
   Account({
     required this.id,
     required this.accountName,
-    this.accountType,
-    this.balance,
-    this.currency,
-    this.isActive,
-    this.createdAt,
-    this.updatedAt,
+    required this.accountType,
+    this.lastFour,
+    required this.currency,
+    this.openingDate,
+    this.startingBalance,
+    this.currentOutstanding,
+    this.cutoffDayOfMonth,
+    this.dueDayOfMonth,
+    this.creditLimit,
+    this.currentBalance,
+    required this.active,
+    required this.readOnly,
+    required this.createdAt,
+    this.closedAt,
+    this.notes,
+    required this.isAsset,
   });
 
-  factory Account.fromJson(Map<String, dynamic> j) => Account(
-    id: j['id'] as String,
-    accountName: j['label'] as String? ?? j['accountName'] as String? ?? 'Unknown Account',
-    accountType: j['type'] as String?,
-    balance: j['balanceCached']?.toDouble() ?? j['openingBalance']?.toDouble(),
-    currency: j['currency'] as String?,
-    isActive: j['isActive'] as bool?,
-    createdAt: j['createdAt'] != null ? DateTime.parse(j['createdAt']) : null,
-    updatedAt: j['updatedAt'] != null ? DateTime.parse(j['updatedAt']) : null,
-  );
+  factory Account.fromJson(Map<String, dynamic> j) {
+    return Account(
+      id: j['id'],
+      accountName: j['accountName'] ?? 'Unnamed Account',
+      accountType: (j['accountType'] as String?)?.toAccountType() ?? AccountType.unknown,
+      lastFour: j['lastFour'],
+      currency: j['currency'] ?? 'INR',
 
-  // Helper method to determine if account is an asset or liability
-  bool get isAsset {
-    if (accountType == null) return true; // Default to asset
+      openingDate: j['openingDate'] != null
+          ? DateTime.tryParse(j['openingDate'])
+          : null,
 
-    final type = accountType!.toUpperCase();
-    // Credit cards and loans are typically liabilities
-    return !type.contains('CARD') && !type.contains('LOAN') && !type.contains('LIABILITY');
+      startingBalance: _toDouble(j['startingBalance']),
+      currentOutstanding: _toDouble(j['currentOutstanding']),
+      cutoffDayOfMonth: j['cutoffDayOfMonth'],
+      dueDayOfMonth: j['dueDayOfMonth'],
+      creditLimit: _toDouble(j['creditLimit']),
+      currentBalance: _toDouble(j['currentBalance']),
+
+      active: j['active'] ?? true,
+      readOnly: j['readOnly'] ?? false,
+
+      createdAt: DateTime.parse(j['createdAt']),
+      closedAt:
+      j['closedAt'] != null ? DateTime.tryParse(j['closedAt']) : null,
+
+      notes: j['notes'],
+
+      isAsset: (j['category'] ?? 'ASSET').toUpperCase() == 'ASSET',
+    );
   }
 
-  // Helper method to get display balance
-  double get displayBalance {
-    return balance ?? 0.0;
+  double get effectiveBalance {
+    if (!isAsset) {
+      return currentOutstanding ?? 0.0;
+    }
+    return currentBalance ?? startingBalance ?? 0.0;
   }
 
-  // Helper method to get account type for display
-  String get displayType {
-    if (accountType == null) return 'Account';
+}
 
-    final type = accountType!.toUpperCase();
-    if (type.contains('SAVINGS')) return 'Savings Account';
-    if (type.contains('CHECKING')) return 'Checking Account';
-    if (type.contains('CREDIT')) return 'Credit Card';
-    if (type.contains('CASH')) return 'Cash';
-    if (type.contains('INVESTMENT')) return 'Investment';
-    if (type.contains('LOAN')) return 'Loan';
-    return accountType!;
-  }
+double? _toDouble(dynamic v) {
+  if (v == null) return null;
+  if (v is double) return v;
+  if (v is int) return v.toDouble();
+  return double.tryParse(v.toString());
 }
