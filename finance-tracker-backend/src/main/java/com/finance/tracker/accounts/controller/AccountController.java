@@ -3,6 +3,7 @@ package com.finance.tracker.accounts.controller;
 import com.finance.tracker.accounts.domain.AccountCreateUpdateRequest;
 import com.finance.tracker.accounts.domain.NetworthSummary;
 import com.finance.tracker.accounts.domain.dto.AccountDto;
+import com.finance.tracker.accounts.domain.dto.AccountResponse;
 import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.accounts.mapper.AccountMapper;
 import com.finance.tracker.accounts.service.AccountService;
@@ -23,9 +24,8 @@ public class AccountController {
     private final AccountMapper accountMapper;
 
     @PostMapping("/account")
-    public ResponseEntity<AccountDto> addAccount(@RequestBody AccountCreateUpdateRequest request){
-        Account account = accountService.createAccount(request);
-        return new ResponseEntity<>(accountMapper.toDto(account), HttpStatus.CREATED);
+    public ResponseEntity<AccountResponse> addAccount(@RequestBody AccountCreateUpdateRequest request){
+        return new ResponseEntity<>(accountService.create(null, request), HttpStatus.CREATED);
     }
 
     @GetMapping("/accounts")

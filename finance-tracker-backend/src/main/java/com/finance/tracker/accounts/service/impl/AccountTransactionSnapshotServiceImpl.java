@@ -22,8 +22,8 @@ public class AccountTransactionSnapshotServiceImpl implements AccountTransaction
         AccountTransactionSnapshot newSnapshot = AccountTransactionSnapshot.builder()
                 .accountId(snapshotCreateRequest.getAccountId())
                 .transactionId(snapshotCreateRequest.getTransactionId())
-                .balanceBefore(BigDecimal.valueOf(snapshotCreateRequest.getPreviousBalance()))
-                .balanceAfter(BigDecimal.valueOf(snapshotCreateRequest.getNewBalance()))
+                .balanceBefore(snapshotCreateRequest.getPreviousBalance())
+                .balanceAfter(snapshotCreateRequest.getNewBalance())
                 .transactionAmount(snapshotCreateRequest.getTransactionAmount())
                 .createdAt(LocalDateTime.now())
                 .build();

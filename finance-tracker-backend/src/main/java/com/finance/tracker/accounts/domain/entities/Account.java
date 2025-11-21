@@ -1,5 +1,6 @@
 package com.finance.tracker.accounts.domain.entities;
 
+import com.finance.tracker.accounts.domain.AccountCategory;
 import com.finance.tracker.accounts.domain.AccountType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -21,31 +23,50 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "_id")
     private String id;
-    private String label;
+
+    private String accountName;
+
     @Enumerated(EnumType.STRING)
-    private AccountType type;
-    private String currency;
-    private boolean active;
-    private LocalDateTime closedAt;
-    private boolean readOnly;
+    private AccountType accountType;
 
-    // if credit card
-    private String cardNetwork;
+    @Column(length = 4, nullable = false)
     private String lastFour;
-    private String statementDay;
-    private String paymentDueDay;
-    private Double creditLimit;
 
-    private BigDecimal openingBalance;
-    private BigDecimal balanceCached;
+    private String currency;
+
+    private LocalDate openingDate;
+
+    private boolean active = true;
+    private boolean readOnly = false;
 
     private LocalDateTime createdAt;
+    private LocalDateTime closedAt;
+
+    private String notes;
+
+    @Enumerated(EnumType.STRING)
+    private AccountCategory category;
+
+    // ------ ASSET fields ------
+    private BigDecimal startingBalance;
+    private BigDecimal currentBalance;
+
+    // ------ LIABILITY fields ------
+    private BigDecimal currentOutstanding;
+    private BigDecimal creditLimit;
+    private Integer cutoffDayOfMonth;
+    private Integer dueDayOfMonth;
+
     private LocalDateTime balanceAsOf;
-    private boolean isAsset;
-    private boolean isLiability;
 
     private String userId;
 
+    // Helpers
+    public boolean isAsset() {
+        return category == AccountCategory.ASSET;
+    }
 
-
+    public boolean isLiability() {
+        return category == AccountCategory.LIABILITY;
+    }
 }
