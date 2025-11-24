@@ -1,21 +1,29 @@
 package com.finance.tracker.transactions.domain.entities;
 
 import com.finance.tracker.transactions.domain.TransactionType;
+import com.finance.tracker.transactions.domain.LastAction;
+import com.finance.tracker.transactions.domain.TransactionStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 @Entity
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "transactions", indexes = {
+        @Index(name = "idx_account", columnList = "account"),
+        @Index(name = "idx_category", columnList = "category"),
+        @Index(name = "idx_occurredAt", columnList = "occurredAt"),
+        @Index(name = "idx_reversalOf", columnList = "reversalOf")
+})
 public class Transaction {
 
     @Id
@@ -24,59 +32,54 @@ public class Transaction {
     private String id;
 
     private String transactionName;
-    private Double amount;
+    private BigDecimal amount;
+
     @Enumerated(EnumType.STRING)
     private TransactionType type;
+
     private String merchant;
     private String notes;
 
-    // account for example: bank, credit, loan acc etc.
-    //TODO need to create seperate entity for account
     private String account;
-
-    // categories for example: Shoping, food, Housing, Income
-    //TODO need to create seperate entity for category
     private String category;
+
+    @Transient
     private List<String> tags;
-    private LocalDateTime occuredAt;
-    private LocalDateTime postedAt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+
+    private Instant occurredAt;
+    private Instant postedAt;
+
+    private Instant createdAt;
+    private Instant updatedAt;
+
     private String currency;
-
-    // attachments can be images
-    //TODO need to create seperate entity for attachment
     private String attachments;
-
-    // source of data like added from form or added through sms notification etc.
-    //TODO need to add seperate entity for external ref
     private String externalRef;
-
-    //TODO need to add seperate entity for user
     private String userId;
-    private String lastAction;
-    private String status;
+
+    @Enumerated(EnumType.STRING)
+    private LastAction lastAction;
+
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus status;
+
+    // Points to ORIGINAL transaction ID
     private String reversalOf;
 
-    public Transaction(Transaction original){
-        this.transactionName=original.getTransactionName();
-        this.amount=original.getAmount();
-        this.currency=original.getCurrency();
-        this.type=original.getType();
-        this.account=original.getAccount();
-        this.category=original.getCategory();
-        this.attachments=original.getAttachments();
-        this.merchant=original.getMerchant();
-        this.occuredAt=original.getOccuredAt();
-        this.notes=original.getNotes();
-        this.postedAt=original.getPostedAt();
-        this.tags=original.getTags();
-        this.userId=original.getUserId();
-        this.lastAction=original.getLastAction();
-        this.userId=original.getUserId();
-        this.externalRef=original.getExternalRef();
-        this.status=original.getStatus();
-        this.reversalOf=original.getReversalOf();
+    public Transaction(Transaction original) {
+        this.transactionName = original.transactionName;
+        this.amount = original.amount;
+        this.type = original.type;
+        this.currency = original.currency;
+        this.account = original.account;
+        this.category = original.category;
+        this.merchant = original.merchant;
+        this.notes = original.notes;
+        this.occurredAt = original.occurredAt;
+        this.postedAt = original.postedAt;
+        this.tags = original.tags == null ? null : List.copyOf(original.tags);
+        this.attachments = original.attachments;
+        this.externalRef = original.externalRef;
+        this.userId = original.userId;
     }
-
 }

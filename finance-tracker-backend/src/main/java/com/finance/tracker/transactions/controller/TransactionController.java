@@ -1,9 +1,10 @@
 package com.finance.tracker.transactions.controller;
 
 import com.finance.tracker.transactions.domain.*;
-import com.finance.tracker.transactions.domain.dtos.TransactionCreateUpdateRequestDto;
+import com.finance.tracker.transactions.domain.dtos.CreateTransactionRequestDto;
 import com.finance.tracker.transactions.domain.dtos.TransactionDto;
 import com.finance.tracker.transactions.domain.dtos.TransactionsAverageDto;
+import com.finance.tracker.transactions.domain.dtos.UpdateTransactionRequestDto;
 import com.finance.tracker.transactions.domain.entities.Transaction;
 import com.finance.tracker.transactions.mapper.TransactionMapper;
 import com.finance.tracker.transactions.service.TransactionService;
@@ -16,10 +17,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/transactions")
 @RequiredArgsConstructor
 @CrossOrigin
 public class TransactionController {
@@ -27,73 +27,106 @@ public class TransactionController {
     private final TransactionService transactionService;
     private final TransactionMapper transactionMapper;
 
-
-    @PostMapping("/transaction")
-    public ResponseEntity<TransactionDto> createTransaction(@RequestBody TransactionCreateUpdateRequestDto dto){
-        TransactionCreateUpdateRequest request = transactionMapper.toTransactionCreateUpdateRequest(dto);
-        Transaction createdTransaction = transactionService.createNewTransaction(request);
-        return new ResponseEntity<>(transactionMapper.toDto(createdTransaction), HttpStatus.CREATED);
+    // -----------------------------------------------------
+    // Create
+    // -----------------------------------------------------
+    @PostMapping
+    public ResponseEntity<TransactionDto> create(@RequestBody CreateTransactionRequestDto dto) {
+        CreateTransactionRequest request = transactionMapper.toRequest(dto);
+        Transaction created = transactionService.createNewTransaction(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionMapper.toDto(created));
     }
 
-    @GetMapping("/transaction/{id}")
-    public ResponseEntity<TransactionDto> getTransaction(@PathVariable("id") String id) {
+    // -----------------------------------------------------
+    // Get Single
+    // -----------------------------------------------------
+    @GetMapping("/{id}")
+    public ResponseEntity<TransactionDto> getOne(@PathVariable("id") String id) {
         return transactionService.getTransaction(id)
-                .map(transaction -> ResponseEntity.ok(transactionMapper.toDto(transaction)))
+                .map(trx -> ResponseEntity.ok(transactionMapper.toDto(trx)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/transactions")
-    public Object getTransactions(
-            @RequestParam(value = "page", defaultValue = "1", required = false) int page,
-            @RequestParam(value = "size", defaultValue = "50", required = false) int size,
-            @RequestParam(value = "version", defaultValue = "1", required = false) int version
-    ){
-        if(version==1){
-            Page<Transaction> transactions = transactionService.getTransactions(PageRequest.of(page-1, size, Sort.by("occuredAt").descending()));
-            return new ResponseEntity<>(transactions.map(transactionMapper::toDto), HttpStatus.OK);
-        } else if (version==2) {
-            Page<TransactionsWithCategoryAndAccount> transactions = transactionService.getTransactionsV2(PageRequest.of(page-1, size, Sort.by("occuredAt").descending()));
-            return new ResponseEntity<>(transactions.map(transactionMapper::toDto), HttpStatus.OK);
-        }
-        return ResponseEntity.badRequest();
+    // -----------------------------------------------------
+    // Get Paginated List (Supports v1 & v2)
+    // -----------------------------------------------------
+    @GetMapping
+    public ResponseEntity<?> getAll(
+            @RequestParam(name = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(name = "size", required = false, defaultValue = "50") int size,
+            @RequestParam(name = "version", required = false, defaultValue = "1") int version
+    ) {
+        PageRequest pageRequest =
+                PageRequest.of(page - 1, size, Sort.by("occurred_at").descending());
+
+        return switch (version) {
+            case 1 -> {
+                Page<Transaction> result = transactionService.getTransactions(pageRequest);
+                yield ResponseEntity.ok(result.map(transactionMapper::toDto));
+            }
+            case 2 -> {
+                Page<TransactionsWithCategoryAndAccount> result =
+                        transactionService.getTransactionsV2(pageRequest);
+                yield ResponseEntity.ok(result.map(transactionMapper::toDto));
+            }
+            default -> ResponseEntity.badRequest().body("Invalid API version");
+        };
     }
 
-    @PostMapping("/avg-daily-expense")
-    public ResponseEntity<TransactionsAverageDto> search(@RequestBody SearchRequest searchRequest) {
-        TransactionsAverage average = transactionService.search(searchRequest);
-        return new ResponseEntity<>(transactionMapper.toDto(average), HttpStatus.OK);
+    // -----------------------------------------------------
+    // Update
+    // -----------------------------------------------------
+    @PutMapping("/{id}")
+    public ResponseEntity<TransactionDto> update(
+            @PathVariable("id") String id,
+            @RequestBody UpdateTransactionRequestDto dto
+    ) {
+        UpdateTransactionRequest request = transactionMapper.toRequest(dto);
+        Transaction updated = transactionService.updateTransaction(id, request);
+        return ResponseEntity.ok(transactionMapper.toDto(updated));
     }
 
-    @GetMapping("/avg-expense-analysis")
-    public ResponseEntity<MonthlyExpenseResponse> getExpenseReport(
-            @RequestParam(value = "duration", required = false) String duration
-    ){
-        MonthlyExpenseResponse monthlyExpenseResponse = transactionService.getExpenseReport(duration);
-        return new ResponseEntity<>(monthlyExpenseResponse, HttpStatus.OK);
+    // -----------------------------------------------------
+    // Delete
+    // -----------------------------------------------------
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable("id") String id) {
+        return transactionService.getTransaction(id)
+                .map(trx -> {
+                    transactionService.deleteTransaction(trx);
+                    return ResponseEntity.noContent().build();
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
+    // -----------------------------------------------------
+    // Daily Average
+    // -----------------------------------------------------
+    @PostMapping("/avg-daily")
+    public ResponseEntity<TransactionsAverageDto> getDailyAverage(
+            @RequestBody SearchRequest searchRequest
+    ) {
+        TransactionsAverage avg = transactionService.search(searchRequest);
+        return ResponseEntity.ok(transactionMapper.toDto(avg));
+    }
+
+    // -----------------------------------------------------
+    // Monthly Expense Analysis
+    // -----------------------------------------------------
+    @GetMapping("/analysis")
+    public ResponseEntity<MonthlyExpenseResponse> getExpenseAnalysis(
+            @RequestParam(name = "duration", required = false) ExpenseReportDuration duration
+    ) {
+        MonthlyExpenseResponse response = transactionService.getExpenseReport(duration);
+        return ResponseEntity.ok(response);
+    }
+
+    // -----------------------------------------------------
+    // Export SMS Messages
+    // -----------------------------------------------------
     @PostMapping("/export-messages")
-    public ResponseEntity<Void> exportMessages(@RequestBody List<SmsMessage> messageList){
-        transactionService.exportMessagesSendToQueue(messageList);
-        return ResponseEntity.status(HttpStatus.OK).build();
-    }
-
-    @DeleteMapping("/transaction/{id}")
-    public ResponseEntity<String> deleteTransaction(@PathVariable("id") String transactionId){
-        Optional<Transaction> transaction = transactionService.getTransaction(transactionId);
-        if(transaction.isEmpty()){
-            return ResponseEntity.notFound().build();
-        }
-        String msg = transactionService.deleteTransaction(transaction.get());
-        return ResponseEntity.ok(msg);
-    }
-
-    @PutMapping("/transaction/update")
-    public ResponseEntity<TransactionDto> updateTransaction(
-            @RequestParam(name = "transactionId", required = true) String transactionId,
-            @RequestBody TransactionCreateUpdateRequest request){
-        System.out.println(request);
-        Transaction updatedTransaction = transactionService.updateTransaction(transactionId, request);
-        return new ResponseEntity<>(transactionMapper.toDto(updatedTransaction), HttpStatus.OK);
+    public ResponseEntity<Void> exportMessages(@RequestBody List<SmsMessage> messages) {
+        transactionService.exportMessagesSendToQueue(messages);
+        return ResponseEntity.ok().build();
     }
 }
