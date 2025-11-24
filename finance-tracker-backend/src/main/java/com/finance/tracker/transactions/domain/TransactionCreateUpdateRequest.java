@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -14,7 +15,7 @@ import java.util.List;
 public class TransactionCreateUpdateRequest {
 
         private String id;
-        private Double amount;
+        private BigDecimal amount;
         private String type;
         private String merchant;
         private String notes;
@@ -29,7 +30,7 @@ public class TransactionCreateUpdateRequest {
         private String category;
         private List<String>tags;
         // ISO DATE TIME FORMAT :: YYYY-MM-DDThh:mm:ss
-        private String occuredAt;
+        private String occurredAt;
         // ISO DATE TIME FORMAT :: YYYY-MM-DDThh:mm:ss
         private String postedAt;
         private String currency;

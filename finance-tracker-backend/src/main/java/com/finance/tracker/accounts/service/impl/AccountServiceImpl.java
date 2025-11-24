@@ -40,6 +40,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional
     public void updateBalanceForTransaction(BalanceUpdateRequest request) {
 
         String userId = null;

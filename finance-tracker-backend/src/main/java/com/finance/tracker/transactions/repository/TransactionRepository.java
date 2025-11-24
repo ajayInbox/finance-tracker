@@ -31,12 +31,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
 
     @Query(value = """
             SELECT c._id, c.label, SUM(t.amount), COUNT(t._id)
-           FROM Transaction t
+           FROM Transactions t
            INNER JOIN category c ON t.category=c._id
            WHERE t.user_id is NULL
              AND t.type = 'EXPENSE'
-             AND t.occured_at >= :startTime
-            AND t.occured_at <= :endTime
+             AND t.occurred_at >= :startTime
+            AND t.occurred_at <= :endTime
             AND t.status = 'ACTIVE'
            GROUP BY c._id, c.label
            ORDER BY SUM(t.amount) DESC
@@ -44,4 +44,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
     List<CategoryExpenseSummary> findCategorySummary(
             @Param("userId") Long userId, @Param("startTime") Instant startTime, @Param("endTime") Instant endTime
     );
+
+    @Query(value = "SELECT * FROM Transactions WHERE status='ACTIVE'", nativeQuery = true)
+    Page<Transaction> findAllTransactions(Pageable pageable);
 }

@@ -2,16 +2,14 @@ package com.finance.tracker.transactions.service;
 
 import com.finance.tracker.transactions.domain.*;
 import com.finance.tracker.transactions.domain.entities.Transaction;
-import com.finance.tracker.transactions.exceptions.TransactionNotFoundException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface TransactionService {
-    Transaction createNewTransaction(TransactionCreateUpdateRequest request);
+    Transaction createNewTransaction(CreateTransactionRequest request);
 
     Optional<Transaction> getTransaction(String id);
 
@@ -21,7 +19,7 @@ public interface TransactionService {
 
     TransactionsAverage search(SearchRequest searchRequest);
 
-    MonthlyExpenseResponse getExpenseReport(String duration);
+    MonthlyExpenseResponse getExpenseReport(ExpenseReportDuration duration);
 
     void exportMessages(List<SmsMessage> messageList);
 
@@ -31,5 +29,5 @@ public interface TransactionService {
 
     String deleteTransaction(Transaction transaction);
 
-    Transaction updateTransaction(String transactionId, TransactionCreateUpdateRequest request);
+    Transaction updateTransaction(String transactionId, UpdateTransactionRequest request);
 }
