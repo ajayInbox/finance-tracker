@@ -7,8 +7,7 @@ import com.finance.tracker.accounts.service.AccountTransactionSnapshotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +24,7 @@ public class AccountTransactionSnapshotServiceImpl implements AccountTransaction
                 .balanceBefore(snapshotCreateRequest.getPreviousBalance())
                 .balanceAfter(snapshotCreateRequest.getNewBalance())
                 .transactionAmount(snapshotCreateRequest.getTransactionAmount())
-                .createdAt(LocalDateTime.now())
+                .createdAt(Instant.now())
                 .build();
         snapshotRepository.save(newSnapshot);
     }

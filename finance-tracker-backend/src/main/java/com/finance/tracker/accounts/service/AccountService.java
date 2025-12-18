@@ -5,8 +5,6 @@ import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
 import com.finance.tracker.accounts.domain.NetworthSummary;
 import com.finance.tracker.accounts.domain.dto.AccountResponse;
 import com.finance.tracker.accounts.domain.entities.Account;
-import com.finance.tracker.transactions.domain.entities.Transaction;
-
 import java.util.List;
 
 public interface AccountService {

@@ -14,7 +14,7 @@ public interface AccountMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "active", constant = "true")
     @Mapping(target = "readOnly", constant = "false")
-    @Mapping(target = "createdAt", expression = "java(LocalDateTime.now())")
+    @Mapping(target = "createdAt", expression = "java(java.time.Instant.now())")
     @Mapping(target = "closedAt", ignore = true)
     @Mapping(target = "balanceAsOf", ignore = true)
     @Mapping(target = "currentBalance", ignore = true)
@@ -33,6 +33,8 @@ public interface AccountMapper {
 
     // ---------- ENTITY → RESPONSE ----------
 
+    @Mapping(target = "createdAt", expression = "java(com.finance.tracker.accounts.utils.DateTimeMapper.toLocalDateTime(account.getCreatedAt()))")
+    @Mapping(target = "closedAt", expression = "java(com.finance.tracker.accounts.utils.DateTimeMapper.toLocalDateTime(account.getClosedAt()))")
     AccountResponse toResponse(Account account);
 
     // ---------- CUSTOM LOGIC FOR ASSET / LIABILITY -----------

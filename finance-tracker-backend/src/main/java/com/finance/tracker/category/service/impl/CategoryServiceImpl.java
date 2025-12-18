@@ -12,6 +12,7 @@ import com.finance.tracker.transactions.domain.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -47,9 +48,9 @@ public class CategoryServiceImpl implements CategoryService {
                 .active(true)
                 .isIncome(request.categoryType().equalsIgnoreCase("income"))
                 .isExpense(request.categoryType().equalsIgnoreCase("expense"))
-                .createdAt(LocalDateTime.now())
+                .createdAt(Instant.now())
                 .deletedAt(null)
-                .updatedAt(LocalDateTime.now())
+                .updatedAt(Instant.now())
                 .userId(null)
                 .parentId(null)
                 .build();

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -75,7 +76,7 @@ public class AccountServiceImpl implements AccountService {
             lockedAccount.setCurrentOutstanding(newOutstanding);
         }
 
-        lockedAccount.setBalanceAsOf(LocalDateTime.now());
+        lockedAccount.setBalanceAsOf(Instant.now());
         accountRepository.save(lockedAccount);
 
         // 3. Create Snapshot

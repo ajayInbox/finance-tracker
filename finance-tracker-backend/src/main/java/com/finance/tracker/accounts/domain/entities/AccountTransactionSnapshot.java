@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Data
@@ -25,6 +25,6 @@ public class AccountTransactionSnapshot {
     private BigDecimal balanceBefore;
     private BigDecimal balanceAfter;
     private BigDecimal transactionAmount;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
 }

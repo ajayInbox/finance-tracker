@@ -9,8 +9,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -39,8 +39,8 @@ public class Account {
     private boolean active = true;
     private boolean readOnly = false;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime closedAt;
+    private Instant createdAt;
+    private Instant closedAt;
 
     private String notes;
 
@@ -57,7 +57,7 @@ public class Account {
     private Integer cutoffDayOfMonth;
     private Integer dueDayOfMonth;
 
-    private LocalDateTime balanceAsOf;
+    private Instant balanceAsOf;
 
     private String userId;
 
