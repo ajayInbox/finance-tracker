@@ -10,5 +10,6 @@ public interface CategoryMapper {
 
     @Mapping(target = "createdAt", expression = "java(com.finance.tracker.accounts.utils.DateTimeMapper.toLocalDateTime(category.getCreatedAt()))")
     @Mapping(target = "updatedAt", expression = "java(com.finance.tracker.accounts.utils.DateTimeMapper.toLocalDateTime(category.getUpdatedAt()))")
+    @Mapping(target = "categoryType", source = "type")
     CategoryDto toDto(Category category);
 }

@@ -1,6 +1,7 @@
 package com.finance.tracker.category.service.impl;
 
 import com.finance.tracker.category.domain.CategoryCreateUpdateRequest;
+import com.finance.tracker.category.domain.CategoryType;
 import com.finance.tracker.category.domain.entities.Category;
 import com.finance.tracker.category.exceptions.CategoryNotActiveException;
 import com.finance.tracker.category.exceptions.CategoryNotForExpenseException;
@@ -13,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,10 +31,10 @@ public class CategoryServiceImpl implements CategoryService {
         if(null != category.getDeletedAt() || false == category.getActive()){
             throw new CategoryNotActiveException("Category is not Active");
         }
-        if(type.getValue().equalsIgnoreCase("income") && category.getIsIncome() != true){
+        if(type.getValue()!=category.getType().name() && type.getValue().equalsIgnoreCase("income")){
             throw new CategoryNotForIncomeException("Not for income");
         }
-        if(type.getValue().equalsIgnoreCase("expense") && category.getIsExpense() != true){
+        if(type.getValue()!=category.getType().name() && type.getValue().equalsIgnoreCase("expense")){
             throw new CategoryNotForExpenseException("not for expense");
         }
 
@@ -53,6 +53,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .updatedAt(Instant.now())
                 .userId(null)
                 .parentId(null)
+                .type(CategoryType.fromValueIgnoreCase(request.categoryType()))
                 .build();
         return categoryRepository.save(category);
     }

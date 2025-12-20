@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+
 import com.finance.tracker.category.domain.CategoryType;
 
 @Data
