@@ -27,8 +27,8 @@ public class TransactionWithCategoryAndAccountDto {
 
     private String categoryId;
     private String categoryName;
-    private Timestamp occuredAt;
-    private Timestamp postedAt;
+    private LocalDateTime occurredAt;
+    private LocalDateTime postedAt;
     private String currency;
 
 }

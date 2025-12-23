@@ -70,11 +70,20 @@ public interface TransactionMapper {
 
     // ---------- ENTITY TO DTO ----------
 
-    @Mapping(target = "occuredAt", expression = "java(mapInstantToLocalDateTime(transaction.getOccurredAt()))")
+    @Mapping(target = "occurredAt", expression = "java(mapInstantToLocalDateTime(transaction.getOccurredAt()))")
     @Mapping(target = "postedAt", expression = "java(mapInstantToLocalDateTime(transaction.getPostedAt()))")
     @Mapping(target = "amount", expression = "java(mapBigDecimalToDouble(transaction.getAmount()))")
     TransactionDto toDto(Transaction transaction);
 
+    // ---------- ENTITY TO RESPONSE ----------
+
+    @Mapping(target = "occurredAt", expression = "java(mapInstantToLocalDateTime(transaction.getOccurredAt()))")
+    @Mapping(target = "postedAt", expression = "java(mapInstantToLocalDateTime(transaction.getPostedAt()))")
+    @Mapping(target = "amount", expression = "java(mapBigDecimalToDouble(transaction.getAmount()))")
+    TransactionDto toResponse(Transaction transaction);
+
+    @Mapping(target = "occurredAt", expression = "java(mapInstantToLocalDateTime(entity.getOccurredAt()))")
+    @Mapping(target = "postedAt", expression = "java(mapInstantToLocalDateTime(entity.getPostedAt()))")
     TransactionWithCategoryAndAccountDto toDto(TransactionsWithCategoryAndAccount entity);
 
     TransactionsAverageDto toDto(TransactionsAverage entity);

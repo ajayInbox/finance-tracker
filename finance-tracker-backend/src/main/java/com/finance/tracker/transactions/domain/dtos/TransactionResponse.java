@@ -1,15 +1,13 @@
 package com.finance.tracker.transactions.domain.dtos;
 
 import com.finance.tracker.transactions.domain.TransactionType;
-import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@Builder
-public class TransactionDto {
+public class TransactionResponse {
 
     private String id;
 
@@ -40,4 +38,3 @@ public class TransactionDto {
     private String externalRef;
 
 }
-
