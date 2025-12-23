@@ -1,28 +1,29 @@
 // lib/pages/dashboard_page.dart
-import 'package:finance_app/data/models/expense_report.dart';
-import 'package:finance_app/data/models/category_breakdown.dart';
-import 'package:finance_app/data/models/networth_summary.dart';
-import 'package:finance_app/data/services/account_service.dart';
+import 'package:finance_app/features/transaction/data/model/expense_report.dart';
+import 'package:finance_app/features/transaction/data/model/category_breakdown.dart';
+import 'package:finance_app/features/account/data/model/networth_summary.dart';
+import 'package:finance_app/features/transaction/data/model/transaction_summary.dart';
+import 'package:finance_app/features/account/provider/networth_provider.dart';
+import 'package:finance_app/providers/transaction_providers.dart';
 import 'package:finance_app/widgets/sms_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:finance_app/data/services/transaction_service.dart';
-import 'package:finance_app/data/models/transaction_summary.dart';
 
 import 'package:finance_app/pages/transactions_page.dart';
 import 'transaction_form_page.dart';
 import 'dart:math' as math;
 
-class DashboardPage extends StatefulWidget {
+class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  ConsumerState<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> with TickerProviderStateMixin {
+class _DashboardPageState extends ConsumerState<DashboardPage> with TickerProviderStateMixin {
   late Future<List<TransactionSummary>> _recentTransactionsFuture;
   late Future<ExpenseReport> _expenseAnalysis;
   late Future<NetworthSummary> _networthSummaryFuture;
@@ -39,9 +40,9 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _recentTransactionsFuture = TransactionService().getFeed();
-    _expenseAnalysis = TransactionService().fetchExpenseReport();
-    _networthSummaryFuture = AccountService().getNetWorth();
+    _recentTransactionsFuture = ref.read(transactionsProvider.future);
+    _expenseAnalysis = ref.read(expenseReportProvider.future);
+    _networthSummaryFuture = ref.read(networthProvider.future);
 
     // Initialize animations
     _fadeController = AnimationController(
@@ -110,9 +111,9 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
 
   Future<void> _handleRefresh() async {
     setState(() {
-      _recentTransactionsFuture = TransactionService().getFeed();
-      _expenseAnalysis = TransactionService().fetchExpenseReport();
-      _networthSummaryFuture = AccountService().getNetWorth();
+      _recentTransactionsFuture = ref.read(transactionsProvider.future);
+      _expenseAnalysis = ref.read(expenseReportProvider.future);
+      _networthSummaryFuture = ref.read(networthProvider.future);
     });
     await Future.delayed(const Duration(milliseconds: 500));
   }
@@ -1130,7 +1131,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
               ),
               const SizedBox(height: 2),
               Text(
-                DateFormat('MMM d').format(transaction.occuredAt),
+                DateFormat('MMM d').format(transaction.occurredAt),
                 style: GoogleFonts.inter(
                   color: Colors.grey[500],
                   fontSize: 10,

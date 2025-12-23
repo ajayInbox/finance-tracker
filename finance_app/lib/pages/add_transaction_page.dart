@@ -1,27 +1,28 @@
 // lib/pages/add_transaction_page.dart
 
-import 'package:finance_app/data/models/account.dart';
+import 'package:finance_app/features/account/data/model/account.dart';
 import 'package:finance_app/data/models/category.dart';
-import 'package:finance_app/data/models/transaction.dart';
-import 'package:finance_app/data/services/account_service.dart';
-import 'package:finance_app/data/services/category_service.dart';
-import 'package:finance_app/data/services/transaction_service.dart';
+import 'package:finance_app/features/transaction/data/model/transaction.dart';
+import 'package:finance_app/providers/account_providers.dart';
+import 'package:finance_app/providers/category_providers.dart';
+import 'package:finance_app/providers/transaction_providers.dart';
 import 'package:finance_app/utils/message_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:another_telephony/telephony.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class AddTransactionPage extends StatefulWidget {
+class AddTransactionPage extends ConsumerStatefulWidget {
   const AddTransactionPage({super.key, this.prefillParsed});
 
   final ParsedTransaction? prefillParsed;
 
   @override
-  State<AddTransactionPage> createState() => _AddTransactionPageState();
+  ConsumerState<AddTransactionPage> createState() => _AddTransactionPageState();
 }
 
-class _AddTransactionPageState extends State<AddTransactionPage>
+class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
@@ -72,8 +73,8 @@ class _AddTransactionPageState extends State<AddTransactionPage>
 
   Future<void> _loadData() async {
     try {
-      final accountsData = await AccountService().getAccounts();
-      final categoriesData = await CategoryService().getAllCategories();
+      final accountsData = await ref.read(accountsProvider.future);
+      final categoriesData = await ref.read(categoriesProvider.future);
       if (mounted) {
         setState(() {
           accounts = accountsData;
@@ -202,7 +203,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1),
+        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Theme.of(context).colorScheme.primary,
@@ -293,8 +294,8 @@ class _AddTransactionPageState extends State<AddTransactionPage>
         backgroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return _transactionType == 'Expense'
-                ? Colors.red.withOpacity(0.1)
-                : Colors.green.withOpacity(0.1);
+                ? Colors.red.withValues(alpha: 0.1)
+                : Colors.green.withValues(alpha: 0.1);
           }
           return Colors.transparent;
         }),
@@ -333,7 +334,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.transparent,
+          color: isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: isSelected ? Border.all(color: color, width: 2) : null,
         ),
@@ -426,7 +427,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
           color: Theme.of(context).colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -687,7 +688,7 @@ class _AddTransactionPageState extends State<AddTransactionPage>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 1),
@@ -886,12 +887,12 @@ class _AddTransactionPageState extends State<AddTransactionPage>
         type: _transactionType,
         account: _selectedAccount!,
         category: _selectedCategory!,
-        occuredAt: _selectedDate,
+        occurredAt: _selectedDate,
         notes: _notesController.text.trim().isEmpty ? '' : _notesController.text.trim(),
       );
 
       // Call API to add transaction
-      await TransactionService().addTransaction(transaction);
+      await ref.read(transactionServiceProvider).addTransaction(transaction);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1034,9 +1035,9 @@ class _AddTransactionPageState extends State<AddTransactionPage>
     // Filter categories based on transaction type
     final filteredCategories = categories.where((c) {
       if (_transactionType == 'Expense') {
-        return c.isExpense;
+        return c.isExpense();
       } else if (_transactionType == 'Income') {
-        return c.isIncome;
+        return c.isIncome();
       }
       return true; // Show all if neither
     }).toList();

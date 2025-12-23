@@ -4,7 +4,7 @@ class ApiConstants {
   //static String baseUrl = "http://localhost:8080/";
   //static String baseUrl = "https://finance-tracker-backend-m1rr.onrender.com";
   static String getTransactions = "/api/v1/transactions";
-  static String createTransaction = "/api/v1/transaction";
+  static String createTransaction = "/api/v1/transactions";
   static String updateTransaction = "/api/v1/transaction/update";
   static String deleteTransaction = "/api/v1/transaction";
   static String getAccounts = "/api/v1/accounts";

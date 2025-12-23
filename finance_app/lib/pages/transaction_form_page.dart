@@ -1,9 +1,9 @@
 // lib/pages/transaction_form_page.dart
 
-import 'package:finance_app/data/models/account.dart';
+import 'package:finance_app/features/account/data/model/account.dart';
 import 'package:finance_app/data/models/category.dart';
-import 'package:finance_app/data/models/transaction.dart';
-import 'package:finance_app/data/models/transaction_summary.dart';
+import 'package:finance_app/features/transaction/data/model/transaction.dart';
+import 'package:finance_app/features/transaction/data/model/transaction_summary.dart';
 import 'package:finance_app/data/services/account_service.dart';
 import 'package:finance_app/data/services/category_service.dart';
 import 'package:finance_app/data/services/transaction_service.dart';
@@ -114,7 +114,7 @@ class _TransactionFormPageState extends State<TransactionFormPage>
       _transactionNameController.text = t.transactionName;
       _notesController.text = ''; // TransactionSummary doesn't have notes
       _transactionType = t.type[0].toUpperCase() + t.type.substring(1).toLowerCase();
-      _selectedDate = t.occuredAt;
+      _selectedDate = t.occurredAt;
 
       // Find and set category
       final category = categories.firstWhere(
@@ -761,7 +761,7 @@ class _TransactionFormPageState extends State<TransactionFormPage>
         type: _transactionType,
         account: _selectedAccount!,
         category: _selectedCategory!,
-        occuredAt: _selectedDate,
+        occurredAt: _selectedDate,
         notes: _notesController.text.trim().isEmpty ? '' : _notesController.text.trim(),
       );
 
@@ -970,9 +970,9 @@ class _TransactionFormPageState extends State<TransactionFormPage>
     // Filter categories based on transaction type
     final filteredCategories = categories.where((c) {
       if (_transactionType == 'Expense') {
-        return c.isExpense;
+        return c.isExpense();
       } else if (_transactionType == 'Income') {
-        return c.isIncome;
+        return c.isIncome();
       }
       return true; // Show all if neither
     }).toList();
