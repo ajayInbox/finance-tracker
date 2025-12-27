@@ -3,48 +3,45 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:another_telephony/telephony.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:finance_app/data/services/account_service.dart';
-import 'package:finance_app/data/services/category_service.dart';
-import 'package:finance_app/data/services/transaction_service.dart';
 import 'package:finance_app/utils/message_parser.dart';
-import 'package:finance_app/data/models/transaction.dart';
+import 'package:finance_app/features/transaction/data/model/transaction.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:finance_app/pages/transactions_page.dart';
+import 'package:finance_app/features/transaction/ui/transactions_page.dart';
 import 'package:finance_app/pages/dashboard_page.dart';
-import 'package:finance_app/pages/accounts_page.dart';
+import 'package:finance_app/features/account/ui/accounts_page.dart';
 import 'package:finance_app/pages/settings_page.dart';
 
-Future<void> _onBackgroundSmsReceived(SmsMessage message) async {
-  // Handle incoming SMS in background
-  // Parse and add transaction similar to SmsTransactionSyncService
-  final parsed = MessageParser().parse(message.body ?? '');
-  if (parsed.isValid) {
-    final accounts = await AccountService().getAccounts();
-    final categories = await CategoryService().getAllCategories();
-    if (accounts.isEmpty || categories.isEmpty) return;
+// Future<void> _onBackgroundSmsReceived(SmsMessage message) async {
+//   // Handle incoming SMS in background
+//   // Parse and add transaction similar to SmsTransactionSyncService
+//   final parsed = MessageParser().parse(message.body ?? '');
+//   if (parsed.isValid) {
+//     final accounts = await AccountService().getAccounts();
+//     final categories = await CategoryService().getAllCategories();
+//     if (accounts.isEmpty || categories.isEmpty) return;
 
-    String accountId = accounts.first.id;
-    String categoryId = categories.first.id;
-    if (parsed.categoryHint != null) {
-      final matchedCat = categories.firstWhere(
-        (c) => c.label.toLowerCase() == parsed.categoryHint!.toLowerCase(),
-        orElse: () => categories.first,
-      );
-      categoryId = matchedCat.id;
-    }
+//     String accountId = accounts.first.id;
+//     String categoryId = categories.first.id;
+//     if (parsed.categoryHint != null) {
+//       final matchedCat = categories.firstWhere(
+//         (c) => c.label.toLowerCase() == parsed.categoryHint!.toLowerCase(),
+//         orElse: () => categories.first,
+//       );
+//       categoryId = matchedCat.id;
+//     }
 
-    final transaction = Transaction(
-      transactionName: '${parsed.merchant ?? 'SMS Transaction'} Transaction',
-      amount: parsed.amount!,
-      type: 'Expense',
-      account: accountId,
-      category: categoryId,
-      occuredAt: parsed.date ?? DateTime.now(),
-      notes: 'Auto-added from SMS: ${message.body ?? ''}',
-    );
-    await TransactionService().addTransaction(transaction);
-  }
-}
+//     final transaction = Transaction(
+//       transactionName: '${parsed.merchant ?? 'SMS Transaction'} Transaction',
+//       amount: parsed.amount!,
+//       type: 'Expense',
+//       account: accountId,
+//       category: categoryId,
+//       occurredAt: parsed.date ?? DateTime.now(),
+//       notes: 'Auto-added from SMS: ${message.body ?? ''}',
+//     );
+//  //   await TransactionService().addTransaction(transaction);
+//   }
+// }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,11 +51,11 @@ void main() async {
   final smsListeningEnabled = prefs.getBool('sms_listening_enabled') ?? false;
 
   // Only start listening for SMS if user has enabled it
-  if (false) {
-    Telephony.instance.listenIncomingSms(
-      onNewMessage: _onBackgroundSmsReceived,
-    );
-  }
+  // if (false) {
+  //   Telephony.instance.listenIncomingSms(
+  //     onNewMessage: _onBackgroundSmsReceived,
+  //   );
+  // }
 
   runApp(const ProviderScope(
     child: MyApp(),
