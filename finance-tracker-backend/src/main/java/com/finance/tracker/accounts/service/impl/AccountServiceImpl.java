@@ -3,8 +3,7 @@ package com.finance.tracker.accounts.service.impl;
 import com.finance.tracker.accounts.domain.*;
 import com.finance.tracker.accounts.domain.dto.AccountResponse;
 import com.finance.tracker.accounts.domain.entities.Account;
-import com.finance.tracker.accounts.exceptions.AccountNotFoundException;
-import com.finance.tracker.accounts.exceptions.DuplicateLastFourException;
+import com.finance.tracker.accounts.exceptions.*;
 import com.finance.tracker.accounts.mapper.AccountMapper;
 import com.finance.tracker.accounts.repository.AccountRepository;
 import com.finance.tracker.accounts.service.AccountService;
@@ -16,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,7 +34,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Transactional(readOnly = true)
-    private List<Account> getAccountByUserId(String userId) {
+    protected List<Account> getAccountByUserId(String userId) {
         return accountRepository.findByUserIdAndIsActive(userId);
     }
 
@@ -62,6 +60,12 @@ public class AccountServiceImpl implements AccountService {
                     : amount;
 
             newBalance = previousBalance.add(delta);
+            if(delta.doubleValue() > previousBalance.doubleValue()){
+                throw new AmountGtCurrentBalance("Amount is greater than current balance");
+            }
+            if(newBalance.doubleValue()<0){
+                throw new AccountAmountNegativeException("Account balance should not be negative");
+            }
             lockedAccount.setCurrentBalance(newBalance);
 
         } else if (lockedAccount.getCategory() == AccountCategory.LIABILITY) {
@@ -70,6 +74,7 @@ public class AccountServiceImpl implements AccountService {
             // EXPENSE → increase outstanding
             // INCOME → reduce outstanding
             BigDecimal currentCreditLimit = lockedAccount.getCreditLimit();
+            BigDecimal startingCreditLimit = lockedAccount.getStartingBalance();
             BigDecimal delta = (request.getTransactionType() == TransactionType.EXPENSE)
                     ? amount
                     : amount.negate();
@@ -79,6 +84,15 @@ public class AccountServiceImpl implements AccountService {
                     : amount;
             
             newBalance = previousBalance.add(delta);
+            if(delta.doubleValue()>currentCreditLimit.doubleValue()){
+                throw new AmountGtCurrentBalance("Amount is greater than current credit limit");
+            }
+            if(newBalance.doubleValue()<0){
+                throw new AccountAmountNegativeException("Current outstanding should not be negative");
+            }
+            if(newBalance.doubleValue() > startingCreditLimit.doubleValue()){
+                throw new CurrentOutstandingGtCreditLimit("Current outstanding should not be greater than credit limit");
+            }
             BigDecimal newCreditLimit = currentCreditLimit.add(deltaForCreditLimit);
             lockedAccount.setCurrentOutstanding(newBalance);
             lockedAccount.setCreditLimit(newCreditLimit);
