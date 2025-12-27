@@ -1,17 +1,19 @@
-import 'package:finance_app/data/services/transaction_service.dart';
+import 'package:finance_app/features/transaction/data/model/sms_message.dart';
+import 'package:finance_app/features/transaction/providers/export_sms_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:another_telephony/telephony.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class SMSModal extends StatefulWidget {
+class SMSModal extends ConsumerStatefulWidget {
   const SMSModal({super.key});
 
   @override
-  State<SMSModal> createState() => _SMSModalState();
+  ConsumerState<SMSModal> createState() => _SMSModalState();
 }
 
-class _SMSModalState extends State<SMSModal> {
+class _SMSModalState extends ConsumerState<SMSModal> {
   final telephony = Telephony.instance;
   String _selectedDuration = 'Last 1 Month';
   List<SmsMessage> _messages = [];
@@ -92,7 +94,14 @@ class _SMSModalState extends State<SMSModal> {
 
     try {
 
-      await TransactionService().exportMessage(_selectedMessages);
+      List<SmsMessageObject> messages = _selectedMessages.map((msg) => SmsMessageObject(
+        messageAddress: msg.address!,
+        messageHeader: msg.address!,
+        messageBody: msg.body!,
+        messageDate: DateTime.fromMillisecondsSinceEpoch(msg.date!).toString()
+      )).toList();
+
+      await ref.read(exportSmsProvider(messages).future);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
