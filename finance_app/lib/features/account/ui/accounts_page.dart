@@ -1,4 +1,4 @@
-import 'package:finance_app/features/account/provider/accounts_provider.dart';
+import 'package:finance_app/features/account/application/accounts_controller.dart';
 import 'package:finance_app/features/account/provider/networth_provider.dart';
 import 'package:finance_app/features/account/ui/add_account_page.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +6,6 @@ import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:finance_app/features/account/data/model/account.dart';
 import 'package:finance_app/features/account/data/model/networth_summary.dart';
 import 'package:finance_app/utils/app_style_constants.dart';
@@ -41,9 +40,10 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
   }
 
   Future<void> _refresh() async {
-    ref.invalidate(accountsProvider);
+    await ref
+      .read(accountsControllerProvider.notifier)
+      .refresh();
     ref.invalidate(networthProvider);
-    await Future.delayed(const Duration(milliseconds: 300));
   }
 
   @override
@@ -55,7 +55,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
 
   @override
   Widget build(BuildContext context) {
-    final accountsAsync = ref.watch(accountsProvider);
+    final accountsAsync = ref.watch(accountsControllerProvider);
 
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
@@ -151,11 +151,11 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
       ),
     );
 
-    if (created == true) {
-      if (!mounted) return;
-      ref.invalidate(accountsProvider);
-      ref.invalidate(networthProvider);
-    }
+    // if (created == true) {
+    //   if (!mounted) return;
+    //   ref.invalidate(accountsProvider);
+    //   ref.invalidate(networthProvider);
+    // }
   }
 
   // --------------------------------------------------------------------------
@@ -270,7 +270,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
   // --------------------------------------------------------------------------
 
   Widget _buildAccountsFuture() {
-    final accountsAsync = ref.watch(accountsProvider);
+    final accountsAsync = ref.watch(accountsControllerProvider);
 
     return accountsAsync.when(
       data: (accounts) =>
@@ -344,8 +344,8 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
   }
 
   Widget _buildAccountsList(List<Account> accounts) {
-    final assets = accounts.where((acc) => acc.isAsset).toList();
-    final liabilities = accounts.where((acc) => !acc.isAsset).toList();
+    final assets = accounts.where((acc) => acc.isAsset()).toList();
+    final liabilities = accounts.where((acc) => !acc.isAsset()).toList();
 
     return ListView(
       shrinkWrap: true,
@@ -403,7 +403,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
   // --------------------------------------------------------------------------
 
   Widget _buildAccountCard(Account account) {
-    final isAsset = account.isAsset;
+    final isAsset = account.isAsset();
     final color = isAsset ? AppColors.success : AppColors.error;
     final balance = account.effectiveBalance;
 
@@ -415,7 +415,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
         border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -433,7 +433,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                 height: 48,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
@@ -477,7 +477,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                     padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
+                      color: color.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

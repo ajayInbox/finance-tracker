@@ -1,3 +1,4 @@
+import 'package:finance_app/features/account/application/accounts_controller.dart';
 import 'package:finance_app/features/account/provider/accounts_provider.dart';
 import 'package:finance_app/features/account/provider/networth_provider.dart';
 import 'package:finance_app/features/transaction/data/model/transaction.dart';
@@ -82,7 +83,8 @@ class TransactionsController
   void _invalidateDerivedProviders() {
     ref.invalidate(averageDailyExpenseProvider);
     ref.invalidate(expenseReportProvider);
-    ref.invalidate(accountsProvider);
+    ref.read(accountsControllerProvider.notifier).refresh();
+  //  ref.invalidate(accountsProvider);
     ref.invalidate(networthProvider);
   }
 }

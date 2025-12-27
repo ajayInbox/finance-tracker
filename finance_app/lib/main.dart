@@ -1,47 +1,12 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:another_telephony/telephony.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:finance_app/utils/message_parser.dart';
-import 'package:finance_app/features/transaction/data/model/transaction.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:finance_app/features/transaction/ui/transactions_page.dart';
 import 'package:finance_app/pages/dashboard_page.dart';
 import 'package:finance_app/features/account/ui/accounts_page.dart';
 import 'package:finance_app/pages/settings_page.dart';
-
-// Future<void> _onBackgroundSmsReceived(SmsMessage message) async {
-//   // Handle incoming SMS in background
-//   // Parse and add transaction similar to SmsTransactionSyncService
-//   final parsed = MessageParser().parse(message.body ?? '');
-//   if (parsed.isValid) {
-//     final accounts = await AccountService().getAccounts();
-//     final categories = await CategoryService().getAllCategories();
-//     if (accounts.isEmpty || categories.isEmpty) return;
-
-//     String accountId = accounts.first.id;
-//     String categoryId = categories.first.id;
-//     if (parsed.categoryHint != null) {
-//       final matchedCat = categories.firstWhere(
-//         (c) => c.label.toLowerCase() == parsed.categoryHint!.toLowerCase(),
-//         orElse: () => categories.first,
-//       );
-//       categoryId = matchedCat.id;
-//     }
-
-//     final transaction = Transaction(
-//       transactionName: '${parsed.merchant ?? 'SMS Transaction'} Transaction',
-//       amount: parsed.amount!,
-//       type: 'Expense',
-//       account: accountId,
-//       category: categoryId,
-//       occurredAt: parsed.date ?? DateTime.now(),
-//       notes: 'Auto-added from SMS: ${message.body ?? ''}',
-//     );
-//  //   await TransactionService().addTransaction(transaction);
-//   }
-// }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

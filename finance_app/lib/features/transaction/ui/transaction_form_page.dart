@@ -1,6 +1,6 @@
 // ui/transaction_form_page.dart
+import 'package:finance_app/features/account/application/accounts_controller.dart';
 import 'package:finance_app/features/account/data/model/account.dart';
-import 'package:finance_app/features/account/provider/accounts_provider.dart';
 import 'package:finance_app/features/category/data/models/category.dart';
 import 'package:finance_app/features/category/providers/categories_provider.dart';
 import 'package:finance_app/features/transaction/application/transaction_controller.dart';
@@ -66,7 +66,7 @@ class _TransactionFormPageState
 
   @override
   Widget build(BuildContext context) {
-    final accountsAsync = ref.watch(accountsProvider);
+    final accountsAsync = ref.watch(accountsControllerProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return accountsAsync.when(

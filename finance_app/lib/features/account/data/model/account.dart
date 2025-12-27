@@ -1,3 +1,5 @@
+import 'package:finance_app/features/account/data/model/account_category.dart';
+
 import 'account_type.dart';
 
 class Account {
@@ -18,7 +20,7 @@ class Account {
   final DateTime createdAt;
   final DateTime? closedAt;
   final String? notes;
-  final bool isAsset;     // ASSET / LIABILITY converted to bool
+  final String category;
 
   Account({
     required this.id,
@@ -38,7 +40,7 @@ class Account {
     required this.createdAt,
     this.closedAt,
     this.notes,
-    required this.isAsset,
+    required this.category,
   });
 
   factory Account.fromJson(Map<String, dynamic> j) {
@@ -69,15 +71,22 @@ class Account {
 
       notes: j['notes'],
 
-      isAsset: (j['category'] ?? 'ASSET').toUpperCase() == 'ASSET',
+      category: (j['category']),
     );
   }
 
   double get effectiveBalance {
-    if (!isAsset) {
+    if (category==AccountCategory.liability.name.toUpperCase()) {
       return currentOutstanding ?? 0.0;
     }
-    return currentBalance ?? startingBalance ?? 0.0;
+    if(category==AccountCategory.asset.name.toUpperCase()) {
+      return currentBalance ?? startingBalance ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  bool isAsset(){
+    return category==AccountCategory.asset.name.toUpperCase();
   }
 
 }
