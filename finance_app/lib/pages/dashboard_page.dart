@@ -1,10 +1,12 @@
 // lib/pages/dashboard_page.dart
+import 'package:finance_app/features/transaction/application/transaction_controller.dart';
 import 'package:finance_app/features/transaction/data/model/expense_report.dart';
 import 'package:finance_app/features/transaction/data/model/category_breakdown.dart';
 import 'package:finance_app/features/account/data/model/networth_summary.dart';
 import 'package:finance_app/features/transaction/data/model/transaction_summary.dart';
 import 'package:finance_app/features/account/provider/networth_provider.dart';
-import 'package:finance_app/providers/transaction_providers.dart';
+import 'package:finance_app/features/transaction/providers/expense_report_provider.dart';
+import 'package:finance_app/features/transaction/ui/transaction_form_page.dart';
 import 'package:finance_app/widgets/sms_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -12,8 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import 'package:finance_app/pages/transactions_page.dart';
-import 'transaction_form_page.dart';
+import 'package:finance_app/features/transaction/ui/transactions_page.dart';
 import 'dart:math' as math;
 
 class DashboardPage extends ConsumerStatefulWidget {
@@ -24,9 +25,6 @@ class DashboardPage extends ConsumerStatefulWidget {
 }
 
 class _DashboardPageState extends ConsumerState<DashboardPage> with TickerProviderStateMixin {
-  late Future<List<TransactionSummary>> _recentTransactionsFuture;
-  late Future<ExpenseReport> _expenseAnalysis;
-  late Future<NetworthSummary> _networthSummaryFuture;
   final String currency = '₹';
 
   // Animation controllers
@@ -40,9 +38,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with TickerProvid
   @override
   void initState() {
     super.initState();
-    _recentTransactionsFuture = ref.read(transactionsProvider.future);
-    _expenseAnalysis = ref.read(expenseReportProvider.future);
-    _networthSummaryFuture = ref.read(networthProvider.future);
 
     // Initialize animations
     _fadeController = AnimationController(
@@ -110,81 +105,89 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with TickerProvid
   }
 
   Future<void> _handleRefresh() async {
-    setState(() {
-      _recentTransactionsFuture = ref.read(transactionsProvider.future);
-      _expenseAnalysis = ref.read(expenseReportProvider.future);
-      _networthSummaryFuture = ref.read(networthProvider.future);
-    });
-    await Future.delayed(const Duration(milliseconds: 500));
+    await ref
+    .read(transactionsControllerProvider.notifier)
+    .refresh();
+    ref.invalidate(expenseReportProvider);
+    ref.invalidate(networthProvider);
   }
 
   // Enhanced Top Summary Cards with Sparklines
   Widget _buildTopSummaryCards() {
-    return FutureBuilder<List<dynamic>>(
-      future: Future.wait([_expenseAnalysis, _networthSummaryFuture]),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Row(
-            children: [
-              Expanded(child: _buildLoadingSummaryCard()),
-              const SizedBox(width: 16),
-              Expanded(child: _buildLoadingSummaryCard()),
-            ],
-          );
-        }
-        if (snapshot.hasError) {
-          return Row(
-            children: [
-              Expanded(child: _buildErrorSummaryCard()),
-              const SizedBox(width: 16),
-              Expanded(child: _buildErrorSummaryCard()),
-            ],
-          );
-        }
-        final results = snapshot.data!;
-        final report = results[0] as ExpenseReport;
-        final networth = results[1] as NetworthSummary;
-        return SizedBox(
-          height: 200,
-         child: Row(
-          children: [
-            Expanded(
-              child: _buildSummaryCard(
-                title: 'This Month',
-                amount: '₹ ${report.total.toStringAsFixed(2)}',
-                trend: '+12.5%', // TODO: Calculate actual trend
-                trendUp: true,
-                subtitle: 'vs last month',
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                sparklineData: [20, 35, 25, 45, 30, 40, 45], // TODO: Use real data
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildSummaryCard(
-                title: 'Total Balance',
-                amount: networth.formattedNetWorth,
-                trend: '+8.2%',
-                trendUp: true,
-                subtitle: 'all accounts',
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF28A745), Color(0xFF20C997)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                sparklineData: [80, 85, 90, 95, 100, 110, 125],
-              ),
-            ),
-          ],
-        )
+    final expenseAsync = ref.watch(expenseReportProvider);
+    final networthAsync = ref.watch(networthProvider);
+    return expenseAsync.when(
+      loading: () => _buildTopLoading(),
+      error: (_, __) => _buildTopError(),
+      data: (report) {
+        return networthAsync.when(
+          loading: () => _buildTopLoading(),
+          error: (_, __) => _buildTopError(),
+          data: (networth) {
+            return _buildTopCards(networth, report);
+          },
         );
       },
     );
   }
+
+  Widget _buildTopLoading() => Row(
+    children: [
+      Expanded(child: _buildLoadingSummaryCard()),
+      const SizedBox(width: 16),
+      Expanded(child: _buildLoadingSummaryCard()),
+    ],
+  );
+
+  Widget _buildTopError() => Row(
+    children: [
+      Expanded(child: _buildErrorSummaryCard()),
+      const SizedBox(width: 16),
+      Expanded(child: _buildErrorSummaryCard()),
+    ],
+  );
+
+  Widget _buildTopCards(NetworthSummary networth, ExpenseReport report) {
+    return SizedBox(
+      height: 200,
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildSummaryCard(
+              title: 'This Month',
+              amount: '₹ ${report.total.toStringAsFixed(2)}',
+              trend: '+12.5%', // TODO: Calculate actual trend
+              trendUp: true,
+              subtitle: 'vs last month',
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              sparklineData: [20, 35, 25, 45, 30, 40, 45], // TODO: Use real data
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildSummaryCard(
+              title: 'Total Balance',
+              amount: networth.formattedNetWorth,
+              trend: '+8.2%',
+              trendUp: true,
+              subtitle: 'all accounts',
+              gradient: const LinearGradient(
+                colors: [Color(0xFF28A745), Color(0xFF20C997)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              sparklineData: [80, 85, 90, 95, 100, 110, 125],
+            ),
+          ),
+        ],
+      )
+    );
+  }
+
 
   Widget _buildLoadingSummaryCard() {
     return Container(
@@ -539,6 +542,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with TickerProvid
   }
 
   Widget _buildExpenseBreakdownCard() {
+    final expenseAsync = ref.watch(expenseReportProvider);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -586,22 +590,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with TickerProvid
             ],
           ),
           const SizedBox(height: 30),
-          FutureBuilder<ExpenseReport>(
-            future: _expenseAnalysis,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return SizedBox(
-                  height: 200,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (snapshot.hasError) {
-                return SizedBox(
-                  height: 200,
-                  child: Center(child: Text('Error loading chart data')),
-                );
-              }
-              final report = snapshot.data!;
+          expenseAsync.when(
+            loading: () => Center(child: CircularProgressIndicator()),
+            error: (error, stackTrace) => Center(child: Text('Error loading chart data')),
+            data: (report) {
               return SizedBox(
                 height: 200,
                 child: PieChart(
@@ -615,19 +607,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with TickerProvid
             },
           ),
           const SizedBox(height: 35),
-          FutureBuilder<ExpenseReport>(
-            future: _expenseAnalysis,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return _buildLoadingLegend();
-              }
-              if (snapshot.hasError) {
-                return Text('Error loading legend');
-              }
-              final report = snapshot.data!;
-              return _buildExpenseLegend(report.categoryBreakdown);
-            },
-          ),
+
+          // FutureBuilder<ExpenseReport>(
+          //   future: _expenseAnalysis,
+          //   builder: (context, snapshot) {
+          //     if (snapshot.connectionState == ConnectionState.waiting) {
+          //       return _buildLoadingLegend();
+          //     }
+          //     if (snapshot.hasError) {
+          //       return Text('Error loading legend');
+          //     }
+          //     final report = snapshot.data!;
+          //     return _buildExpenseLegend(report.categoryBreakdown);
+          //   },
+          // ),
         ],
       ),
     );
@@ -883,6 +876,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with TickerProvid
   }
 
   Widget _buildRecentTransactions() {
+    final txAsync = ref.watch(transactionsControllerProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -913,31 +907,47 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with TickerProvid
         const SizedBox(height: 16),
         SizedBox(
           height: 200,
-          child: FutureBuilder<List<TransactionSummary>>(
-            future: _recentTransactionsFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return _buildLoadingTransactions();
-              }
+          child: txAsync.when(
+              loading: _buildLoadingTransactions,
+              error: (_, __) => _buildErrorTransactions(),
+              data: (transactions) {
+                if (transactions.isEmpty) {
+                  return _buildEmptyTransactions();
+                }
 
-              if (snapshot.hasError) {
-                return _buildErrorTransactions();
-              }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: transactions.length > 5 ? 5 : transactions.length,
+                  itemBuilder: (_, i) => _buildTransactionItem(transactions[i]),
+                );
+              },
+            ),
+          // child: FutureBuilder<List<TransactionSummary>>(
+          //   future: _recentTransactionsFuture,
+          //   builder: (context, snapshot) {
+          //     if (snapshot.connectionState == ConnectionState.waiting) {
+          //       return _buildLoadingTransactions();
+          //     }
 
-              final transactions = snapshot.data ?? [];
-              if (transactions.isEmpty) {
-                return _buildEmptyTransactions();
-              }
+          //     if (snapshot.hasError) {
+          //       return _buildErrorTransactions();
+          //     }
 
-              return ListView.builder(
-                itemCount: transactions.length > 5 ? 5 : transactions.length,
-                itemBuilder: (context, index) {
-                  final transaction = transactions[index];
-                  return _buildTransactionItem(transaction);
-                },
-              );
-            },
-          ),
+          //     final transactions = snapshot.data ?? [];
+          //     if (transactions.isEmpty) {
+          //       return _buildEmptyTransactions();
+          //     }
+
+          //     return ListView.builder(
+          //       itemCount: transactions.length > 5 ? 5 : transactions.length,
+          //       itemBuilder: (context, index) {
+          //         final transaction = transactions[index];
+          //         return _buildTransactionItem(transaction);
+          //       },
+          //     );
+          //   },
+          // ),
         ),
       ],
     );

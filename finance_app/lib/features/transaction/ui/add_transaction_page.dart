@@ -1,33 +1,28 @@
-// // lib/pages/transaction_form_page.dart
+// // lib/pages/add_transaction_page.dart
 
 // import 'package:finance_app/features/account/data/model/account.dart';
 // import 'package:finance_app/features/category/data/models/category.dart';
 // import 'package:finance_app/features/transaction/data/model/transaction.dart';
-// import 'package:finance_app/features/transaction/data/model/transaction_summary.dart';
+// import 'package:finance_app/providers/account_providers.dart';
+// import 'package:finance_app/providers/category_providers.dart';
+// import 'package:finance_app/providers/transaction_providers.dart';
 // import 'package:finance_app/utils/message_parser.dart';
 // import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
-// import 'package:another_telephony/telephony.dart';
 // import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:another_telephony/telephony.dart';
 // import 'package:permission_handler/permission_handler.dart';
 
-// class TransactionFormPage extends ConsumerStatefulWidget {
-//   const TransactionFormPage({
-//     super.key,
-//     this.transaction, // null = add mode, provided = edit mode
-//     this.prefillParsed,
-//   });
+// class AddTransactionPage extends ConsumerStatefulWidget {
+//   const AddTransactionPage({super.key, this.prefillParsed});
 
-//   final TransactionSummary? transaction;
 //   final ParsedTransaction? prefillParsed;
 
-//   bool get isEditMode => transaction != null;
-
 //   @override
-//   ConsumerState<TransactionFormPage> createState() => _TransactionFormPageState();
+//   ConsumerState<AddTransactionPage> createState() => _AddTransactionPageState();
 // }
 
-// class _TransactionFormPageState extends ConsumerState<TransactionFormPage>
+// class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
 //     with TickerProviderStateMixin {
 //   final _formKey = GlobalKey<FormState>();
 //   final _amountController = TextEditingController();
@@ -54,7 +49,7 @@
 //   String? _lastUsedCategory;
 //   String? _lastUsedAccount;
 
-//   // SMS parsing state (add mode only)
+//   // SMS parsing state
 //   ParsedTransaction? _parsedTransaction;
 //   bool _showSmsBanner = false;
 
@@ -78,17 +73,16 @@
 
 //   Future<void> _loadData() async {
 //     try {
-//       final accountsData = await AccountService().getAccounts();
-//       final categoriesData = await CategoryService().getAllCategories();
+//       final accountsData = await ref.read(accountsProvider.future);
+//       final categoriesData = await ref.read(categoriesProvider.future);
 //       if (mounted) {
 //         setState(() {
 //           accounts = accountsData;
 //           categories = categoriesData;
+//           if (widget.prefillParsed != null) {
+//             _prefillFromParsed(widget.prefillParsed!);
+//           }
 //         });
-//         // Prefill data after loading accounts and categories
-//         _prefillData();
-//         // Force a rebuild to ensure transaction type selection is updated
-//         setState(() {});
 //       }
 //     } catch (e) {
 //       if (mounted) {
@@ -98,42 +92,6 @@
 //             backgroundColor: Colors.red,
 //           ),
 //         );
-//       }
-//     }
-//   }
-
-//   void _prefillData() {
-//     if (widget.isEditMode) {
-//       // Edit mode: prefill from existing transaction
-//       final t = widget.transaction!;
-//       print(t.type[0].toUpperCase() + t.type.substring(1).toLowerCase());
-//       _setAmount = t.amount.abs();
-//       _amountController.text = t.amount.abs().toString();
-//       _transactionNameController.text = t.transactionName;
-//       _notesController.text = ''; // TransactionSummary doesn't have notes
-//       _transactionType = t.type[0].toUpperCase() + t.type.substring(1).toLowerCase();
-//       _selectedDate = t.occurredAt;
-
-//       // Find and set category
-//       final category = categories.firstWhere(
-//         (c) => c.label.toLowerCase() == t.categoryName.toLowerCase(),
-//         orElse: () => categories.firstWhere(
-//           (c) => c.isExpense == (t.type.toLowerCase() == 'expense'),
-//           orElse: () => categories.first,
-//         ),
-//       );
-//       _selectedCategory = category.id;
-
-//       // Find and set account
-//       final account = accounts.firstWhere(
-//         (a) => a.accountName.toLowerCase() == t.accountName.toLowerCase(),
-//         orElse: () => accounts.first,
-//       );
-//       _selectedAccount = account.id;
-//     } else {
-//       // Add mode: prefill from SMS if provided
-//       if (widget.prefillParsed != null) {
-//         _prefillFromParsed(widget.prefillParsed!);
 //       }
 //     }
 //   }
@@ -162,12 +120,12 @@
 //     return Scaffold(
 //       backgroundColor: Theme.of(context).colorScheme.surface,
 //       appBar: AppBar(
-//         title: Text(widget.isEditMode ? 'Update Transaction' : 'Add Transaction'),
+//         title: const Text('Add Transaction'),
 //         backgroundColor: Colors.transparent,
 //         foregroundColor: Theme.of(context).colorScheme.onSurface,
 //         elevation: 0,
 //         actions: [
-//           if (!widget.isEditMode && _parsedTransaction != null)
+//           if (_parsedTransaction != null)
 //             Container(
 //               margin: const EdgeInsets.only(right: 8),
 //               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -183,18 +141,11 @@
 //                 ),
 //               ),
 //             ),
-//           if (!widget.isEditMode)
-//             IconButton(
-//               onPressed: _scanSms,
-//               icon: const Icon(Icons.sms),
-//               tooltip: 'Scan SMS',
-//             ),
-//           if (widget.isEditMode)
-//             IconButton(
-//               onPressed: _deleteTransaction,
-//               icon: const Icon(Icons.delete, color: Colors.red),
-//               tooltip: 'Delete Transaction',
-//             ),
+//           IconButton(
+//             onPressed: _scanSms,
+//             icon: const Icon(Icons.sms),
+//             tooltip: 'Scan SMS',
+//           ),
 //         ],
 //       ),
 //       body: Stack(
@@ -204,8 +155,8 @@
 //             child: ListView(
 //               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100), // Bottom padding for sticky button
 //               children: [
-//                 // SMS Banner (add mode only)
-//                 if (!widget.isEditMode && _showSmsBanner && _parsedTransaction != null)
+//                 // SMS Banner
+//                 if (_showSmsBanner && _parsedTransaction != null)
 //                   _buildSmsBanner(),
 
 //                 // Transaction Type Selector
@@ -252,7 +203,7 @@
 //       margin: const EdgeInsets.only(bottom: 16),
 //       padding: const EdgeInsets.all(12),
 //       decoration: BoxDecoration(
-//         color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1),
+//         color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
 //         borderRadius: BorderRadius.circular(12),
 //         border: Border.all(
 //           color: Theme.of(context).colorScheme.primary,
@@ -312,7 +263,7 @@
 //           label: Row(
 //             mainAxisSize: MainAxisSize.min,
 //             children: [
-//               Icon(Icons.remove, size: 16, color: _transactionType.toLowerCase() == 'expense' ? Colors.red : Colors.grey),
+//               Icon(Icons.remove, size: 16, color: _transactionType == 'Expense' ? Colors.red : Colors.grey),
 //               const SizedBox(width: 4),
 //               const Text('Expense'),
 //             ],
@@ -324,7 +275,7 @@
 //           label: Row(
 //             mainAxisSize: MainAxisSize.min,
 //             children: [
-//               Icon(Icons.add, size: 16, color: _transactionType.toLowerCase() == 'income' ? Colors.green : Colors.grey),
+//               Icon(Icons.add, size: 16, color: _transactionType == 'Income' ? Colors.green : Colors.grey),
 //               const SizedBox(width: 4),
 //               const Text('Income'),
 //             ],
@@ -342,7 +293,7 @@
 //       style: ButtonStyle(
 //         backgroundColor: WidgetStateProperty.resolveWith((states) {
 //           if (states.contains(WidgetState.selected)) {
-//             return _transactionType.toLowerCase() == 'expense'
+//             return _transactionType == 'Expense'
 //                 ? Colors.red.withValues(alpha: 0.1)
 //                 : Colors.green.withValues(alpha: 0.1);
 //           }
@@ -350,14 +301,14 @@
 //         }),
 //         foregroundColor: WidgetStateProperty.resolveWith((states) {
 //           if (states.contains(WidgetState.selected)) {
-//             return _transactionType.toLowerCase() == 'expense' ? Colors.red : Colors.green;
+//             return _transactionType == 'Expense' ? Colors.red : Colors.green;
 //           }
 //           return Colors.grey[600];
 //         }),
 //         side: WidgetStateProperty.resolveWith((states) {
 //           if (states.contains(WidgetState.selected)) {
 //             return BorderSide(
-//               color: _transactionType.toLowerCase() == 'expense' ? Colors.red : Colors.green,
+//               color: _transactionType == 'Expense' ? Colors.red : Colors.green,
 //               width: 1,
 //             );
 //           }
@@ -365,6 +316,36 @@
 //         }),
 //         shape: WidgetStateProperty.all(
 //           RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildTypeOption(String type, Color color) {
+//     final isSelected = _transactionType == type;
+    
+//     return GestureDetector(
+//       onTap: () {
+//         setState(() {
+//           _transactionType = type;
+//           _selectedCategory = null; // Reset category when type changes
+//         });
+//       },
+//       child: Container(
+//         padding: const EdgeInsets.symmetric(vertical: 16),
+//         decoration: BoxDecoration(
+//           color: isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
+//           borderRadius: BorderRadius.circular(12),
+//           border: isSelected ? Border.all(color: color, width: 2) : null,
+//         ),
+//         child: Text(
+//           type,
+//           textAlign: TextAlign.center,
+//           style: TextStyle(
+//             color: isSelected ? color : Colors.grey[600],
+//             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+//             fontSize: 16,
+//           ),
 //         ),
 //       ),
 //     );
@@ -446,7 +427,7 @@
 //           color: Theme.of(context).colorScheme.primaryContainer,
 //           borderRadius: BorderRadius.circular(16),
 //           border: Border.all(
-//             color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+//             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
 //             width: 1,
 //           ),
 //         ),
@@ -707,7 +688,7 @@
 //         borderRadius: BorderRadius.circular(12),
 //         boxShadow: [
 //           BoxShadow(
-//             color: Colors.grey.withOpacity(0.1),
+//             color: Colors.grey.withValues(alpha: 0.1),
 //             spreadRadius: 1,
 //             blurRadius: 4,
 //             offset: const Offset(0, 1),
@@ -715,6 +696,114 @@
 //         ],
 //       ),
 //       child: child,
+//     );
+//   }
+
+//   Widget _buildCategoryField() {
+//     return _buildDropdownField<Category>(
+//       'Category',
+//       _selectedCategory,
+//       categories,
+//       (category) => category.label,
+//       (value) => setState(() => _selectedCategory = value),
+//     );
+//   }
+
+//   Widget _buildAccountField() {
+//     return _buildDropdownField<Account>(
+//       'Account',
+//       _selectedAccount,
+//       accounts,
+//       (account) => account.accountName,
+//       (value) => setState(() => _selectedAccount = value),
+//     );
+//   }
+
+//   Widget _buildDropdownField<T>(
+//     String label,
+//     String? value,
+//     List<T> items,
+//     String Function(T) getDisplayText,
+//     Function(String?) onChanged,
+//   ) {
+//     return _buildContainer(
+//       Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Text(
+//             label,
+//             style: TextStyle(
+//               fontSize: 14,
+//               fontWeight: FontWeight.w500,
+//               color: Colors.grey[700],
+//             ),
+//           ),
+//           const SizedBox(height: 8),
+//           DropdownButtonFormField<String>(
+//             initialValue: value,
+//             decoration: const InputDecoration(
+//               border: InputBorder.none,
+//               contentPadding: EdgeInsets.zero,
+//             ),
+//             hint: Text('Select $label'),
+//             items: items.map((item) => DropdownMenuItem(
+//               value: _getItemId(item),
+//               child: Text(getDisplayText(item)),
+//             )).toList(),
+//             onChanged: onChanged,
+//             validator: (value) {
+//               if (value == null) {
+//                 return 'Please select a $label';
+//               }
+//               return null;
+//             },
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   String _getItemId(dynamic item) {
+//     if (item is Account) return item.id;
+//     if (item is Category) return item.id;
+//     throw ArgumentError('Unsupported item type');
+//   }
+
+//   Widget _buildDateField() {
+//     return _buildContainer(
+//       Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Text(
+//             'Date',
+//             style: TextStyle(
+//               fontSize: 14,
+//               fontWeight: FontWeight.w500,
+//               color: Colors.grey[700],
+//             ),
+//           ),
+//           const SizedBox(height: 8),
+//           GestureDetector(
+//             onTap: _selectDate,
+//             child: Container(
+//               padding: const EdgeInsets.symmetric(vertical: 12),
+//               decoration: BoxDecoration(
+//                 border: Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1)),
+//               ),
+//               child: Row(
+//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                 children: [
+//                   Text(
+//                     '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+//                     style: const TextStyle(fontSize: 16),
+//                   ),
+//                   const Icon(Icons.calendar_today, color: Colors.grey),
+//                 ],
+//               ),
+//             ),
+//           ),
+//         ],
+//       ),
 //     );
 //   }
 
@@ -746,6 +835,45 @@
 //     );
 //   }
 
+//   Widget _buildSubmitButton() {
+//     return SizedBox(
+//       width: double.infinity,
+//       height: 50,
+//       child: ElevatedButton(
+//         onPressed: _isSubmitting ? null : _submitTransaction,
+//         style: ElevatedButton.styleFrom(
+//           backgroundColor: _isSubmitting ? Colors.grey : Colors.blue,
+//           shape: RoundedRectangleBorder(
+//             borderRadius: BorderRadius.circular(12),
+//           ),
+//           elevation: 0,
+//         ),
+//         child: Text(
+//           _isSubmitting ? 'Adding Transaction...' : 'Add Transaction',
+//           style: const TextStyle(
+//             fontSize: 16,
+//             fontWeight: FontWeight.w600,
+//             color: Colors.white,
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Future<void> _selectDate() async {
+//     final DateTime? picked = await showDatePicker(
+//       context: context,
+//       initialDate: _selectedDate,
+//       firstDate: DateTime(2020),
+//       lastDate: DateTime.now(),
+//     );
+//     if (picked != null && picked != _selectedDate) {
+//       setState(() {
+//         _selectedDate = picked;
+//       });
+//     }
+//   }
+
 //   Future<void> _submitTransaction() async {
 //     if (!_formKey.currentState!.validate()) return;
 
@@ -763,40 +891,24 @@
 //         notes: _notesController.text.trim().isEmpty ? '' : _notesController.text.trim(),
 //       );
 
-//       if (widget.isEditMode) {
-//         // Update existing transaction
-//         await TransactionService().updateTransaction(widget.transaction!.id, transaction);
-
-//         if (mounted) {
-//           ScaffoldMessenger.of(context).showSnackBar(
-//             const SnackBar(
-//               content: Text('Transaction updated successfully!'),
-//               backgroundColor: Colors.green,
-//             ),
-//           );
-//         }
-//       } else {
-//         // Add new transaction
-//         await TransactionService().addTransaction(transaction);
-
-//         if (mounted) {
-//           ScaffoldMessenger.of(context).showSnackBar(
-//             const SnackBar(
-//               content: Text('Transaction added successfully!'),
-//               backgroundColor: Colors.green,
-//             ),
-//           );
-//         }
-//       }
+//       // Call API to add transaction
+//       await ref.read(transactionServiceProvider).addTransaction(transaction);
 
 //       if (mounted) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           const SnackBar(
+//             content: Text('Transaction added successfully!'),
+//             backgroundColor: Colors.green,
+//           ),
+//         );
+
 //         Navigator.pop(context);
 //       }
 //     } catch (e) {
 //       if (mounted) {
 //         ScaffoldMessenger.of(context).showSnackBar(
 //           SnackBar(
-//             content: Text('Failed to ${widget.isEditMode ? 'update' : 'add'} transaction: $e'),
+//             content: Text('Failed to add transaction: $e'),
 //             backgroundColor: Colors.red,
 //           ),
 //         );
@@ -804,51 +916,6 @@
 //     } finally {
 //       if (mounted) {
 //         setState(() => _isSubmitting = false);
-//       }
-//     }
-//   }
-
-//   Future<void> _deleteTransaction() async {
-//     final confirmed = await showDialog<bool>(
-//       context: context,
-//       builder: (context) => AlertDialog(
-//         title: const Text('Delete Transaction'),
-//         content: const Text('Are you sure you want to delete this transaction?'),
-//         actions: [
-//           TextButton(
-//             onPressed: () => Navigator.pop(context, false),
-//             child: const Text('Cancel'),
-//           ),
-//           TextButton(
-//             onPressed: () => Navigator.pop(context, true),
-//             style: TextButton.styleFrom(foregroundColor: Colors.red),
-//             child: const Text('Delete'),
-//           ),
-//         ],
-//       ),
-//     );
-
-//     if (confirmed == true) {
-//       try {
-//         await TransactionService().deleteTransaction(widget.transaction!.id);
-//         if (mounted) {
-//           ScaffoldMessenger.of(context).showSnackBar(
-//             const SnackBar(
-//               content: Text('Transaction deleted successfully'),
-//               backgroundColor: Colors.green,
-//             ),
-//           );
-//           Navigator.pop(context);
-//         }
-//       } catch (e) {
-//         if (mounted) {
-//           ScaffoldMessenger.of(context).showSnackBar(
-//             SnackBar(
-//               content: Text('Failed to delete transaction: $e'),
-//               backgroundColor: Colors.red,
-//             ),
-//           );
-//         }
 //       }
 //     }
 //   }
@@ -1241,9 +1308,7 @@
 //                   size: 20,
 //                 ),
 //                 label: Text(
-//                   widget.isEditMode
-//                       ? 'Update $_transactionType ${_setAmount > 0 ? '₹${_setAmount.toStringAsFixed(2)}' : ''}'
-//                       : 'Save $_transactionType ${_setAmount > 0 ? '₹${_setAmount.toStringAsFixed(2)}' : ''}',
+//                   'Save $_transactionType ${_setAmount > 0 ? '₹${_setAmount.toStringAsFixed(2)}' : ''}',
 //                 ),
 //                 style: ElevatedButton.styleFrom(
 //                   backgroundColor: _transactionType == 'Expense' ? Colors.red : Colors.green,
@@ -1256,21 +1321,19 @@
 //                 ),
 //               ),
 //             ),
-//             if (!widget.isEditMode) ...[
-//               const SizedBox(width: 12),
-//               OutlinedButton.icon(
-//                 onPressed: _canSubmit() ? _submitAndNew : null,
-//                 icon: const Icon(Icons.add, size: 20),
-//                 label: const Text('Save & New'),
-//                 style: OutlinedButton.styleFrom(
-//                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(12),
-//                   ),
-//                   side: BorderSide(color: Theme.of(context).colorScheme.primary),
+//             const SizedBox(width: 12),
+//             OutlinedButton.icon(
+//               onPressed: _canSubmit() ? _submitAndNew : null,
+//               icon: const Icon(Icons.add, size: 20),
+//               label: const Text('Save & New'),
+//               style: OutlinedButton.styleFrom(
+//                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+//                 shape: RoundedRectangleBorder(
+//                   borderRadius: BorderRadius.circular(12),
 //                 ),
+//                 side: BorderSide(color: Theme.of(context).colorScheme.primary),
 //               ),
-//             ],
+//             ),
 //           ],
 //         ),
 //       ),

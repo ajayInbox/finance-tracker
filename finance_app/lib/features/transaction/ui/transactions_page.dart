@@ -1,13 +1,13 @@
 // lib/pages/transactions_page.dart
-import 'package:finance_app/features/transaction/providers/transactions_provider.dart';
+import 'package:finance_app/features/transaction/application/transaction_controller.dart';
+import 'package:finance_app/features/transaction/data/model/transaction_result.dart';
+import 'package:finance_app/features/transaction/ui/transaction_form_page.dart';
 import 'package:finance_app/utils/category_icon.dart';
 import 'package:finance_app/widgets/filter_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:finance_app/data/services/transaction_service.dart';
 import 'package:finance_app/features/transaction/data/model/transaction_summary.dart';
-import 'package:finance_app/pages/transaction_form_page.dart';
 
 class TransactionsPage extends ConsumerStatefulWidget {
   const TransactionsPage({super.key});
@@ -42,8 +42,6 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
   @override
   void initState() {
     super.initState();
-    final svc = TransactionService();
-    transactions = svc.getFeed();
 
     _fabAnimationController = AnimationController(
       duration: const Duration(milliseconds: 200),
@@ -76,7 +74,9 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
   }
 
   Future<void> _refreshTransactions() async {
-    ref.invalidate(transactionsProvider);
+    await ref
+      .read(transactionsControllerProvider.notifier)
+      .refresh();
   }
 
   List<TransactionSummary> _filterTransactions(List<TransactionSummary> transactions) {
@@ -157,128 +157,10 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
     );
   }
 
-
-  // @override
-  // Widget build(BuildContext context) {
-  //   final transactionsAsync = ref.watch(transactionsProvider);
-  //   return Scaffold(
-  //     backgroundColor: Colors.grey[50],
-  //     appBar: AppBar(
-  //       title: _searchQuery.isNotEmpty
-  //           ? TextField(
-  //               controller: _searchController,
-  //               decoration: const InputDecoration(
-  //                 hintText: 'Search transactions...',
-  //                 border: InputBorder.none,
-  //                 hintStyle: TextStyle(color: Colors.grey),
-  //               ),
-  //               style: const TextStyle(color: Colors.black, fontSize: 18),
-  //               onChanged: (value) {
-  //                 setState(() {
-  //                   _searchQuery = value;
-  //                 });
-  //               },
-  //             )
-  //           : const Text('Transactions'),
-  //       backgroundColor: Colors.white,
-  //       foregroundColor: Colors.black,
-  //       elevation: 0,
-  //       actions: [
-  //         IconButton(
-  //           onPressed: () {
-  //             setState(() {
-  //               if (_searchQuery.isEmpty) {
-  //                 _searchQuery = '';
-  //                 _searchController.clear();
-  //               } else {
-  //                 _searchQuery = '';
-  //                 _searchController.clear();
-  //               }
-  //             });
-  //           },
-  //           icon: Icon(_searchQuery.isNotEmpty ? Icons.close : Icons.search),
-  //         ),
-  //         IconButton(
-  //           onPressed: _showFilterDialog,
-  //           icon: const Icon(Icons.filter_list),
-  //         ),
-  //       ],
-  //     ),
-  //     body: FutureBuilder<List<TransactionSummary>>(
-  //       future: transactions,
-  //       builder: (context, snap) {
-  //         if (snap.connectionState != ConnectionState.done) {
-  //           return const Center(child: CircularProgressIndicator());
-  //         }
-  //         if (snap.hasError) {
-  //           return Center(
-  //             child: Column(
-  //               mainAxisAlignment: MainAxisAlignment.center,
-  //               children: [
-  //                 Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-  //                 const SizedBox(height: 16),
-  //                 Text('Error: ${snap.error}', style: TextStyle(color: Colors.red[600])),
-  //                 const SizedBox(height: 16),
-  //                 ElevatedButton(
-  //                   onPressed: _refreshTransactions,
-  //                   child: const Text('Retry'),
-  //                 ),
-  //               ],
-  //             ),
-  //           );
-  //         }
-  //         final items = snap.data!;
-  //         final filteredItems = _filterTransactions(items);
-
-  //         if (filteredItems.isEmpty) {
-  //           return Center(
-  //             child: Column(
-  //               mainAxisAlignment: MainAxisAlignment.center,
-  //               children: [
-  //                 Icon(
-  //                   Icons.receipt_long_outlined,
-  //                   size: 64,
-  //                   color: Colors.grey[400],
-  //                 ),
-  //                 const SizedBox(height: 16),
-  //                 Text(
-  //                   _searchQuery.isNotEmpty
-  //                       ? 'No transactions found for "$_searchQuery"'
-  //                       : (_selectedTimeFilter != 'All' || _selectedAccountFilter != 'All' ||
-  //                          _selectedCategoryFilter != 'All')
-  //                           ? 'No transactions match the selected filters'
-  //                           : 'No transactions yet',
-  //                   style: TextStyle(color: Colors.grey[600], fontSize: 16),
-  //                 ),
-  //                 const SizedBox(height: 8),
-  //                 Text(
-  //                   'Add your first transaction to get started',
-  //                   style: TextStyle(color: Colors.grey[500], fontSize: 14),
-  //                 ),
-  //               ],
-  //             ),
-  //           );
-  //         }
-
-  //         return RefreshIndicator(
-  //           onRefresh: _refreshTransactions,
-  //           child: ListView.builder(
-  //             padding: const EdgeInsets.all(16),
-  //             itemCount: filteredItems.length,
-  //             itemBuilder: (_, i) {
-  //               final t = filteredItems[i];
-  //               return _buildTransactionCard(t);
-  //             },
-  //           ),
-  //         );
-  //       },
-  //     ),
-  //   );
-  // }
-
   @override
 Widget build(BuildContext context) {
-  final transactionsAsync = ref.watch(transactionsProvider);
+  final transactionsAsync =
+      ref.watch(transactionsControllerProvider);
 
   return Scaffold(
     backgroundColor: Colors.grey[50],
@@ -394,10 +276,9 @@ Widget build(BuildContext context) {
 
   Widget _buildTransactionCard(TransactionSummary transaction) {
     final formattedDate = DateFormat('MMM dd, yyyy').format(transaction.occurredAt);
-  //  final formattedTime = DateFormat('hh:mm a').format(transaction.occuredAt);
 
     return Dismissible(
-      key: Key(transaction.id),
+      key: ValueKey(transaction.id),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
@@ -416,13 +297,9 @@ Widget build(BuildContext context) {
       },
       onDismissed: (direction) async {
         try {
-          final svc = TransactionService();
-          await svc.deleteTransaction(transaction.id);
-
-          // Refresh the transactions list
-          setState(() {
-            transactions = svc.getFeed();
-          });
+          await ref
+            .read(transactionsControllerProvider.notifier)
+            .deleteTransaction(transaction.id);
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -433,10 +310,6 @@ Widget build(BuildContext context) {
             );
           }
         } catch (e) {
-          // If deletion fails, show error and refresh to restore the item
-          setState(() {
-            transactions = TransactionService().getFeed();
-          });
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -471,22 +344,7 @@ Widget build(BuildContext context) {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: () {
-              if (_isMultiSelectMode) {
-                _toggleTransactionSelection(transaction.id);
-              } else {
-                // Navigate to transaction form page (edit mode)
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TransactionFormPage(transaction: transaction),
-                  ),
-                ).then((_) {
-                  // Refresh transactions when returning from form page
-                  _refreshTransactions();
-                });
-              }
-            },
+            onTap: () => _openTransactionForm(transaction),
             onLongPress: () {
               _toggleMultiSelect();
               _toggleTransactionSelection(transaction.id);
@@ -622,6 +480,41 @@ Widget build(BuildContext context) {
         ),
       ),
     );
+  }
+
+  Future<void> _openTransactionForm(TransactionSummary? transaction) async {
+    final result = await Navigator.push<TransactionResult>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TransactionFormPage(transaction: transaction),
+      ),
+    );
+
+    if (!mounted || result == null) return;
+
+    if (result == TransactionResult.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            transaction == null
+                ? 'Transaction added successfully'
+                : 'Transaction updated successfully',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            transaction == null
+                ? 'Failed to add transaction'
+                : 'Failed to update transaction',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<bool?> _showDeleteConfirmationDialog(BuildContext context) {
