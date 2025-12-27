@@ -51,6 +51,7 @@ public class AccountServiceImpl implements AccountService {
 
         BigDecimal amount = request.getAmount();
         BigDecimal previousBalance = getEffectiveBalance(lockedAccount);
+        BigDecimal newBalance = BigDecimal.ZERO;
 
         // 2. APPLY CORRECT EFFECT BASED ON CATEGORY
         if (lockedAccount.getCategory() == AccountCategory.ASSET) {
@@ -60,7 +61,7 @@ public class AccountServiceImpl implements AccountService {
                     ? amount.negate()
                     : amount;
 
-            BigDecimal newBalance = previousBalance.add(delta);
+            newBalance = previousBalance.add(delta);
             lockedAccount.setCurrentBalance(newBalance);
 
         } else if (lockedAccount.getCategory() == AccountCategory.LIABILITY) {
@@ -68,12 +69,19 @@ public class AccountServiceImpl implements AccountService {
             // Credit Card / Loan
             // EXPENSE → increase outstanding
             // INCOME → reduce outstanding
+            BigDecimal currentCreditLimit = lockedAccount.getCreditLimit();
             BigDecimal delta = (request.getTransactionType() == TransactionType.EXPENSE)
                     ? amount
                     : amount.negate();
 
-            BigDecimal newOutstanding = previousBalance.add(delta);
-            lockedAccount.setCurrentOutstanding(newOutstanding);
+            BigDecimal deltaForCreditLimit = (request.getTransactionType() == TransactionType.EXPENSE)
+                    ? amount.negate()
+                    : amount;
+            
+            newBalance = previousBalance.add(delta);
+            BigDecimal newCreditLimit = currentCreditLimit.add(deltaForCreditLimit);
+            lockedAccount.setCurrentOutstanding(newBalance);
+            lockedAccount.setCreditLimit(newCreditLimit);
         }
 
         lockedAccount.setBalanceAsOf(Instant.now());
@@ -86,7 +94,7 @@ public class AccountServiceImpl implements AccountService {
                         lockedAccount.getId(),
                         request.getTransactionId(),
                         previousBalance,
-                        getEffectiveBalance(lockedAccount),
+                        newBalance,
                         request.getAmount()
                 )
         );

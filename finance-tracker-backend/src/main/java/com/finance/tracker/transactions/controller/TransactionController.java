@@ -41,7 +41,7 @@ public class TransactionController {
     // Get Single
     // -----------------------------------------------------
     @GetMapping("/{id}")
-    public ResponseEntity<TransactionDto> getOne(@PathVariable("id") String id) {
+    public ResponseEntity<TransactionDto> getOne(@PathVariable String id) {
         return transactionService.getTransaction(id)
                 .map(trx -> ResponseEntity.ok(transactionMapper.toDto(trx)))
                 .orElse(ResponseEntity.notFound().build());
@@ -62,7 +62,7 @@ public class TransactionController {
         return switch (version) {
             case 1 -> {
                 Page<Transaction> result = transactionService.getTransactions(pageRequest);
-                yield ResponseEntity.ok(result.map(transactionMapper::toDto));
+                yield ResponseEntity.ok(result.map(transactionMapper::toResponse));
             }
             case 2 -> {
                 Page<TransactionsWithCategoryAndAccount> result =
@@ -94,7 +94,7 @@ public class TransactionController {
         return transactionService.getTransaction(id)
                 .map(trx -> {
                     transactionService.deleteTransaction(trx);
-                    return ResponseEntity.noContent().build();
+                    return ResponseEntity.ok().build();
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

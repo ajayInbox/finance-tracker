@@ -8,6 +8,7 @@ import com.finance.tracker.transactions.mapper.TransactionMapper;
 import com.finance.tracker.transactions.repository.TransactionRepository;
 import com.finance.tracker.transactions.service.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
@@ -34,6 +36,7 @@ public class TransactionServiceImpl implements TransactionService {
         validationService.validate(request);
         // TODO: actual user id
         String userId = null;
+        log.debug("Request Body: {}", request);
 
         Transaction transaction = transactionMapper.toNewEntity(request, userId);
         Transaction saved = transactionRepository.save(transaction);

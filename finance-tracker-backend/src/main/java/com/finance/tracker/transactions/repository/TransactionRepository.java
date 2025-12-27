@@ -19,8 +19,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
 
     @Query(
             value = "SELECT t._id AS _id, t.transaction_name AS transactionName, t.amount AS amount, t.type AS type," +
-                    "a._id AS accountId, a.label AS accountName, ats.balance_after AS balanceCached, " +
-                    "c._id AS categoryId, c.label AS categoryName, t.occured_at AS occuredAt," +
+                    "a._id AS accountId, a.account_name AS accountName, ats.balance_after AS balanceCached, " +
+                    "c._id AS categoryId, c.label AS categoryName, t.occurred_at AS occuredAt," +
                     "t.posted_at AS postedAt, t.currency AS currency FROM transaction t " +
                     "INNER JOIN category c ON t.category=c._id INNER JOIN account a ON t.account=a._id INNER JOIN " +
                     "account_transaction_snapshot ats ON t._id=ats.transaction_id and a._id=ats.account_id " +
@@ -31,7 +31,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
 
     @Query(value = """
             SELECT c._id, c.label, SUM(t.amount), COUNT(t._id)
-           FROM Transactions t
+           FROM Transaction t
            INNER JOIN category c ON t.category=c._id
            WHERE t.user_id is NULL
              AND t.type = 'EXPENSE'
@@ -45,6 +45,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
             @Param("userId") Long userId, @Param("startTime") Instant startTime, @Param("endTime") Instant endTime
     );
 
-    @Query(value = "SELECT * FROM Transactions WHERE status='ACTIVE'", nativeQuery = true)
+    @Query(value = "SELECT * FROM Transaction WHERE status='ACTIVE'", nativeQuery = true)
     Page<Transaction> findAllTransactions(Pageable pageable);
 }

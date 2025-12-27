@@ -31,10 +31,10 @@ public class CategoryServiceImpl implements CategoryService {
         if(null != category.getDeletedAt() || false == category.getActive()){
             throw new CategoryNotActiveException("Category is not Active");
         }
-        if(type.getValue()!=category.getType().name() && type.getValue().equalsIgnoreCase("income")){
+        if(!type.name().equals(category.getType().name()) && type.getValue().equalsIgnoreCase("income")){
             throw new CategoryNotForIncomeException("Not for income");
         }
-        if(type.getValue()!=category.getType().name() && type.getValue().equalsIgnoreCase("expense")){
+        if(!type.name().equals(category.getType().name()) && type.getValue().equalsIgnoreCase("expense")){
             throw new CategoryNotForExpenseException("not for expense");
         }
 

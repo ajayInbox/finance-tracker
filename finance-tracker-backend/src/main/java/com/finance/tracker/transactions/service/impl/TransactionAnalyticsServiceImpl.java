@@ -111,12 +111,12 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
                 transactionRepository.findCategorySummary(null, range.start(), range.end());
 
         BigDecimal total = summaries.stream()
-                .map(s -> BigDecimal.valueOf(s.total()))
+                .map(CategoryExpenseSummary::total)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<CategoryBreakdown> breakdown = summaries.stream()
                 .map(s -> {
-                    BigDecimal subtotal = BigDecimal.valueOf(s.total());
+                    BigDecimal subtotal = s.total();
                     BigDecimal percentage = total.compareTo(BigDecimal.ZERO) > 0
                             ? subtotal.divide(total, 4, RoundingMode.HALF_UP)
                             .multiply(BigDecimal.valueOf(100))
