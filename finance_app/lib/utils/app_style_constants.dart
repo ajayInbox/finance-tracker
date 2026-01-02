@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 // Design System Colors
 class AppColors {
   // Primary Colors
+  static const Color primary = Color(0xFF13EC5B);
+  static const Color primaryDark = Color(0xFF0EA842);
   static const Color primaryBlue = Color(0xFF1E40AF);
   static const Color primaryGradientStart = Color(0xFF1E40AF);
   static const Color primaryGradientEnd = Color(0xFF7C3AED);
@@ -28,8 +30,10 @@ class AppColors {
   static const Color info = Color(0xFF3B82F6);
 
   // Neutrals - Light Mode
-  static const Color background = Color(0xFFF9FAFB);
+  static const Color background = Color(0xFFF8FAFC); // Slightly cooler white for freshness
+  static const Color backgroundDark = Color(0xFF0C1811);
   static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceDark = Color(0xFF16261D);
   static const Color border = Color(0xFFE5E7EB);
   static const Color borderFocus = Color(0xFF1E40AF);
   static const Color textPrimary = Color(0xFF111827);
@@ -38,10 +42,10 @@ class AppColors {
   static const Color textPlaceholder = Color(0xFFD1D5DB);
 
   // Background colors
-  static const Color lightBackground = Color(0xFFF9FAFB);
-  static const Color darkBackground = Color(0xFF111827);
+  static const Color lightBackground = Color(0xFFF8FAFC);
+  static const Color darkBackground = Color(0xFF0C1811);
   static const Color lightSurface = Colors.white;
-  static const Color darkSurface = Color(0xFF1F2937);
+  static const Color darkSurface = Color(0xFF16261D);
 
   // Text colors
   static const Color lightTextPrimary = Color(0xFF111827);

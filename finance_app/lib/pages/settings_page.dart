@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -10,188 +11,349 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _smsListeningEnabled = false;
-  bool _isLoading = true;
+  bool _smsPermission = false;
+  bool _smsAutoSync = false;
+  final String _appVersion = '1.0.0';
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _checkPermissions();
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _smsListeningEnabled = prefs.getBool('sms_listening_enabled') ?? false;
-      _isLoading = false;
+      _smsAutoSync = prefs.getBool('sms_auto_sync') ?? false;
     });
   }
 
-  Future<void> _toggleSmsListening(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    if (value) {
-      // Check SMS permission before enabling
-      final smsPermission = await Permission.sms.status;
-      if (smsPermission.isDenied || smsPermission.isPermanentlyDenied) {
-        final granted = await Permission.sms.request();
-        if (!granted.isGranted) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('SMS permission is required to enable SMS listening'),
-                action: SnackBarAction(
-                  label: 'Settings',
-                  onPressed: openAppSettings,
-                ),
-              ),
-            );
-          }
-          return; // Don't enable if permission denied
-        }
-      }
-    }
-
-    await prefs.setBool('sms_listening_enabled', value);
+  Future<void> _checkPermissions() async {
+    final status = await Permission.sms.status;
     setState(() {
-      _smsListeningEnabled = value;
+      _smsPermission = status.isGranted;
+    });
+  }
+
+  Future<void> _toggleSmsAutoSync(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('sms_auto_sync', value);
+    setState(() {
+      _smsAutoSync = value;
     });
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            value
-                ? 'SMS listening enabled. App will now automatically process financial SMS.'
-                : 'SMS listening disabled. App will no longer process SMS in background.',
-          ),
-        ),
-      );
+    if (value && !_smsPermission) {
+      _requestSmsPermission();
+    }
+  }
+
+  Future<void> _requestSmsPermission() async {
+    final status = await Permission.sms.request();
+    setState(() {
+      _smsPermission = status.isGranted;
+    });
+    if (!status.isGranted) {
+      _toggleSmsAutoSync(false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              children: [
-                const SizedBox(height: 16),
-                _buildSectionHeader('SMS Integration'),
-                _buildSwitchTile(
-                  title: 'SMS Transaction Auto-Sync',
-                  subtitle: 'Automatically process financial SMS messages for transactions',
-                  value: _smsListeningEnabled,
-                  onChanged: _toggleSmsListening,
-                  icon: Icons.sms,
-                ),
-                if (!_smsListeningEnabled)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+      backgroundColor: const Color(0xFFF3F4F6),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader('Integrations'),
+                  const SizedBox(height: 16),
+                  _buildSettingCard(
+                    children: [
+                      SwitchListTile(
+                        value: _smsAutoSync,
+                        onChanged: _toggleSmsAutoSync,
+                        activeColor: const Color(0xFF10B981),
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          'SMS Transaction Sync',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Automatically detect transactions from bank SMS',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                        secondary: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.sms,
+                            color: Color(0xFF10B981),
+                            size: 20,
+                          ),
+                        ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Manual SMS Processing Available',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'You can still manually process SMS messages using the SMS processing feature in the dashboard.',
-                            style: TextStyle(
-                              color: Colors.blue.shade700,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+                  _buildSectionHeader('Permissions'),
+                  const SizedBox(height: 16),
+                  _buildSettingCard(
+                    children: [
+                      _buildPermissionItem(
+                        'SMS Permission',
+                        _smsPermission,
+                        Icons.message,
+                        () => _requestSmsPermission(),
+                      ),
+                      const Divider(
+                        height: 32,
+                        thickness: 1,
+                        color: Color(0xFFF3F4F6),
+                      ),
+                      _buildPermissionItem(
+                        'Notification Permission',
+                        true, // Mocked
+                        Icons.notifications,
+                        () {},
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+                  _buildSectionHeader('Data & Support'),
+                  const SizedBox(height: 16),
+                  _buildSettingCard(
+                    children: [
+                      _buildActionItem('Export Data', Icons.download, () {}),
+                      const Divider(
+                        height: 32,
+                        thickness: 1,
+                        color: Color(0xFFF3F4F6),
+                      ),
+                      _buildActionItem(
+                        'Clear All Data',
+                        Icons.delete_outline,
+                        () {},
+                        isDestructive: true,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+                  Center(
+                    child: Text(
+                      'v$_appVersion',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.grey[400],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                const Divider(),
-                _buildSectionHeader('Permissions'),
-                _buildInfoTile(
-                  title: 'SMS Permission',
-                  subtitle: 'Required for automatic SMS processing',
-                  icon: Icons.perm_phone_msg,
-                  onTap: () async {
-                    final status = await Permission.sms.status;
-                    if (status.isGranted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('SMS permission is granted')),
-                      );
-                    } else {
-                      openAppSettings();
-                    }
-                  },
-                ),
-              ],
-            ),
-    );
-  }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Colors.black54,
-          letterSpacing: 0.5,
+                  const SizedBox(height: 100),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSwitchTile({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-    required IconData icon,
-  }) {
-    return SwitchListTile(
-      secondary: Icon(icon, color: Colors.blue),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w500),
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.only(left: 24, right: 24, top: 48, bottom: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Settings',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 24, // text-2xl
+              fontWeight: FontWeight.w700, // font-bold
+              color: const Color(0xFF111827), // text-primary-light
+            ),
+          ),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16), // rounded-2xl
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                const Center(
+                  child: Icon(
+                    Icons.notifications_none_rounded,
+                    color: Color(0xFF4B5563), // text-gray-600
+                    size: 24,
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  right: 14,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEF4444), // bg-red-500
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      subtitle: Text(subtitle),
-      value: value,
-      onChanged: onChanged,
-      activeColor: Colors.blue,
     );
   }
 
-  Widget _buildInfoTile({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.blue),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle),
-      trailing: const Icon(Icons.navigate_next),
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title.toUpperCase(),
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: Colors.grey[400],
+        letterSpacing: 1,
+      ),
+    );
+  }
+
+  Widget _buildSettingCard({required List<Widget> children}) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 40,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildPermissionItem(
+    String title,
+    bool isGranted,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
       onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.grey[600], size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              title,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF111827),
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: isGranted
+                  ? const Color(0xFF10B981).withOpacity(0.1)
+                  : Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              isGranted ? 'Granted' : 'Denied',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: isGranted ? const Color(0xFF10B981) : Colors.red,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionItem(
+    String title,
+    IconData icon,
+    VoidCallback onTap, {
+    bool isDestructive = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDestructive
+                  ? Colors.red.withOpacity(0.1)
+                  : const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: isDestructive ? Colors.red : Colors.grey[600],
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            title,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: isDestructive ? Colors.red : const Color(0xFF111827),
+            ),
+          ),
+          const Spacer(),
+          Icon(Icons.chevron_right, color: Colors.grey[400]),
+        ],
+      ),
     );
   }
 }
