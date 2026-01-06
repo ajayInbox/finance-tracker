@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:finance_app/features/transaction/ui/transactions_page.dart';
 import 'package:finance_app/pages/dashboard_page.dart';
 import 'package:finance_app/features/account/ui/accounts_page.dart';
+import 'package:finance_app/features/sms/ui/sms_review_page.dart';
 import 'package:finance_app/pages/settings_page.dart';
 
 void main() async {
@@ -77,6 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
     DashboardPage(),
     TransactionsPage(),
     AccountsPage(),
+    SmsReviewPage(), // New Page
     SettingsPage(),
   ];
 
@@ -133,7 +135,7 @@ class _MyHomePageState extends State<MyHomePage> {
               borderRadius: BorderRadius.circular(40),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 40,
                   offset: const Offset(0, -10),
                 ),
@@ -145,7 +147,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 _buildNavItem(Icons.home, 0),
                 _buildNavItem(Icons.history, 1),
                 _buildNavItem(Icons.donut_large, 2),
-                _buildNavItem(Icons.settings, 3),
+                _buildNavItem(Icons.sms, 3), // SMS Icon
+                _buildNavItem(Icons.settings, 4), // Settings shifts to 4
               ],
             ),
           ),

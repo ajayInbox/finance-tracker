@@ -14,11 +14,9 @@ class AccountRepository {
 
     final data = res.data;
     final List list = data is List ? data : (data['content'] as List);
+    print(list);
 
-    return list
-        .cast<Map<String, dynamic>>()
-        .map(Account.fromJson)
-        .toList();
+    return list.cast<Map<String, dynamic>>().map(Account.fromJson).toList();
   }
 
   Future<Account> createAccount(AccountCreateUpdateRequest request) async {
@@ -37,5 +35,9 @@ class AccountRepository {
     );
 
     return NetworthSummary.fromJson(res.data);
+  }
+
+  Future<void> deleteAccount(String id) async {
+    await dio.delete('${ApiConstants.deleteAccount}/$id');
   }
 }

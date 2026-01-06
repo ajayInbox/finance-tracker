@@ -5,302 +5,109 @@ import 'package:finance_app/features/account/data/model/account_create_update_re
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AddAccountPage extends ConsumerStatefulWidget {
   final AccountCategory category;
 
-  const AddAccountPage({
-    super.key,
-    required this.category,
-  });
+  const AddAccountPage({super.key, required this.category});
 
   @override
   ConsumerState<AddAccountPage> createState() => _AddAccountPageState();
 }
 
-class _AddAccountPageState extends ConsumerState<AddAccountPage>
-    with TickerProviderStateMixin {
+class _AddAccountPageState extends ConsumerState<AddAccountPage> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
+  final _amountController =
+      TextEditingController(); // Unified for Balance/Outstanding
   final _nameController = TextEditingController();
-  final _balanceController = TextEditingController();
-  final _creditLimitController = TextEditingController();
-  final _notesController = TextEditingController();
+  final _bankNameController = TextEditingController(); // New field for UI
   final _lastFourController = TextEditingController();
+  final _creditLimitController = TextEditingController();
 
   // State
-  late String _selectedType; // depends on category
-  DateTime _openingDate = DateTime.now();
-  bool _isPositiveBalance = true;
-  String _selectedCurrency = 'INR';
-  String _cutoffDay = 'Day 1 of month';
-  String _dueDay = 'Day 1 of month';
-  bool _hideFromSelection = false;
-  bool _hideFromReports = false;
+  late String _selectedType;
+  final DateTime _openingDate =
+      DateTime.now(); // For Asset accounts implicitly today
+  DateTime? _statementDate; // For Credit Card
+  DateTime? _dueDate; // For Credit Card
   bool _isSubmitting = false;
 
-  late List<String> _accountTypes; // depends on category
-
-  final List<String> _currencies = ['INR', 'USD', 'EUR', 'GBP'];
-
-  final List<String> _dayOptions = [
-    'Day 1 of month',
-    'Day 2 of month',
-    'Day 3 of month',
-    'Day 4 of month',
-    'Day 5 of month',
-    'Day 6 of month',
-    'Day 7 of month',
-    'Day 8 of month',
-    'Day 9 of month',
-    'Day 10 of month',
-    'Day 11 of month',
-    'Day 12 of month',
-    'Day 13 of month',
-    'Day 14 of month',
-    'Day 15 of month',
-    'Day 16 of month',
-    'Day 17 of month',
-    'Day 18 of month',
-    'Day 19 of month',
-    'Day 20 of month',
-    'Day 21 of month',
-    'Day 22 of month',
-    'Day 23 of month',
-    'Day 24 of month',
-    'Day 25 of month',
-    'Day 26 of month',
-    'Day 27 of month',
-    'Day 28 of month',
-    'Day 29 of month',
-    'Day 30 of month',
-    'Day 31 of month',
-  ];
+  // Defaults
+  final String _selectedCurrency = 'INR';
 
   bool get _isLiability => widget.category == AccountCategory.liability;
 
   @override
   void initState() {
     super.initState();
-
-    // 🔧 Configure based on category
     if (widget.category == AccountCategory.asset) {
-      _accountTypes = ['Bank']; // you can later add 'Cash', 'Investment', etc.
-      _selectedType = 'Bank';
-      _isPositiveBalance = true;
+      _selectedType = 'CHECKING'; // Default to Checking for Bank
     } else {
-      _accountTypes = ['Credit Card']; // liability
-      _selectedType = 'Credit Card';
-      _isPositiveBalance = false; // usually you owe here
+      _selectedType = 'CREDIT CARD';
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final title =
-    _isLiability ? 'Add Liability Account' : 'Add Asset Account';
+  void dispose() {
+    _amountController.dispose();
+    _nameController.dispose();
+    _bankNameController.dispose();
+    _lastFourController.dispose();
+    _creditLimitController.dispose();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: Stack(
-        children: [
-          Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildAccountNameField(),
-                const SizedBox(height: 16),
-                _buildLastFourDigitField(),
-                const SizedBox(height: 16),
-                _buildTypeField(),
-                const SizedBox(height: 16),
-                _buildOpeningDateField(),
-                const SizedBox(height: 16),
-                _buildBalanceField(),
-                const SizedBox(height: 16),
-                _buildCurrencyField(),
-                // Credit Card specific fields (liability)
-                if (_selectedType == 'Credit Card') ...[
-                  const SizedBox(height: 16),
-                  _buildCreditLimitField(),
-                  const SizedBox(height: 16),
-                  _buildCutoffDayField(),
-                  const SizedBox(height: 16),
-                  _buildDueDayField(),
-                ],
-                const SizedBox(height: 16),
-                _buildNotesField(),
-                const SizedBox(height: 16),
-                _buildHideOptions(),
-                const SizedBox(height: 32),
-                _buildStickyBottomAction(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---------------- FIELDS ----------------
-
-  Widget _buildAccountNameField() {
-    return _buildContainer(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Account Name',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _nameController,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              hintText: 'Enter account name',
-              hintStyle: TextStyle(color: Colors.grey),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter account name';
-              }
-              return null;
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLastFourDigitField(){
-    return _buildContainer(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-        Text(
-        'Last 4 digits',
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Colors.grey[700],
-        ),
-      ),
-      const SizedBox(height: 8),
-      TextFormField(
-        controller: _lastFourController,
-        maxLength: 4,
-        keyboardType: TextInputType.number,
-        decoration: const InputDecoration(
-          counterText: '',
-          hintText: '1234',
-          hintStyle: TextStyle(color: Colors.grey),
-          border: InputBorder.none,
-        ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Enter last 4 digits';
-          }
-          if (value.length != 4 || int.tryParse(value) == null) {
-            return 'Must be exactly 4 digits';
-          }
-          return null;
-        },
-      ),
-      ]
-      )
-    );
-  }
-
-  Widget _buildTypeField() {
-    return _buildContainer(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Type',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedType,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-            hint: const Text('Select account type'),
-            items: _accountTypes
-                .map(
-                  (type) => DropdownMenuItem(
-                value: type,
-                child: Text(type),
-              ),
-            )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                _selectedType = value;
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOpeningDateField() {
-    return _buildContainer(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Opening Date',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: _selectDate,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.grey[300]!,
-                    width: 1,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      _isLiability
+                          ? _buildCreditCardLayout()
+                          : _buildBankAccountLayout(),
+                      const SizedBox(height: 32),
+                      _buildActionButtons(),
+                      const SizedBox(height: 32),
+                    ],
                   ),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    DateFormat('d MMMM yyyy').format(_openingDate),
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const Icon(Icons.calendar_today, color: Colors.grey),
-                ],
-              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.only(left: 24, right: 24, top: 48, bottom: 24),
+      color: AppColors.background.withValues(
+        alpha: 0.9,
+      ), // Glass effect simulation
+      child: Row(
+        children: [
+          _buildBackButton(),
+          const SizedBox(width: 16),
+          Text(
+            _isLiability ? 'Add Credit Card' : 'Add Bank Account',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
           ),
         ],
@@ -308,469 +115,644 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage>
     );
   }
 
-  Widget _buildBalanceField() {
-    final label = _isLiability ? 'Current Outstanding' : 'Starting Balance';
+  Widget _buildBackButton() {
+    return InkWell(
+      onTap: () => Navigator.pop(context),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: AppShadows.shadowSm,
+        ),
+        child: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+      ),
+    );
+  }
 
-    return _buildContainer(
-      Column(
+  // ---------------- BANK ACCOUNT LAYOUT ----------------
+
+  Widget _buildBankAccountLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildAmountCard(
+          label: 'Current Balance',
+          subtitle: 'Current net balance of the account',
+        ),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: AppShadows.shadowSm,
+          ),
+          child: Column(
+            children: [
+              _buildTextField(
+                label: 'Account Name',
+                controller: _nameController,
+                placeholder: 'e.g. Main Checking',
+              ),
+              const SizedBox(height: 24),
+              _buildAccountTypeSelector(),
+              const SizedBox(height: 24),
+              _buildTextField(
+                label: 'Bank Name',
+                controller: _bankNameController,
+                placeholder: 'e.g. Chase, Wells Fargo',
+                icon: Icons.business,
+              ),
+              const SizedBox(height: 24),
+              _buildLastFourField(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAccountTypeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Account Type',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildRadioItem(
+                'Checking',
+                Icons.account_balance,
+                'CHECKING',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildRadioItem('Savings', Icons.savings, 'SAVINGS'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildRadioItem(
+                'Cash',
+                Icons.account_balance_wallet,
+                'CASH',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildRadioItem('Other', Icons.other_houses, 'OTHER'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRadioItem(String label, IconData icon, String value) {
+    final isSelected = _selectedType == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedType = value),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : AppColors.background,
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 28,
+              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------- CREDIT CARD LAYOUT ----------------
+
+  Widget _buildCreditCardLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildAmountCard(
+          label: 'Current Outstanding',
+          subtitle: 'Total amount currently owed on this card',
+        ),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: AppShadows.shadowSm,
+          ),
+          child: Column(
+            children: [
+              _buildTextField(
+                label: 'Account Name',
+                controller: _nameController,
+                placeholder: 'e.g. Visa Rewards',
+              ),
+              const SizedBox(height: 24),
+              _buildTextField(
+                label: 'Bank Name',
+                controller: _bankNameController,
+                placeholder: 'e.g. Capital One',
+                icon: Icons.business,
+              ),
+              const SizedBox(height: 24),
+              _buildLastFourField(),
+              const SizedBox(height: 24),
+              _buildTextField(
+                label: 'Credit Limit',
+                controller: _creditLimitController,
+                placeholder: 'e.g. 50000',
+                icon: Icons.speed, // best approximation for gauge/limit
+                inputType: TextInputType.number,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDatePickerField(
+                      label: 'Statement Date',
+                      value: _statementDate,
+                      onChanged: (d) => setState(() => _statementDate = d),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildDatePickerField(
+                      label: 'Due Date',
+                      value: _dueDate,
+                      onChanged: (d) => setState(() => _dueDate = d),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ---------------- SHARED COMPONENTS ----------------
+
+  Widget _buildAmountCard({required String label, required String subtitle}) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: AppShadows.shadowSm,
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
+            label.toUpperCase(),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+              letterSpacing: 1.0,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Text(
+                '₹',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: TextFormField(
-                  controller: _balanceController,
-                  keyboardType: TextInputType.number,
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     hintText: '0.00',
-                    hintStyle: TextStyle(color: Colors.grey),
+                    hintStyle: TextStyle(color: AppColors.textPlaceholder),
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter amount';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _isPositiveBalance ? Colors.green : Colors.red,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: InkWell(
-                  onTap: () {
-                    setState(() {
-                      _isPositiveBalance = !_isPositiveBalance;
-                    });
-                  },
-                  child: Icon(
-                    _isPositiveBalance ? Icons.add : Icons.remove,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  validator: (value) =>
+                      (value == null || value.isEmpty) ? 'Required' : null,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Container(height: 2, color: AppColors.primary.withValues(alpha: 0.2)),
+          const SizedBox(height: 12),
+          Text(
+            subtitle,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCurrencyField() {
-    return _buildContainer(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Default Currency',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    String? placeholder,
+    IconData? icon,
+    TextInputType inputType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
           ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedCurrency,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-            items: _currencies
-                .map(
-                  (currency) => DropdownMenuItem(
-                value: currency,
-                child: Text(currency),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            // Use transparent container as the padding logic is inside input decoration if needed,
+            // but here we want a specific bg
+          ),
+          child: Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              if (icon != null)
+                Positioned(
+                  left: 16,
+                  child: Icon(icon, color: AppColors.textSecondary),
+                ),
+              TextFormField(
+                controller: controller,
+                keyboardType: inputType,
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.background,
+                  hintText: placeholder,
+                  hintStyle: GoogleFonts.plusJakartaSans(
+                    color: AppColors.textSecondary,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: EdgeInsets.only(
+                    top: 16,
+                    bottom: 16,
+                    left: 16,
+                    right: 16,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                validator: (value) =>
+                    (value == null || value.isEmpty) ? 'Required' : null,
               ),
-            )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                _selectedCurrency = value;
-              });
-            },
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildCreditLimitField() {
-    return _buildContainer(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Credit Limit',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
+  Widget _buildLastFourField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Account Number (Last 4 digits)',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
           ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _creditLimitController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              hintText: 'Enter credit limit',
-              hintStyle: TextStyle(color: Colors.grey),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCutoffDayField() {
-    return _buildContainer(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Cutoff Day',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: _cutoffDay,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-            items: _dayOptions
-                .map(
-                  (day) => DropdownMenuItem(
-                value: day,
-                child: Text(day),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(
+                    3,
+                    (index) => Text(
+                      '••••',
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        color: AppColors.textSecondary.withValues(alpha: 0.5),
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                _cutoffDay = value;
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDueDayField() {
-    return _buildContainer(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Due Date',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
             ),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: _dueDay,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-            items: _dayOptions
-                .map(
-                  (day) => DropdownMenuItem(
-                value: day,
-                child: Text(day),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 100,
+              child: TextFormField(
+                controller: _lastFourController,
+                maxLength: 4,
+                textAlign: TextAlign.center,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+                decoration: InputDecoration(
+                  counterText: '',
+                  filled: true,
+                  fillColor: AppColors.background,
+                  hintText: '0000',
+                  hintStyle: const TextStyle(
+                    fontFamily: 'monospace',
+                    color: AppColors.textPlaceholder,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                validator: (value) {
+                  if (value == null || value.length != 4) return 'Invalid';
+                  return null;
+                },
               ),
-            )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                _dueDay = value;
-              });
-            },
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  Widget _buildNotesField() {
-    return _buildContainer(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Notes (Optional)',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
+  Widget _buildDatePickerField({
+    required String label,
+    required DateTime? value,
+    required Function(DateTime) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+            );
+            if (picked != null) {
+              onChanged(picked);
+            }
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  value == null
+                      ? '--/--/--'
+                      : DateFormat('dd/MM/yyyy').format(value),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w600,
+                    color: value == null
+                        ? AppColors.textPlaceholder
+                        : AppColors.textPrimary,
+                  ),
+                ),
+                const Icon(
+                  Icons.calendar_today,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _notesController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              hintText: 'Add a note...',
-              hintStyle: TextStyle(color: Colors.grey),
-            ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: _isSubmitting ? null : _saveAccount,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-        ],
+          shadowColor: AppColors.primary.withValues(alpha: 0.4),
+        ),
+        child: _isSubmitting
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check, size: 24),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Save ${_isLiability ? "Credit Card" : "Account"}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
 
-  Widget _buildHideOptions() {
-    return _buildContainer(
-      Column(
-        children: [
-          CheckboxListTile(
-            title: const Text('Hide from account selection'),
-            value: _hideFromSelection,
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                _hideFromSelection = value;
-              });
-            },
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: EdgeInsets.zero,
-          ),
-          CheckboxListTile(
-            title: const Text(
-                'Hide from account selection and all reports'),
-            value: _hideFromReports,
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                _hideFromReports = value;
-              });
-            },
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: EdgeInsets.zero,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContainer(Widget child) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-
-  // ---------------- ACTIONS ----------------
-
-  Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _openingDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2035),
-    );
-    if (picked != null && picked != _openingDate) {
-      setState(() {
-        _openingDate = picked;
-      });
-    }
-  }
+  // ---------------- LOGIC ----------------
 
   Future<void> _saveAccount() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_isLiability && (_statementDate == null || _dueDate == null)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select statement and due dates')),
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
 
     try {
-      // Parse balance
-      final balanceAmount = double.tryParse(_balanceController.text) ?? 0.0;
-      final signedBalance = _isPositiveBalance ? balanceAmount : -balanceAmount;
+      final amount = double.tryParse(_amountController.text) ?? 0.0;
 
-      // For assets: startingBalance = signedBalance, currentOutstanding = 0
-      // For liabilities: startingBalance = 0, currentOutstanding = signedBalance.abs() (since outstanding is always positive)
-      final startingBalance = _isLiability ? 0.0 : signedBalance;
-      final currentOutstanding = _isLiability ? signedBalance.abs() : 0.0;
+      // Notes: Append Bank Name if present
+      String finalNotes = "";
+      if (_bankNameController.text.isNotEmpty) {
+        finalNotes = "Bank: ${_bankNameController.text.trim()}";
+      }
 
-      // Parse credit limit
+      // Liability Logic:
+      // Input is "Outstanding" (Positive number user usually thinks of as debt)
+      // Backend: created as liability category.
+      // startingBalance = 0, currentOutstanding = amount.
+
+      // Asset Logic:
+      // Input is "Balance"
+      // startingBalance = amount, currentOutstanding = 0.
+
+      final startingBalance = _isLiability ? 0.0 : amount;
+      final currentOutstanding = _isLiability ? amount : 0.0;
+
+      // Credit Card specific format
+      final cutOffDay = _isLiability && _statementDate != null
+          ? 'Day ${_statementDate!.day} of month'
+          : 'Day 1 of month';
+      final dueDay = _isLiability && _dueDate != null
+          ? 'Day ${_dueDate!.day} of month'
+          : 'Day 1 of month';
+
       final creditLimit = double.tryParse(_creditLimitController.text) ?? 0.0;
 
-      // Create request object
       final request = AccountCreateUpdateRequest(
         accountName: _nameController.text.trim(),
         lastFour: int.parse(_lastFourController.text),
-        accountType: _selectedType.toUpperCase(),
+        accountType: _selectedType, // CHECKING/SAVINGS/CASH/CREDIT CARD
         openingDate: _openingDate,
         startingBalance: startingBalance,
         currentOutstanding: currentOutstanding,
         currency: _selectedCurrency,
         creditLimit: creditLimit,
-        cutOffDay: _cutoffDay,
-        dueDate: _dueDay,
-        notes: _notesController.text.trim(),
-        hideFromSelection: _hideFromSelection,
-        hideFromReports: _hideFromReports,
+        cutOffDay: cutOffDay,
+        dueDate: dueDay,
+        notes: finalNotes,
+        hideFromSelection: false, // Default false
+        hideFromReports: false, // Default false
         category: _isLiability ? 'LIABILITY' : 'ASSET',
       );
 
-      // Call API
       await ref.read(createAccountProvider(request).future);
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Account added successfully!'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
-
-      // Pop with true => so parent knows to refresh
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to add account: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
+      if (mounted) setState(() => _isSubmitting = false);
     }
-  }
-
-  Widget _buildStickyBottomAction() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(
-          top: BorderSide(color: AppColors.border),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            offset: const Offset(0, -4),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: ElevatedButton(
-          onPressed: _isFormValid() ? _saveAccount : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _isFormValid()
-                ? AppColors.primaryBlue
-                : AppColors.border,
-            foregroundColor: AppColors.surface,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.radiusFull),
-            ),
-          ),
-          child: _isSubmitting
-              ? Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    AppColors.surface,
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.space2),
-              Text(
-                'Creating account...',
-                style: TextStyle(
-                  fontSize: AppTypography.textMd,
-                  fontWeight: AppTypography.weightSemibold,
-                ),
-              ),
-            ],
-          )
-              : Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.add,
-                size: 20,
-              ),
-              const SizedBox(width: AppSpacing.space2),
-              Text(
-                'Add Account',
-                style: TextStyle(
-                  fontSize: AppTypography.textLg,
-                  fontWeight: AppTypography.weightSemibold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  bool _isFormValid() {
-    return _nameController.text.length >= 3 &&
-        _selectedType.isNotEmpty &&
-        _balanceController.text.isNotEmpty;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _balanceController.dispose();
-    _creditLimitController.dispose();
-    _notesController.dispose();
-    _lastFourController.dispose();
-    super.dispose();
   }
 }

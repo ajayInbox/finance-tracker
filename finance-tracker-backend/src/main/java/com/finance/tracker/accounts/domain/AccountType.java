@@ -10,6 +10,9 @@ public enum AccountType {
     BANK(true),
     CASH(true),
     INVESTMENT(true),
+    WALLET(true),
+    CHECKING(true),
+    SAVINGS(true),
 
     // Liabilities
     @JsonProperty("CREDIT CARD")

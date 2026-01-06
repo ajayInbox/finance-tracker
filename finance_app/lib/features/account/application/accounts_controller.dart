@@ -5,8 +5,10 @@ import 'package:finance_app/features/account/data/providers/account_repository_p
 import 'package:finance_app/features/account/provider/networth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final accountsControllerProvider = 
-              AsyncNotifierProvider<AccountsController, List<Account>>(AccountsController.new,);
+final accountsControllerProvider =
+    AsyncNotifierProvider<AccountsController, List<Account>>(
+      AccountsController.new,
+    );
 
 class AccountsController extends AsyncNotifier<List<Account>> {
   @override
@@ -37,11 +39,20 @@ class AccountsController extends AsyncNotifier<List<Account>> {
   }
 
   // ---------------------------------------------------------------------------
+  // DELETE
+  // ---------------------------------------------------------------------------
+
+  Future<void> deleteAccount(String id) async {
+    await ref.read(accountRepositoryProvider).deleteAccount(id);
+    await refresh();
+    _invalidateDerivedProviders();
+  }
+
+  // ---------------------------------------------------------------------------
   // SIDE EFFECTS
   // ---------------------------------------------------------------------------
 
   void _invalidateDerivedProviders() {
     ref.invalidate(networthProvider);
   }
-  
 }

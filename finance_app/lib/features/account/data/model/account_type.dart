@@ -1,11 +1,12 @@
-
 enum AccountType {
   bank,
+  savings,
+  checking,
   cash,
   creditCard,
   loan,
   investment,
-  unknown
+  unknown,
 }
 
 extension AccountTypeX on AccountType {
@@ -13,6 +14,10 @@ extension AccountTypeX on AccountType {
     switch (this) {
       case AccountType.bank:
         return "Bank Account";
+      case AccountType.savings:
+        return "Savings Account";
+      case AccountType.checking:
+        return "Checking Account";
       case AccountType.cash:
         return "Cash";
       case AccountType.creditCard:
@@ -30,6 +35,10 @@ extension AccountTypeX on AccountType {
     switch (this) {
       case AccountType.bank:
         return "BANK";
+      case AccountType.savings:
+        return "SAVINGS";
+      case AccountType.checking:
+        return "CHECKING";
       case AccountType.cash:
         return "CASH";
       case AccountType.creditCard:
@@ -51,6 +60,10 @@ extension AccountTypeParser on String {
     switch (normalized) {
       case "BANK":
         return AccountType.bank;
+      case "SAVINGS":
+        return AccountType.savings;
+      case "CHECKING":
+        return AccountType.checking;
       case "CASH":
         return AccountType.cash;
       case "CREDIT_CARD":

@@ -26,11 +26,11 @@ public record AccountCreateUpdateRequest(
 
         BigDecimal currentOutstanding,    // liability only
 
-        @Min(1) @Max(31)
-        Integer cutoffDayOfMonth,         // credit card only
+        @NotNull
+        String statementDayOfMonth,         // credit card only
 
-        @Min(1) @Max(31)
-        Integer dueDayOfMonth,            // credit card only
+        @NotNull
+        String dueDayOfMonth,            // credit card only
 
         BigDecimal creditLimit,           // credit card only
 
