@@ -24,7 +24,8 @@ public class AccountController {
 
     @PostMapping("/account")
     public ResponseEntity<AccountResponse> addAccount(@RequestBody AccountCreateUpdateRequest request){
-        return new ResponseEntity<>(accountService.create(null, request), HttpStatus.CREATED);
+        Account account = accountService.create(null, request);
+        return new ResponseEntity<>(accountMapper.toResponse(account), HttpStatus.CREATED);
     }
 
     @GetMapping("/accounts")
@@ -38,5 +39,17 @@ public class AccountController {
     public ResponseEntity<NetworthSummary> getNetWorth(@RequestParam(required = false, name = "userId") String userId){
         NetworthSummary netWorth = accountService.getNetWorth(null);
         return ResponseEntity.ok(netWorth);
+    }
+
+    @DeleteMapping("/accounts/{id}")
+    public ResponseEntity<?> delete(@PathVariable("id") String accountId){
+        accountService.deleteAccount(accountId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/accounts/{id}")
+    public ResponseEntity<AccountResponse> update(@PathVariable("id") String accountId, @RequestBody AccountCreateUpdateRequest request){
+        Account account = accountService.update(null, accountId, request);
+        return ResponseEntity.ok(accountMapper.toResponse(account));
     }
 }

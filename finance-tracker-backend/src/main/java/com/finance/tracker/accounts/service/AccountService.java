@@ -13,13 +13,15 @@ public interface AccountService {
 
     void updateBalanceForTransaction(BalanceUpdateRequest request);
 
-    AccountResponse create(String userId, AccountCreateUpdateRequest req);
+    Account create(String userId, AccountCreateUpdateRequest req);
 
-    AccountResponse update(String userId, String id, AccountCreateUpdateRequest req);
+    Account update(String userId, String id, AccountCreateUpdateRequest req);
 
     List<Account> getAccounts();
 
     String getAccountByLastFour(String lastFour);
 
     NetworthSummary getNetWorth(String userId);
+
+    void deleteAccount(String accountId);
 }

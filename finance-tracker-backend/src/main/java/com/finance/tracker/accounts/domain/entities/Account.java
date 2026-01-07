@@ -1,6 +1,7 @@
 package com.finance.tracker.accounts.domain.entities;
 
 import com.finance.tracker.accounts.domain.AccountCategory;
+import com.finance.tracker.accounts.domain.AccountStatus;
 import com.finance.tracker.accounts.domain.AccountType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -54,12 +55,15 @@ public class Account {
     // ------ LIABILITY fields ------
     private BigDecimal currentOutstanding;
     private BigDecimal creditLimit;
-    private Integer cutoffDayOfMonth;
-    private Integer dueDayOfMonth;
+    private String statementDayOfMonth;
+    private String dueDayOfMonth;
 
     private Instant balanceAsOf;
 
     private String userId;
+
+    @Enumerated(EnumType.STRING)
+    private AccountStatus status;
 
     // Helpers
     public boolean isAsset() {

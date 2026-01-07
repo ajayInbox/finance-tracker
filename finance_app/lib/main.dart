@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:finance_app/features/transaction/ui/transactions_page.dart';
 import 'package:finance_app/pages/dashboard_page.dart';
 import 'package:finance_app/features/account/ui/accounts_page.dart';
+import 'package:finance_app/features/sms/ui/sms_review_page.dart';
 import 'package:finance_app/pages/settings_page.dart';
 
 void main() async {
@@ -22,9 +23,7 @@ void main() async {
   //   );
   // }
 
-  runApp(const ProviderScope(
-    child: MyApp(),
-  ),);
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -36,9 +35,27 @@ class MyApp extends StatelessWidget {
       title: 'Finance Tracker',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-      //  primarySwatch: Colors.blue,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        fontFamily: 'Plus Jakarta Sans',
+        scaffoldBackgroundColor: const Color(0xFFF3F4F6), // background-light
+        primaryColor: const Color(0xFF10B981), // Primary Emerald
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF10B981),
+          primary: const Color(0xFF10B981),
+          secondary: const Color(
+            0xFF10B981,
+          ), // Use primary as secondary for now to match teal vibe
+          surface: Colors.white,
+          brightness: Brightness.light,
+        ),
+        cardTheme: const CardThemeData(
+          color: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+          ),
+        ),
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(),
       ),
       home: MyHomePage(title: "Finance Tracker"),
     );
@@ -57,10 +74,12 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
-  static final List<Widget> _widgetOptions = <Widget>[
+  final List<Widget> _widgetOptions = <Widget>[
     DashboardPage(),
     TransactionsPage(),
     AccountsPage(),
+    SmsReviewPage(), // New Page
+    SettingsPage(),
   ];
 
   @override
@@ -77,122 +96,100 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
-      bottomNavigationBar: _buildBottomNavigationBar(),
-      body: _widgetOptions[_selectedIndex],
-      drawer: _buildDrawer(),
+      backgroundColor: const Color(0xFFF8FAFC),
+      drawer:
+          _buildDrawer(), // Keep drawer? Yes, triggered by menu button in header
+      body: Stack(
+        children: [
+          // Content
+          Padding(
+            padding: const EdgeInsets.only(
+              top: 0,
+              bottom: 80,
+            ), // Reserve space for nav only
+            child: _widgetOptions[_selectedIndex],
+          ),
+
+          // Bottom Nav
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildFloatingBottomBar(),
+          ),
+        ],
+      ),
     );
   }
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      elevation: 0,
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black87,
-      title: Text(
-        widget.title,
-        style: GoogleFonts.lato(
-          textStyle: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-      ),
-      leading: Builder(
-        builder: (context) {
-          return Container(
-            margin: const EdgeInsets.all(8),
+  Widget _buildFloatingBottomBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 450), // Match max-w-md
+          child: Container(
+            height: 80,
             decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(40),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 40,
+                  offset: const Offset(0, -10),
+                ),
+              ],
             ),
-            child: IconButton(
-              icon: const Icon(Icons.menu, color: Colors.blue),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildNavItem(Icons.home, 0),
+                _buildNavItem(Icons.history, 1),
+                _buildNavItem(Icons.donut_large, 2),
+                _buildNavItem(Icons.sms, 3), // SMS Icon
+                _buildNavItem(Icons.settings, 4), // Settings shifts to 4
+              ],
             ),
-          );
-        },
+          ),
+        ),
       ),
-      actions: [
-        _buildNotificationButton(),
-      ],
     );
   }
 
-  Widget _buildNotificationButton() {
-    // Notification Icon with Badge
-              return Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    const Icon(
-                      Icons.notifications_outlined,
-                      color: Color(0xFF4A90E2),
-                      size: 24,
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return NavigationBar(
-      selectedIndex: _selectedIndex,
-      onDestinationSelected: (i) => _onItemTapped(i),
-      backgroundColor: Colors.white,
-      elevation: 8,
-      destinations: [
-        NavigationDestination(
-          icon: Icon(
-            _selectedIndex == 0 ? Icons.home : Icons.home_outlined,
-            color: _selectedIndex == 0 ? Colors.blue : Colors.grey,
-          ),
-          label: 'Home',
+  Widget _buildNavItem(IconData icon, int index) {
+    bool isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? const Color(0xFF10B981) : Colors.grey[400],
+              size: 28,
+            ),
+            const SizedBox(height: 4),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: isSelected ? 4 : 0,
+              height: 4,
+              decoration: const BoxDecoration(
+                color: Color(0xFF10B981),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
         ),
-        NavigationDestination(
-          icon: Icon(
-            _selectedIndex == 1 ? Icons.list_alt : Icons.list_alt_outlined,
-            color: _selectedIndex == 1 ? Colors.blue : Colors.grey,
-          ),
-          label: 'Transactions',
-        ),
-        NavigationDestination(
-          icon: Icon(
-            _selectedIndex == 2 ? Icons.account_balance : Icons.account_balance_outlined,
-            color: _selectedIndex == 2 ? Colors.blue : Colors.grey,
-          ),
-          label: 'Accounts',
-        ),
-      ],
+      ),
     );
   }
+
+  // _buildAddButton removed as it is integrated into _buildFloatingBottomBar
 
   Widget _buildDrawer() {
     return Drawer(
@@ -311,10 +308,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Text(
             'Good $timeOfDay!',
             style: GoogleFonts.lato(
-              textStyle: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
+              textStyle: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
           ),
           Text(
@@ -339,10 +333,7 @@ class _MyHomePageState extends State<MyHomePage> {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: isSelected ? Colors.blue : Colors.grey[600],
-      ),
+      leading: Icon(icon, color: isSelected ? Colors.blue : Colors.grey[600]),
       title: Text(
         title,
         style: TextStyle(

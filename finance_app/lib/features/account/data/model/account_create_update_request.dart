@@ -7,8 +7,8 @@ class AccountCreateUpdateRequest {
   final double currentOutstanding;
   final String currency;
   final double creditLimit;
-  final String cutOffDay;
-  final String dueDate;
+  final String statementDayOfMonth;
+  final String dueDayOfMonth;
   final String notes;
   final bool hideFromSelection;
   final bool hideFromReports;
@@ -23,8 +23,8 @@ class AccountCreateUpdateRequest {
     required this.currentOutstanding,
     required this.currency,
     required this.creditLimit,
-    required this.cutOffDay,
-    required this.dueDate,
+    required this.statementDayOfMonth,
+    required this.dueDayOfMonth,
     required this.notes,
     required this.hideFromSelection,
     required this.hideFromReports,
@@ -41,8 +41,8 @@ class AccountCreateUpdateRequest {
       'currentOutstanding': currentOutstanding,
       'currency': currency,
       'creditLimit': creditLimit,
-      'cutOffDay': cutOffDay,
-      'dueDate': dueDate,
+      'statementDayOfMonth': statementDayOfMonth,
+      'dueDayOfMonth': dueDayOfMonth,
       'notes': notes,
       'hideFromSelection': hideFromSelection,
       'hideFromReports': hideFromReports,

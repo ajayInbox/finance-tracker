@@ -49,7 +49,7 @@ public interface AccountMapper {
 
             entity.setCurrentOutstanding(null);
             entity.setCreditLimit(null);
-            entity.setCutoffDayOfMonth(null);
+            entity.setStatementDayOfMonth(null);
             entity.setDueDayOfMonth(null);
 
             entity.setCurrentBalance(req.startingBalance());
@@ -63,7 +63,7 @@ public interface AccountMapper {
 
             entity.setCurrentOutstanding(req.currentOutstanding());
             entity.setCreditLimit(req.creditLimit());
-            entity.setCutoffDayOfMonth(req.cutoffDayOfMonth());
+            entity.setStatementDayOfMonth(req.statementDayOfMonth());
             entity.setDueDayOfMonth(req.dueDayOfMonth());
         }
     }

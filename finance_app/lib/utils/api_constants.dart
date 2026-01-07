@@ -1,5 +1,4 @@
 class ApiConstants {
-
   static String baseUrl = "http://10.0.2.2:8080/";
   //static String baseUrl = "http://localhost:8080/";
   //static String baseUrl = "https://finance-tracker-backend-m1rr.onrender.com";
@@ -14,5 +13,6 @@ class ApiConstants {
   static String expenseReport = "/api/v1/transactions/analysis";
   static String exportMessages = "/api/v1/transactions/export-messages";
   static String networthSummary = "/api/v1/networth";
-
+  static String deleteAccount = "/api/v1/accounts";
+  static String updateAccount = "/api/v1/accounts";
 }

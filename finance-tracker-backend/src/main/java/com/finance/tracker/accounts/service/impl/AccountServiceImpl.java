@@ -1,7 +1,6 @@
 package com.finance.tracker.accounts.service.impl;
 
 import com.finance.tracker.accounts.domain.*;
-import com.finance.tracker.accounts.domain.dto.AccountResponse;
 import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.accounts.exceptions.*;
 import com.finance.tracker.accounts.mapper.AccountMapper;
@@ -27,14 +26,12 @@ public class AccountServiceImpl implements AccountService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    @Transactional(readOnly = true)
     public Account getAccountByIdAndUser(String accountId, String userId) {
         return accountRepository.findAccountByIdForUser(accountId, userId)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found"));
     }
 
-    @Transactional(readOnly = true)
-    protected List<Account> getAccountByUserId(String userId) {
+    protected List<Account> getAccountsByUserId(String userId) {
         return accountRepository.findByUserIdAndIsActive(userId);
     }
 
@@ -60,9 +57,6 @@ public class AccountServiceImpl implements AccountService {
                     : amount;
 
             newBalance = previousBalance.add(delta);
-            if(delta.doubleValue() > previousBalance.doubleValue()){
-                throw new AmountGtCurrentBalance("Amount is greater than current balance");
-            }
             if(newBalance.doubleValue()<0){
                 throw new AccountAmountNegativeException("Account balance should not be negative");
             }
@@ -73,15 +67,11 @@ public class AccountServiceImpl implements AccountService {
             // Credit Card / Loan
             // EXPENSE → increase outstanding
             // INCOME → reduce outstanding
-            BigDecimal currentCreditLimit = lockedAccount.getCreditLimit();
-            BigDecimal startingCreditLimit = lockedAccount.getStartingBalance();
+            BigDecimal creditLimit = lockedAccount.getCreditLimit();
             BigDecimal delta = (request.getTransactionType() == TransactionType.EXPENSE)
                     ? amount
                     : amount.negate();
-
-            BigDecimal deltaForCreditLimit = (request.getTransactionType() == TransactionType.EXPENSE)
-                    ? amount.negate()
-                    : amount;
+            BigDecimal currentCreditLimit = creditLimit.add(newBalance.negate());
             
             newBalance = previousBalance.add(delta);
             if(delta.doubleValue()>currentCreditLimit.doubleValue()){
@@ -90,12 +80,7 @@ public class AccountServiceImpl implements AccountService {
             if(newBalance.doubleValue()<0){
                 throw new AccountAmountNegativeException("Current outstanding should not be negative");
             }
-            if(newBalance.doubleValue() > startingCreditLimit.doubleValue()){
-                throw new CurrentOutstandingGtCreditLimit("Current outstanding should not be greater than credit limit");
-            }
-            BigDecimal newCreditLimit = currentCreditLimit.add(deltaForCreditLimit);
             lockedAccount.setCurrentOutstanding(newBalance);
-            lockedAccount.setCreditLimit(newCreditLimit);
         }
 
         lockedAccount.setBalanceAsOf(Instant.now());
@@ -115,17 +100,15 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public AccountResponse create(String userId, AccountCreateUpdateRequest req) {
+    public Account create(String userId, AccountCreateUpdateRequest req) {
         ensureLastFourNotDuplicate(req.lastFour(), userId, req.accountType());
 
         Account account = mapper.toEntity(req, userId);
-        accountRepository.save(account);
-
-        return mapper.toResponse(account);
+        return accountRepository.save(account);
     }
 
     @Override
-    public AccountResponse update(String userId, String id, AccountCreateUpdateRequest req) {
+    public Account update(String userId, String id, AccountCreateUpdateRequest req) {
         Account entity = accountRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
@@ -137,14 +120,12 @@ public class AccountServiceImpl implements AccountService {
         }
 
         mapper.updateEntity(entity, req);
-        accountRepository.save(entity);
-
-        return mapper.toResponse(entity);
+        return accountRepository.save(entity);
     }
 
     @Override
     public List<Account> getAccounts() {
-        return accountRepository.findAll();
+        return getAccountsByUserId(null);
     }
 
     @Override
@@ -159,9 +140,8 @@ public class AccountServiceImpl implements AccountService {
     // -------------------------------------------------------------------------
 
     @Override
-    @Transactional(readOnly = true)
     public NetworthSummary getNetWorth(String userId) {
-        List<Account> accounts = getAccountByUserId(userId);
+        List<Account> accounts = getAccountsByUserId(userId);
 
         BigDecimal assetValue = BigDecimal.ZERO;
         BigDecimal liabilityValue = BigDecimal.ZERO;
@@ -193,6 +173,15 @@ public class AccountServiceImpl implements AccountService {
                 ))
                 .netWorth(totalNetWorth)
                 .build();
+    }
+
+    @Override
+    public void deleteAccount(String accountId) {
+        Account account = getAccountByIdAndUser(accountId, null);
+        account.setActive(false);
+        account.setClosedAt(Instant.now());
+        account.setStatus(AccountStatus.INACTIVE);
+        accountRepository.save(account);
     }
 
     private void ensureLastFourNotDuplicate(String lastFour, String userId, AccountType type) {
