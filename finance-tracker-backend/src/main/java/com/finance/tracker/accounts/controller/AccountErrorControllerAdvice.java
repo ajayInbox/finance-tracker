@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpServerErrorException;
 
 @RestControllerAdvice
 @Slf4j
@@ -60,5 +61,15 @@ public class AccountErrorControllerAdvice {
                 .errorMessage(ex.getMessage())
                 .build();
         return new ResponseEntity<>(errorBody, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorBody> handleHttpServerErrorException(Exception ex){
+        log.error("caught Unexpected exception");
+        ErrorBody errorBody = ErrorBody.builder()
+                .errorStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .errorMessage(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(errorBody, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

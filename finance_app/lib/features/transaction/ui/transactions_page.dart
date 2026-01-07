@@ -518,7 +518,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
         borderRadius: BorderRadius.circular(16), // rounded-2xl
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04), // shadow-soft
+            color: Colors.black.withValues(alpha: 0.04), // shadow-soft
             blurRadius: 40,
             offset: const Offset(0, 10),
           ),

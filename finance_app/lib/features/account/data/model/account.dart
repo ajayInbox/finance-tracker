@@ -11,8 +11,8 @@ class Account {
   final DateTime? openingDate;
   final double? startingBalance;
   final double? currentOutstanding;
-  final int? cutoffDayOfMonth;
-  final int? dueDayOfMonth;
+  final String? statementDayOfMonth;
+  final String? dueDayOfMonth;
   final double? creditLimit;
   final double? currentBalance;
   final bool active;
@@ -31,7 +31,7 @@ class Account {
     this.openingDate,
     this.startingBalance,
     this.currentOutstanding,
-    this.cutoffDayOfMonth,
+    this.statementDayOfMonth,
     this.dueDayOfMonth,
     this.creditLimit,
     this.currentBalance,
@@ -47,7 +47,8 @@ class Account {
     return Account(
       id: j['id'],
       accountName: j['accountName'] ?? 'Unnamed Account',
-      accountType: (j['accountType'] as String?)?.toAccountType() ?? AccountType.unknown,
+      accountType:
+          (j['accountType'] as String?)?.toAccountType() ?? AccountType.unknown,
       lastFour: j['lastFour'],
       currency: j['currency'] ?? 'INR',
 
@@ -57,7 +58,7 @@ class Account {
 
       startingBalance: _toDouble(j['startingBalance']),
       currentOutstanding: _toDouble(j['currentOutstanding']),
-      cutoffDayOfMonth: j['cutoffDayOfMonth'],
+      statementDayOfMonth: j['statementDayOfMonth'],
       dueDayOfMonth: j['dueDayOfMonth'],
       creditLimit: _toDouble(j['creditLimit']),
       currentBalance: _toDouble(j['currentBalance']),
@@ -66,8 +67,7 @@ class Account {
       readOnly: j['readOnly'] ?? false,
 
       createdAt: DateTime.parse(j['createdAt']),
-      closedAt:
-      j['closedAt'] != null ? DateTime.tryParse(j['closedAt']) : null,
+      closedAt: j['closedAt'] != null ? DateTime.tryParse(j['closedAt']) : null,
 
       notes: j['notes'],
 
@@ -76,19 +76,28 @@ class Account {
   }
 
   double get effectiveBalance {
-    if (category==AccountCategory.liability.name.toUpperCase()) {
+    if (category == AccountCategory.liability.name.toUpperCase()) {
       return currentOutstanding ?? 0.0;
     }
-    if(category==AccountCategory.asset.name.toUpperCase()) {
+    if (category == AccountCategory.asset.name.toUpperCase()) {
       return currentBalance ?? startingBalance ?? 0.0;
     }
     return 0.0;
   }
 
-  bool isAsset(){
-    return category==AccountCategory.asset.name.toUpperCase();
+  double get remainingBalance {
+    if (category == AccountCategory.liability.name.toUpperCase()) {
+      return (creditLimit ?? 0.0) - (currentOutstanding ?? 0.0);
+    }
+    if (category == AccountCategory.asset.name.toUpperCase()) {
+      return currentBalance ?? startingBalance ?? 0.0;
+    }
+    return 0.0;
   }
 
+  bool isAsset() {
+    return category == AccountCategory.asset.name.toUpperCase();
+  }
 }
 
 double? _toDouble(dynamic v) {

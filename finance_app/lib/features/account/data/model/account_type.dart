@@ -42,7 +42,7 @@ extension AccountTypeX on AccountType {
       case AccountType.cash:
         return "CASH";
       case AccountType.creditCard:
-        return "CREDIT_CARD";
+        return "CREDIT CARD";
       case AccountType.loan:
         return "LOAN";
       case AccountType.investment:

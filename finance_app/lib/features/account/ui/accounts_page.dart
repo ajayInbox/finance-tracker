@@ -455,7 +455,9 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      account.accountName,
+                      account.accountName.length > 9
+                          ? '${account.accountName.substring(0, 9)}...'
+                          : account.accountName,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 16, // text-base
                         fontWeight: FontWeight.w700, // font-bold
@@ -546,7 +548,9 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          account.accountName,
+                          account.accountName.length > 15
+                              ? '${account.accountName.substring(0, 15)}...'
+                              : account.accountName,
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 16, // text-base
                             fontWeight: FontWeight.w700, // font-bold
@@ -611,14 +615,20 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
   String? _getDueMessage(Account account) {
     if (account.dueDayOfMonth == null) return null;
 
+    // Parse "Day X of month" to int
+    final parts = account.dueDayOfMonth!.split(' ');
+    if (parts.length < 2) return null;
+    final day = int.tryParse(parts[1]);
+    if (day == null) return null;
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    DateTime dueDate = DateTime(now.year, now.month, account.dueDayOfMonth!);
+    DateTime dueDate = DateTime(now.year, now.month, day);
 
     // If the due date, this month has already passed, assume it's next month
     if (dueDate.isBefore(today)) {
-      dueDate = DateTime(now.year, now.month + 1, account.dueDayOfMonth!);
+      dueDate = DateTime(now.year, now.month + 1, day);
     }
 
     final difference = dueDate.difference(today).inDays;
@@ -641,11 +651,20 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
         account: account,
         onEdit: () {
           Navigator.pop(sheetContext);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Edit Bank Account not implemented yet'),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddAccountPage(
+                category: AccountCategory.asset,
+                account: account,
+              ),
             ),
-          );
+          ).then((value) {
+            if (value == true && mounted) {
+              ref.invalidate(accountsControllerProvider);
+              ref.invalidate(networthProvider);
+            }
+          });
         },
         onDelete: () async {
           final messenger = ScaffoldMessenger.of(context);
@@ -701,11 +720,20 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
         account: account,
         onEdit: () {
           Navigator.pop(sheetContext);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Edit Credit Card not implemented yet'),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddAccountPage(
+                category: AccountCategory.liability,
+                account: account,
+              ),
             ),
-          );
+          ).then((value) {
+            if (value == true && mounted) {
+              ref.invalidate(accountsControllerProvider);
+              ref.invalidate(networthProvider);
+            }
+          });
         },
         onDelete: () async {
           final messenger = ScaffoldMessenger.of(context);

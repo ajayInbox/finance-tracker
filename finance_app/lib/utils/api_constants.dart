@@ -14,4 +14,5 @@ class ApiConstants {
   static String exportMessages = "/api/v1/transactions/export-messages";
   static String networthSummary = "/api/v1/networth";
   static String deleteAccount = "/api/v1/accounts";
+  static String updateAccount = "/api/v1/accounts";
 }

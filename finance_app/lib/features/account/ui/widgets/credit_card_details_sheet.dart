@@ -215,7 +215,7 @@ class CreditCardDetailsSheet extends StatelessWidget {
                 _buildInfoCard('Account Type', 'Credit Card'),
                 _buildInfoCard(
                   'Statement Date',
-                  _formatDate(account.cutoffDayOfMonth),
+                  _formatDate(account.statementDayOfMonth),
                 ),
                 _buildInfoCard(
                   'Payment Due',
@@ -344,8 +344,8 @@ class CreditCardDetailsSheet extends StatelessWidget {
   // Helper to format date string assuming specific backend format "Day X of month"
   // For now just returning as is or simplifying if needed.
   // If we had actual Date objects we would use DateFormat.
-  String _formatDate(int? day) {
+  String _formatDate(String? day) {
     if (day == null) return 'N/A';
-    return 'Day $day of month';
+    return day;
   }
 }

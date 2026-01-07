@@ -1,16 +1,20 @@
+import 'package:finance_app/features/account/data/model/account.dart';
+import 'package:finance_app/features/account/data/model/account_type.dart';
 import 'package:finance_app/features/account/provider/create_account_provider.dart';
+import 'package:finance_app/features/account/application/accounts_controller.dart';
 import 'package:finance_app/utils/app_style_constants.dart';
 import 'package:finance_app/features/account/data/model/account_category.dart';
 import 'package:finance_app/features/account/data/model/account_create_update_request.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 
 class AddAccountPage extends ConsumerStatefulWidget {
   final AccountCategory category;
+  final Account? account;
 
-  const AddAccountPage({super.key, required this.category});
+  const AddAccountPage({super.key, required this.category, this.account});
 
   @override
   ConsumerState<AddAccountPage> createState() => _AddAccountPageState();
@@ -31,8 +35,8 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
   late String _selectedType;
   final DateTime _openingDate =
       DateTime.now(); // For Asset accounts implicitly today
-  DateTime? _statementDate; // For Credit Card
-  DateTime? _dueDate; // For Credit Card
+  String? _statementDay; // For Credit Card
+  String? _dueDay; // For Credit Card
   bool _isSubmitting = false;
 
   // Defaults
@@ -43,10 +47,39 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.category == AccountCategory.asset) {
-      _selectedType = 'CHECKING'; // Default to Checking for Bank
+    if (widget.account != null) {
+      final acc = widget.account!;
+      _nameController.text = acc.accountName;
+      _lastFourController.text = acc.lastFour ?? '';
+      _selectedType = acc.accountType.apiValue;
+      print(_selectedType);
+
+      // Handle Balance/Outstanding
+      if (_isLiability) {
+        _amountController.text = (acc.currentOutstanding ?? 0).toString();
+        _creditLimitController.text = (acc.creditLimit ?? 0).toString();
+        // Handle dates extraction from logic if possible, or default
+        if (acc.dueDayOfMonth != null) {
+          _dueDay = acc.dueDayOfMonth;
+        }
+        if (acc.statementDayOfMonth != null) {
+          _statementDay = acc.statementDayOfMonth;
+        }
+      } else {
+        _amountController.text =
+            (acc.currentBalance ?? acc.startingBalance ?? 0).toString();
+      }
+
+      // Extract Bank Name from Notes
+      if (acc.notes != null && acc.notes!.startsWith("Bank: ")) {
+        _bankNameController.text = acc.notes!.substring(6);
+      }
     } else {
-      _selectedType = 'CREDIT CARD';
+      if (widget.category == AccountCategory.asset) {
+        _selectedType = AccountType.checking.apiValue; // Default to Checking
+      } else {
+        _selectedType = AccountType.creditCard.apiValue;
+      }
     }
   }
 
@@ -103,7 +136,9 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
           _buildBackButton(),
           const SizedBox(width: 16),
           Text(
-            _isLiability ? 'Add Credit Card' : 'Add Bank Account',
+            widget.account != null
+                ? (_isLiability ? 'Edit Credit Card' : 'Edit Bank Account')
+                : (_isLiability ? 'Add Credit Card' : 'Add Bank Account'),
             style: GoogleFonts.plusJakartaSans(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -194,12 +229,16 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
               child: _buildRadioItem(
                 'Checking',
                 Icons.account_balance,
-                'CHECKING',
+                AccountType.checking.apiValue,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildRadioItem('Savings', Icons.savings, 'SAVINGS'),
+              child: _buildRadioItem(
+                'Savings',
+                Icons.savings,
+                AccountType.savings.apiValue,
+              ),
             ),
           ],
         ),
@@ -210,12 +249,16 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
               child: _buildRadioItem(
                 'Cash',
                 Icons.account_balance_wallet,
-                'CASH',
+                AccountType.cash.apiValue,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildRadioItem('Other', Icons.other_houses, 'OTHER'),
+              child: _buildRadioItem(
+                'Other',
+                Icons.other_houses,
+                AccountType.unknown.apiValue,
+              ),
             ),
           ],
         ),
@@ -304,24 +347,18 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                 inputType: TextInputType.number,
               ),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDatePickerField(
-                      label: 'Statement Date',
-                      value: _statementDate,
-                      onChanged: (d) => setState(() => _statementDate = d),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildDatePickerField(
-                      label: 'Due Date',
-                      value: _dueDate,
-                      onChanged: (d) => setState(() => _dueDate = d),
-                    ),
-                  ),
-                ],
+              _buildDropdownField(
+                label: 'Statement Day',
+                value: _statementDay,
+                items: _generateDayOptions(),
+                onChanged: (v) => setState(() => _statementDay = v),
+              ),
+              const SizedBox(height: 24),
+              _buildDropdownField(
+                label: 'Due Day',
+                value: _dueDay,
+                items: _generateDayOptions(),
+                onChanged: (v) => setState(() => _dueDay = v),
               ),
             ],
           ),
@@ -566,10 +603,15 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
     );
   }
 
-  Widget _buildDatePickerField({
+  List<String> _generateDayOptions() {
+    return List.generate(31, (index) => 'Day ${index + 1} of month');
+  }
+
+  Widget _buildDropdownField({
     required String label,
-    required DateTime? value,
-    required Function(DateTime) onChanged,
+    required String? value,
+    required List<String> items,
+    required Function(String?) onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -583,45 +625,37 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
           ),
         ),
         const SizedBox(height: 8),
-        InkWell(
-          onTap: () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
-            );
-            if (picked != null) {
-              onChanged(picked);
-            }
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  value == null
-                      ? '--/--/--'
-                      : DateFormat('dd/MM/yyyy').format(value),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontWeight: FontWeight.w600,
-                    color: value == null
-                        ? AppColors.textPlaceholder
-                        : AppColors.textPrimary,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: value,
+              isExpanded: true,
+              hint: Text(
+                'Select Day',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.textPlaceholder,
+                  fontSize: 14,
+                ),
+              ),
+              icon: const Icon(Icons.arrow_drop_down, color: AppColors.primary),
+              items: items.map((String item) {
+                return DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(
+                    item,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-                const Icon(
-                  Icons.calendar_today,
-                  size: 16,
-                  color: AppColors.primary,
-                ),
-              ],
+                );
+              }).toList(),
+              onChanged: onChanged,
             ),
           ),
         ),
@@ -659,7 +693,11 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                   const Icon(Icons.check, size: 24),
                   const SizedBox(width: 8),
                   Text(
-                    'Save ${_isLiability ? "Credit Card" : "Account"}',
+                    widget.account != null
+                        ? (_isLiability
+                              ? "Update Credit Card"
+                              : "Update Account")
+                        : (_isLiability ? "Save Credit Card" : "Save Account"),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -676,7 +714,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
   Future<void> _saveAccount() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_isLiability && (_statementDate == null || _dueDate == null)) {
+    if (_isLiability && (_statementDay == null || _dueDay == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select statement and due dates')),
       );
@@ -694,24 +732,15 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
         finalNotes = "Bank: ${_bankNameController.text.trim()}";
       }
 
-      // Liability Logic:
-      // Input is "Outstanding" (Positive number user usually thinks of as debt)
-      // Backend: created as liability category.
-      // startingBalance = 0, currentOutstanding = amount.
-
-      // Asset Logic:
-      // Input is "Balance"
-      // startingBalance = amount, currentOutstanding = 0.
-
       final startingBalance = _isLiability ? 0.0 : amount;
       final currentOutstanding = _isLiability ? amount : 0.0;
 
       // Credit Card specific format
-      final cutOffDay = _isLiability && _statementDate != null
-          ? 'Day ${_statementDate!.day} of month'
+      final cutOffDay = _isLiability && _statementDay != null
+          ? _statementDay!
           : 'Day 1 of month';
-      final dueDay = _isLiability && _dueDate != null
-          ? 'Day ${_dueDate!.day} of month'
+      final dueDay = _isLiability && _dueDay != null
+          ? _dueDay!
           : 'Day 1 of month';
 
       final creditLimit = double.tryParse(_creditLimitController.text) ?? 0.0;
@@ -725,20 +754,30 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
         currentOutstanding: currentOutstanding,
         currency: _selectedCurrency,
         creditLimit: creditLimit,
-        cutOffDay: cutOffDay,
-        dueDate: dueDay,
+        statementDayOfMonth: cutOffDay,
+        dueDayOfMonth: dueDay,
         notes: finalNotes,
         hideFromSelection: false, // Default false
         hideFromReports: false, // Default false
         category: _isLiability ? 'LIABILITY' : 'ASSET',
       );
 
-      await ref.read(createAccountProvider(request).future);
+      if (widget.account != null) {
+        await ref
+            .read(accountsControllerProvider.notifier)
+            .updateAccount(id: widget.account!.id, request: request);
+      } else {
+        await ref.read(createAccountProvider(request).future);
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account added successfully!'),
+        SnackBar(
+          content: Text(
+            widget.account != null
+                ? 'Account updated successfully!'
+                : 'Account added successfully!',
+          ),
           backgroundColor: AppColors.success,
         ),
       );
@@ -747,7 +786,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to add account: $e'),
+          content: Text('Failed to save account: $e'),
           backgroundColor: AppColors.error,
         ),
       );

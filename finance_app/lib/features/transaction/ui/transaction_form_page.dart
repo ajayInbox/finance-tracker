@@ -899,7 +899,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                           ),
                         ),
                         subtitle: Text(
-                          'Balance: ₹${account.effectiveBalance}',
+                          'Balance: ₹${account.remainingBalance}',
                           style: const TextStyle(color: Color(0xFF6B7280)),
                         ),
                         trailing: isSelected

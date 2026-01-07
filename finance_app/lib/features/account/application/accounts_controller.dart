@@ -49,6 +49,19 @@ class AccountsController extends AsyncNotifier<List<Account>> {
   }
 
   // ---------------------------------------------------------------------------
+  // UPDATE
+  // ---------------------------------------------------------------------------
+
+  Future<void> updateAccount({
+    required String id,
+    required AccountCreateUpdateRequest request,
+  }) async {
+    await ref.read(accountRepositoryProvider).updateAccount(id, request);
+    await refresh();
+    _invalidateDerivedProviders();
+  }
+
+  // ---------------------------------------------------------------------------
   // SIDE EFFECTS
   // ---------------------------------------------------------------------------
 
