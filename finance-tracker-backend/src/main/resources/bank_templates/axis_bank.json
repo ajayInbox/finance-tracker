@@ -1,10 +1,17 @@
 [
   {
-    "pattern": "(?s)Spent\\s.*?Card no\\.\\s*XX(?<CardLast4>\\d{4})\\s*INR\\s*(?<Amount>[\\d,.]+)\\s*(?<DateTime>\\d{2}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2})(?:\\s*\\w+)?\\s*(?<Merchant>.+?)\\s*Avl\\s*Lim(?:it|t)[:\\s]*INR\\s*(?<AvailableLimit>[\\d,.]+)\n",
-    "fields": ["CardLast4", "Amount", "DateTime", "Merchant", "AvailableLimit"]
+    "name": "AXIS_CREDIT_CARD_SPEND_TXN",
+    "pattern": "(?s)Spent\\s.*?Card no\\.\\s*XX(?<LastFour>\\d{4})\\s*INR\\s*(?<Amount>[\\d,.]+)\\s*(?<Date>\\d{2}-\\d{2}-\\d{2})\\s+(?<Time>\\d{2}:\\d{2}:\\d{2})(?:\\s*\\w+)?\\s*(?<Merchant>.+?)\\s*Avl\\s*Lim(?:it|t)[:\\s]*INR\\s*(?<AvailableLimit>[\\d,.]+)",
+    "fields": ["LastFour", "Amount", "DateTime", "Merchant", "AvailableLimit"]
   },
   {
-    "pattern": "(?s)Spent\\s*INR\\s*(?<Amount>[\\d,.]+).*?Card\\s*no\\.\\s*XX(?<CardLast4>\\d{4}).*?(?<DateTime>\\d{2}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}).*?(?<Merchant>[A-Za-z ]+)\\s*Avl\\s*Limit[:\\s]*INR\\s*(?<AvailableLimit>[\\d,.]+)",
-    "fields": ["Amount", "CardLast4", "DateTime", "Merchant", "AvailableLimit"]
+    "name": "AXIS_CREDIT_CARD_SPEND_TXN",
+    "pattern": "(?s)Spent\\s*INR\\s*(?<Amount>[\\d,.]+).*?Card\\s*no\\.\\s*XX(?<LastFour>\\d{4}).*?(?<Date>\\d{2}-\\d{2}-\\d{2})\\s+(?<Time>\\d{2}:\\d{2}:\\d{2}).*?(?<Merchant>[A-Za-z ]+)\\s*Avl\\s*Limit[:\\s]*INR\\s*(?<AvailableLimit>[\\d,.]+)",
+    "fields": ["Amount", "LastFour", "DateTime", "Merchant", "AvailableLimit"]
+  },
+  {
+    "name": "AXIS_BANK_DEBIT_TXN",
+    "pattern": "^Debit\\s+INR\\s+(?<Amount>[\\d,]+\\.?\\d*)\\s+Axis\\s+Bank\\s+A/c\\s+(?<LastFour>[a-zA-Z0-9]+)\\s+(?<Date>\\d{2}-\\d{2}-\\d{2})\\s+(?<Time>\\d{2}:\\d{2}:\\d{2})\\s+(?<Merchant>.*?)(?=\\s+(?:BAL|Not You|Avl|Ref))",
+    "fields": ["Amount", "LastFour", "Date", "Time", "Merchant"]
   }
 ]

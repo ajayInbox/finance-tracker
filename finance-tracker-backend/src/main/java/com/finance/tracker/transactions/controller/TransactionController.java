@@ -129,4 +129,13 @@ public class TransactionController {
         transactionService.exportMessagesSendToQueue(messages);
         return ResponseEntity.ok().build();
     }
+
+    // -----------------------------------------------------
+    // Parse SMS Messages
+    // -----------------------------------------------------
+    @PostMapping("/parse")
+    public ResponseEntity<ParsedTransaction> parse(@RequestBody SmsMessage message) {
+        ParsedTransaction parsedTransaction = transactionService.parse(message);
+        return ResponseEntity.ok(parsedTransaction);
+    }
 }

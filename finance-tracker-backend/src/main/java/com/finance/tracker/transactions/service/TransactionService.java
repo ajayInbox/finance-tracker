@@ -30,4 +30,6 @@ public interface TransactionService {
     String deleteTransaction(Transaction transaction);
 
     Transaction updateTransaction(String transactionId, UpdateTransactionRequest request);
+
+    ParsedTransaction parse(SmsMessage message);
 }

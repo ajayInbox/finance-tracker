@@ -4,6 +4,7 @@ import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
 import com.finance.tracker.accounts.service.AccountService;
 import com.finance.tracker.transactions.domain.*;
 import com.finance.tracker.transactions.domain.entities.Transaction;
+import com.finance.tracker.transactions.exceptions.SmsNotParsedException;
 import com.finance.tracker.transactions.mapper.TransactionMapper;
 import com.finance.tracker.transactions.repository.TransactionRepository;
 import com.finance.tracker.transactions.service.*;
@@ -85,7 +86,8 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public void createTransactionFromQueueMsg(SmsMessage message) {
-        smsService.createTransactionFromQueueMsg(message);
+
+        //smsService.createTransactionFromQueueMsg(message);
     }
 
     @Override
@@ -96,6 +98,12 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Transaction updateTransaction(String transactionId, UpdateTransactionRequest request) {
         return reversalService.updateTransaction(transactionId, request);
+    }
+
+    @Override
+    public ParsedTransaction parse(SmsMessage message) {
+        return smsService.parseTransactionFromSms(message)
+                .orElseThrow(() -> new SmsNotParsedException("Unable to Parse"));
     }
 
     private void updateBalanceFor(Transaction txn) {

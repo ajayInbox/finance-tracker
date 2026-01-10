@@ -1,15 +1,12 @@
 package com.finance.tracker.transactions.service.impl;
 
-import com.finance.tracker.accounts.service.AccountService;
 import com.finance.tracker.transactions.domain.CreateTransactionRequest;
+import com.finance.tracker.transactions.domain.ParsedTransaction;
 import com.finance.tracker.transactions.domain.SmsMessage;
-import com.finance.tracker.transactions.domain.TransactionCreateUpdateRequest;
-import com.finance.tracker.transactions.domain.entities.Transaction;
-import com.finance.tracker.transactions.mapper.TransactionMapper;
-import com.finance.tracker.transactions.repository.TransactionRepository;
+import com.finance.tracker.transactions.exceptions.SmsParsingFailedException;
 import com.finance.tracker.transactions.service.MessageProducer;
+import com.finance.tracker.transactions.service.SmsParserService;
 import com.finance.tracker.transactions.service.TransactionSmsService;
-import com.finance.tracker.transactions.utilities.SmsParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -19,16 +16,14 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class TransactionSmsServiceImpl implements TransactionSmsService {
 
-    private final SmsParser smsParser;
+    private final Map<String, SmsParserService> parserMap;
     private final MessageProducer messageProducer;
-    private final AccountService accountService;
-    private final TransactionRepository transactionRepository;
-    private final TransactionMapper transactionMapper;
 
     @Value("${transaction.default-category-id}")
     private String defaultCategoryId;
@@ -38,11 +33,12 @@ public class TransactionSmsServiceImpl implements TransactionSmsService {
 
     // Choose your app zone
     private static final ZoneId APP_ZONE_ID = ZoneId.of("Asia/Kolkata");
+    private static final double CONFIDENCE_THRESHOLD = 0.7;
 
     @Override
     public void exportMessages(List<SmsMessage> messageList) {
         for (SmsMessage message : messageList) {
-            createTransactionFromMessage(message);
+          //  createTransactionFromMessage(message);
         }
     }
 
@@ -54,47 +50,58 @@ public class TransactionSmsServiceImpl implements TransactionSmsService {
     }
 
     @Override
-    public void createTransactionFromQueueMsg(SmsMessage message) {
-        createTransactionFromMessage(message);
-    }
+    public Optional<ParsedTransaction> parseTransactionFromSms(SmsMessage message) {
 
-    private void createTransactionFromMessage(SmsMessage message) {
-        String bank = checkBank(message.getMessageHeader());
-        Map<String, String> parsedObject = smsParser.parse(bank, message.getMessageBody());
+        //UPI → UPI parser
+        if (isUpi(message.getMessageBody())) {
+            Optional<ParsedTransaction> upiResult =
+                    parserMap.get("upiSmsParser").parse(message);
 
-        String accountId = accountService.getAccountByLastFour(parsedObject.get("CardLast4"));
-        parsedObject.put("accountId", accountId);
-
-        CreateTransactionRequest request = buildTransactionCreateRequest(parsedObject);
-        // TODO: user id from SMS context if you support multi-user; for now null
-        String userId = null;
-        Transaction transaction = transactionMapper.toNewEntity(request, userId);
-        transactionRepository.save(transaction);
-    }
-
-    private String checkBank(String header) {
-        // You can move the banks list here or inject
-        List<String> banks = List.of("HDFC", "SBI", "ICICI", "Axis");
-        for (String bank : banks) {
-            if (header.toUpperCase().contains(bank.toUpperCase())) {
-                return bank.toUpperCase();
+            if (isSatisfactory(upiResult)) {
+                return upiResult;
             }
         }
-        // TODO: if not able to get bank then think how we can identify bank name for patterns
-        return null;
+
+        //Bank → Bank parser
+        Optional<ParsedTransaction> bankResult =
+                parserMap.get("bankSmsParser").parse(message);
+
+        if (isSatisfactory(bankResult)) {
+            return bankResult;
+        }
+
+        //Generic fallback
+        Optional<ParsedTransaction> genericResult =
+                parserMap.get("genericSmsParser").parse(message);
+
+        if (isSatisfactory(genericResult)) {
+            return genericResult;
+        }
+
+        //Hard failure
+        throw new SmsParsingFailedException(message.getMessageBody());
     }
 
-    private CreateTransactionRequest buildTransactionCreateRequest(Map<String, String> object) {
+    private boolean isSatisfactory(Optional<ParsedTransaction> result) {
+        return result.isPresent()
+                && result.get().getConfidence() >= CONFIDENCE_THRESHOLD;
+    }
+
+    private boolean isUpi(String sms) {
+        return sms.matches("(?i).*\\bupi\\b.*|.*@.*");
+    }
+
+    private CreateTransactionRequest buildTransactionCreateRequest(String accountId, ParsedTransaction parsedTransaction) {
         LocalDateTime localDateTime =
-                LocalDateTime.parse(object.get("DateTime"), SMS_DATE_FORMATTER);
+                LocalDateTime.parse(parsedTransaction.getDateTime(), SMS_DATE_FORMATTER);
         Instant when = localDateTime.atZone(APP_ZONE_ID).toInstant();
 
         return CreateTransactionRequest.builder()
                 .transactionName("New Expense Transaction")
-                .merchant(object.get("Merchant"))
+                .merchant(parsedTransaction.getMerchant())
                 .currency("INR")
-                .account(object.get("accountId")) // use the lower-case key we inserted
-                .amount(BigDecimal.valueOf(Long.parseLong(object.get("Amount"))))
+                .account(accountId) // use the lower-case key we inserted
+                .amount(BigDecimal.valueOf(Long.parseLong(parsedTransaction.getAmount())))
                 .type("expense")
                 .attachments("")
                 .tags(List.of())
