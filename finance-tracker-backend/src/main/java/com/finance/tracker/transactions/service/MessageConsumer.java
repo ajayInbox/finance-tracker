@@ -1,7 +1,7 @@
 package com.finance.tracker.transactions.service;
 
 import com.finance.tracker.transactions.config.RabbitMQConfig;
-import com.finance.tracker.transactions.domain.SmsMessage;
+import com.finance.tracker.transactions.domain.SmsRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -14,7 +14,7 @@ public class MessageConsumer {
     private final TransactionService transactionService;
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE)
-    public void receiveMessage(SmsMessage message) {
+    public void receiveMessage(SmsRequest message) {
         try {
             System.out.println("Received message: " + message);
             transactionService.createTransactionFromQueueMsg(message);

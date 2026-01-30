@@ -21,15 +21,15 @@ public interface TransactionService {
 
     MonthlyExpenseResponse getExpenseReport(ExpenseReportDuration duration);
 
-    void exportMessages(List<SmsMessage> messageList);
+    void exportMessages(List<SmsRequest> messageList);
 
-    void exportMessagesSendToQueue(List<SmsMessage> messageList);
+    void exportMessagesSendToQueue(List<SmsRequest> messageList);
 
-    void createTransactionFromQueueMsg(SmsMessage message);
+    void createTransactionFromQueueMsg(SmsRequest message);
 
     String deleteTransaction(Transaction transaction);
 
     Transaction updateTransaction(String transactionId, UpdateTransactionRequest request);
 
-    ParsedTransaction parse(SmsMessage message);
+    ParsedTxnResponse parse(SmsRequest message);
 }

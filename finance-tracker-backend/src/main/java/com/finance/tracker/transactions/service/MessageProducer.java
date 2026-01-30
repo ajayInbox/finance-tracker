@@ -1,7 +1,7 @@
 package com.finance.tracker.transactions.service;
 
 import com.finance.tracker.transactions.config.RabbitMQConfig;
-import com.finance.tracker.transactions.domain.SmsMessage;
+import com.finance.tracker.transactions.domain.SmsRequest;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +14,7 @@ public class MessageProducer {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void sendMessage(SmsMessage message) {
+    public void sendMessage(SmsRequest message) {
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, message);
     }
 }

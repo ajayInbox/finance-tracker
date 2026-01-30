@@ -2,7 +2,7 @@ package com.finance.tracker.transactions.service.impl;
 
 import com.finance.tracker.transactions.domain.BankTemplate;
 import com.finance.tracker.transactions.domain.ParsedTransaction;
-import com.finance.tracker.transactions.domain.SmsMessage;
+import com.finance.tracker.transactions.domain.SmsRequest;
 import com.finance.tracker.transactions.service.SmsParserService;
 import com.finance.tracker.transactions.utilities.BankSenderRegistry;
 import com.finance.tracker.transactions.utilities.DateParserUtils;
@@ -21,18 +21,19 @@ import java.util.regex.Matcher;
 public class BankSmsParserServiceImpl implements SmsParserService {
 
     private final BankSenderRegistry senderRegistry;
+    private final TemplateLoader templateLoader;
 
     @Override
-    public Optional<ParsedTransaction> parse(SmsMessage sms) {
+    public Optional<ParsedTransaction> parse(SmsRequest sms) {
 
-        Optional<String> bankOpt = senderRegistry.resolveBank(sms.getMessageHeader());
+        Optional<String> bankOpt = senderRegistry.resolveBank(sms.getSender());
         if (bankOpt.isEmpty()) {
             return Optional.empty();
         }
 
         String bank = bankOpt.get();
-        List<BankTemplate> templates = TemplateLoader.load(bank);
-        String smsBody = sms.getMessageBody();
+        List<BankTemplate> templates = templateLoader.load(bank);
+        String smsBody = sms.getBody();
 
         ParsedTransaction bestTx = null;
         double bestConfidence = 0.0;

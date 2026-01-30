@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, String>, JpaSpecificationExecutor<Transaction> {
@@ -47,4 +48,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
 
     @Query(value = "SELECT * FROM Transaction WHERE status='ACTIVE'", nativeQuery = true)
     Page<Transaction> findAllTransactions(Pageable pageable);
+
+    @Query(value = "SELECT * from transaction where unique_identifier=:uniqueIdentifier AND (status='DRAFT' OR status='ACTIVE')", nativeQuery = true)
+    Optional<Transaction> findTransactionByUniqueIdentifier(@Param("uniqueIdentifier") String uniqueIdentifier);
 }
