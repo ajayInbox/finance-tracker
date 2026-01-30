@@ -1,3 +1,12 @@
+gradle.startParameter.excludedTaskNames.addAll(
+    listOf(
+        ":path_provider_android:compileDebugUnitTestSources",
+        ":path_provider_android:compileProfileUnitTestSources",
+        ":path_provider_android:compileReleaseUnitTestSources",
+        ":path_provider_android:generateDebugUnitTestConfig",
+        ":shared_preferences_android:generateDebugUnitTestConfig"
+    )
+)
 pluginManagement {
     val flutterSdkPath =
         run {
@@ -21,6 +30,7 @@ plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "8.9.1" apply false
     id("org.jetbrains.kotlin.android") version "2.1.0" apply false
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
 
 include(":app")
