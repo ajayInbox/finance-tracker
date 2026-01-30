@@ -16,13 +16,6 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final smsListeningEnabled = prefs.getBool('sms_listening_enabled') ?? false;
 
-  // Only start listening for SMS if user has enabled it
-  // if (false) {
-  //   Telephony.instance.listenIncomingSms(
-  //     onNewMessage: _onBackgroundSmsReceived,
-  //   );
-  // }
-
   runApp(const ProviderScope(child: MyApp()));
 }
 

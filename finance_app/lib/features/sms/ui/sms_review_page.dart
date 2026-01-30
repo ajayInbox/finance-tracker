@@ -1,65 +1,35 @@
+import 'package:finance_app/features/sms/ui/parsed_transaction_notifier.dart';
+import 'package:finance_app/features/sms/ui/sms_ui_state.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-class SmsReviewPage extends StatefulWidget {
+class SmsReviewPage extends ConsumerStatefulWidget {
   const SmsReviewPage({super.key});
 
   @override
-  State<SmsReviewPage> createState() => _SmsReviewPageState();
+  ConsumerState<SmsReviewPage> createState() => _SmsReviewPageState();
 }
 
-class _SmsReviewPageState extends State<SmsReviewPage> {
-  // Mock data for drafts
-  final List<Map<String, dynamic>> _drafts = [
-    {
-      'id': 1,
-      'isChecked': false,
-      'merchant': 'Whole Foods',
-      'time': 'Today, 10:42 AM',
-      'amount': '\$124.50',
-      'snippet':
-          'You spent \$124.50 at Whole Foods Market on card ending 4421...',
-      'icon': Icons.shopping_cart,
-      'color': Colors.orange,
-      'category': 'Groceries',
-    },
-    {
-      'id': 2,
-      'isChecked': true,
-      'merchant': 'Shell Station',
-      'time': 'Yesterday, 6:15 PM',
-      'amount': '\$45.00',
-      'snippet': 'Transaction alert: \$45.00 at Shell Station #3928 AUTH...',
-      'icon': Icons.local_gas_station,
-      'color': Colors.blue,
-      'category': 'Transport',
-    },
-    {
-      'id': 3,
-      'isChecked': false,
-      'merchant': 'Unknown Merch...',
-      'time': 'Yesterday, 12:30 PM',
-      'amount': '\$12.99',
-      'snippet': 'Purchase authorized for \$12.99 at SQ *CAFE M...',
-      'icon': Icons.help_center,
-      'color': Colors.grey,
-      'category': null,
-    },
-    {
-      'id': 4,
-      'isChecked': false,
-      'merchant': 'Netflix',
-      'time': 'Oct 24, 9:00 AM',
-      'amount': '\$15.99',
-      'snippet': 'Netflix subscription charge of \$15.99 processed...',
-      'icon': Icons.movie,
-      'color': Colors.purple,
-      'category': null, // Example of no category/buttons differing
-    },
-  ];
+class _SmsReviewPageState extends ConsumerState<SmsReviewPage> {
+  @override
+  void initState() {
+    super.initState();
+    _requestSmsPermission();
+  }
+
+  Future<void> _requestSmsPermission() async {
+    await Permission.sms.request();
+    // After permission is determined, we can ensure the provider is refreshed if needed,
+    // but the stream listener in the provider should be fine.
+  }
 
   @override
   Widget build(BuildContext context) {
+    final smsStateParams = ref.watch(parsedTxnProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8F6), // background-light
       body: Stack(
@@ -68,21 +38,40 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
             children: [
               _buildHeader(),
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    140,
-                  ), // Bottom padding for FAB and Nav
-                  children: [
-                    _buildScanCard(),
-                    const SizedBox(height: 24),
-                    _buildDraftsHeader(),
-                    const SizedBox(height: 12),
-                    ..._drafts.map((draft) => _buildDraftCard(draft)),
-                    const SizedBox(height: 10),
-                  ],
+                child: smsStateParams.when(
+                  data: (smsState) {
+                    final drafts = smsState.drafts;
+                    return ListView(
+                      padding: const EdgeInsets.fromLTRB(
+                        16,
+                        8,
+                        16,
+                        140,
+                      ), // Bottom padding for FAB and Nav
+                      children: [
+                        _buildScanCard(),
+                        const SizedBox(height: 24),
+                        _buildDraftsHeader(drafts),
+                        const SizedBox(height: 12),
+                        if (drafts.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Text(
+                                "No SMS drafts found",
+                                style: GoogleFonts.manrope(color: Colors.grey),
+                              ),
+                            ),
+                          )
+                        else
+                          ...drafts.map((draft) => _buildDraftCard(draft)),
+                        const SizedBox(height: 10),
+                      ],
+                    );
+                  },
+                  error: (err, stack) => Center(child: Text('Error: $err')),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                 ),
               ),
             ],
@@ -91,7 +80,11 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
             bottom: 30, // Above bottom nav
             left: 24,
             right: 24,
-            child: _buildCreateButton(),
+            child: smsStateParams.when(
+              data: (smsState) => _buildCreateButton(smsState.drafts),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
           ),
         ],
       ),
@@ -120,7 +113,7 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
               borderRadius: BorderRadius.circular(16), // rounded-2xl
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 2,
                   offset: const Offset(0, 1),
                 ),
@@ -259,7 +252,7 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
     );
   }
 
-  Widget _buildDraftsHeader() {
+  Widget _buildDraftsHeader(List<TransactionDraft> drafts) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
@@ -269,7 +262,7 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${_drafts.length} New Drafts',
+                '${drafts.length} New Drafts',
                 style: GoogleFonts.manrope(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -286,18 +279,23 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF49E619).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              'Select All',
-              style: GoogleFonts.manrope(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF49E619),
+          InkWell(
+            onTap: () {
+              ref.read(parsedTxnProvider.notifier).selectAll();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF49E619).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Select All',
+                style: GoogleFonts.manrope(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF49E619),
+                ),
               ),
             ),
           ),
@@ -306,7 +304,7 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
     );
   }
 
-  Widget _buildDraftCard(Map<String, dynamic> draft) {
+  Widget _buildDraftCard(TransactionDraft draft) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -327,11 +325,11 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
               width: 24,
               height: 24,
               child: Checkbox(
-                value: draft['isChecked'],
+                value: draft.isChecked,
                 onChanged: (val) {
-                  setState(() {
-                    draft['isChecked'] = val;
-                  });
+                  ref
+                      .read(parsedTxnProvider.notifier)
+                      .toggleDraft(draft.id, val);
                 },
                 activeColor: const Color(0xFF49E619),
                 shape: RoundedRectangleBorder(
@@ -349,46 +347,58 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: (draft['color'] as Color).withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            draft['icon'],
-                            size: 20,
-                            color: draft['color'],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              draft['merchant'],
-                              style: GoogleFonts.manrope(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF0F172A),
-                              ),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: (draft.categoryColor ?? Colors.grey)
+                                  .withOpacity(0.1),
+                              shape: BoxShape.circle,
                             ),
-                            Text(
-                              draft['time'],
-                              style: GoogleFonts.manrope(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[400],
-                              ),
+                            child: Icon(
+                              draft.categoryIcon ?? Icons.help_outline,
+                              size: 20,
+                              color: draft.categoryColor ?? Colors.grey,
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  draft.merchant,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                Text(
+                                  DateFormat(
+                                    'MMM d, h:mm a',
+                                  ).format(draft.date),
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[400],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        ref
+                            .read(parsedTxnProvider.notifier)
+                            .removeDraft(draft.id);
+                      },
                       icon: const Icon(Icons.close, size: 20),
                       color: Colors.grey[400],
                       padding: EdgeInsets.zero,
@@ -398,7 +408,7 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  draft['amount'],
+                  NumberFormat.simpleCurrency(name: 'INR').format(draft.amount),
                   style: GoogleFonts.manrope(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
@@ -407,7 +417,7 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  draft['snippet'],
+                  draft.originalMessage,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.manrope(
@@ -429,11 +439,11 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _buildActionButton(
-                        icon: draft['category'] == null
+                        icon: draft.assignedCategory == null
                             ? Icons.add
                             : Icons.category,
-                        label: draft['category'] ?? 'Categorize',
-                        isPrimary: draft['category'] == null,
+                        label: draft.assignedCategory ?? 'Categorize',
+                        isPrimary: draft.assignedCategory == null,
                         onTap: () {},
                       ),
                     ),
@@ -486,8 +496,8 @@ class _SmsReviewPageState extends State<SmsReviewPage> {
     );
   }
 
-  Widget _buildCreateButton() {
-    int checkedCount = _drafts.where((d) => d['isChecked'] == true).length;
+  Widget _buildCreateButton(List<TransactionDraft> drafts) {
+    int checkedCount = drafts.where((d) => d.isChecked).length;
     return Container(
       height: 56,
       decoration: BoxDecoration(
