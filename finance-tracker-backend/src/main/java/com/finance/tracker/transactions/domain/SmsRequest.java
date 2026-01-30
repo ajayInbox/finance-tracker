@@ -7,11 +7,11 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SmsMessage {
+public class SmsRequest {
 
-    private String messageAddress;
-    private String messageHeader;
-    private String messageBody;
-    private String messageDate;
+    private String uniqueIdentifier;
+    private String sender;
+    private String body;
+    private String timestamp;
 
 }
