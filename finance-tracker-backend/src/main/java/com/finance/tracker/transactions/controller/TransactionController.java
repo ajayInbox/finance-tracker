@@ -125,7 +125,7 @@ public class TransactionController {
     // Export SMS Messages
     // -----------------------------------------------------
     @PostMapping("/export-messages")
-    public ResponseEntity<Void> exportMessages(@RequestBody List<SmsMessage> messages) {
+    public ResponseEntity<Void> exportMessages(@RequestBody List<SmsRequest> messages) {
         transactionService.exportMessagesSendToQueue(messages);
         return ResponseEntity.ok().build();
     }
@@ -134,8 +134,7 @@ public class TransactionController {
     // Parse SMS Messages
     // -----------------------------------------------------
     @PostMapping("/parse")
-    public ResponseEntity<ParsedTransaction> parse(@RequestBody SmsMessage message) {
-        ParsedTransaction parsedTransaction = transactionService.parse(message);
-        return ResponseEntity.ok(parsedTransaction);
+    public ResponseEntity<ParsedTxnResponse> parse(@RequestBody SmsRequest message) {
+        return ResponseEntity.ok(transactionService.parse(message));
     }
 }

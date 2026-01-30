@@ -12,6 +12,6 @@ public class SmsRequest {
     private String uniqueIdentifier;
     private String sender;
     private String body;
-    private String timestamp;
+    private Long timestamp;
 
 }

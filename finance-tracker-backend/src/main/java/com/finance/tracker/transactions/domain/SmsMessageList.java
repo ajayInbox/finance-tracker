@@ -9,6 +9,6 @@ import java.util.List;
 @AllArgsConstructor
 public class SmsMessageList {
 
-    List<SmsMessage> smsMessages;
+    List<SmsRequest> smsMessages;
 
 }

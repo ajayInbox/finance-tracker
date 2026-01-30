@@ -1,8 +1,6 @@
 package com.finance.tracker.transactions.domain.entities;
 
-import com.finance.tracker.transactions.domain.TransactionType;
-import com.finance.tracker.transactions.domain.LastAction;
-import com.finance.tracker.transactions.domain.TransactionStatus;
+import com.finance.tracker.transactions.domain.*;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,7 +50,8 @@ public class Transaction {
     private Instant createdAt;
     private Instant updatedAt;
 
-    private String currency;
+    @Enumerated(EnumType.STRING)
+    private Currency currency;
     private String attachments;
     private String externalRef;
     private String userId;
@@ -65,6 +64,9 @@ public class Transaction {
 
     // Points to ORIGINAL transaction ID
     private String reversalOf;
+    @Enumerated(EnumType.STRING)
+    private TransactionSource source;
+    private String uniqueIdentifier;
 
     public Transaction(Transaction original) {
         this.transactionName = original.transactionName;
