@@ -1,7 +1,7 @@
 package com.finance.tracker.transactions.service.impl;
 
 import com.finance.tracker.transactions.domain.ParsedTransaction;
-import com.finance.tracker.transactions.domain.SmsMessage;
+import com.finance.tracker.transactions.domain.SmsRequest;
 import com.finance.tracker.transactions.service.SmsParserService;
 import org.springframework.stereotype.Service;
 
@@ -40,9 +40,9 @@ public class UpiSmsParserServiceImpl implements SmsParserService {
             Pattern.compile("(?i)(?:AC|A/C|A/c|a/c|ac)\\s*[Xx]?(\\d{4})\\b");
 
     @Override
-    public Optional<ParsedTransaction> parse(SmsMessage sms) {
+    public Optional<ParsedTransaction> parse(SmsRequest sms) {
         // Fast reject if message doesn't look like UPI
-        String smsBody = sms.getMessageBody();
+        String smsBody = sms.getBody();
         if (!UPI_HINT.matcher(smsBody).find()) {
             return Optional.empty();
         }

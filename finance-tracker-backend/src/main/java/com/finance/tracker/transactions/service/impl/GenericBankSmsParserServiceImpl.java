@@ -1,7 +1,7 @@
 package com.finance.tracker.transactions.service.impl;
 
 import com.finance.tracker.transactions.domain.ParsedTransaction;
-import com.finance.tracker.transactions.domain.SmsMessage;
+import com.finance.tracker.transactions.domain.SmsRequest;
 import com.finance.tracker.transactions.service.SmsParserService;
 import org.springframework.stereotype.Service;
 
@@ -31,8 +31,8 @@ public class GenericBankSmsParserServiceImpl implements SmsParserService {
             Pattern.compile("(?i)(?:AC|A/C|A/c|a/c|ac)\\s*[Xx]?(\\d{4})\\b");
 
     @Override
-    public Optional<ParsedTransaction> parse(SmsMessage sms) {
-        String smsBody = sms.getMessageBody();
+    public Optional<ParsedTransaction> parse(SmsRequest sms) {
+        String smsBody = sms.getBody();
         String amount = extract(AMOUNT, smsBody, 2);
         if (amount == null) {
             return Optional.empty(); // amount is mandatory

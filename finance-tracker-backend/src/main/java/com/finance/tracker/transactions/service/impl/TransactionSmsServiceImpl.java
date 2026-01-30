@@ -2,7 +2,7 @@ package com.finance.tracker.transactions.service.impl;
 
 import com.finance.tracker.transactions.domain.CreateTransactionRequest;
 import com.finance.tracker.transactions.domain.ParsedTransaction;
-import com.finance.tracker.transactions.domain.SmsMessage;
+import com.finance.tracker.transactions.domain.SmsRequest;
 import com.finance.tracker.transactions.exceptions.SmsParsingFailedException;
 import com.finance.tracker.transactions.service.MessageProducer;
 import com.finance.tracker.transactions.service.SmsParserService;
@@ -36,24 +36,24 @@ public class TransactionSmsServiceImpl implements TransactionSmsService {
     private static final double CONFIDENCE_THRESHOLD = 0.7;
 
     @Override
-    public void exportMessages(List<SmsMessage> messageList) {
-        for (SmsMessage message : messageList) {
+    public void exportMessages(List<SmsRequest> messageList) {
+        for (SmsRequest message : messageList) {
           //  createTransactionFromMessage(message);
         }
     }
 
     @Override
-    public void exportMessagesSendToQueue(List<SmsMessage> messageList) {
-        for (SmsMessage message : messageList) {
+    public void exportMessagesSendToQueue(List<SmsRequest> messageList) {
+        for (SmsRequest message : messageList) {
             messageProducer.sendMessage(message);
         }
     }
 
     @Override
-    public Optional<ParsedTransaction> parseTransactionFromSms(SmsMessage message) {
+    public Optional<ParsedTransaction> parseTransactionFromSms(SmsRequest message) {
 
         //UPI → UPI parser
-        if (isUpi(message.getMessageBody())) {
+        if (isUpi(message.getBody())) {
             Optional<ParsedTransaction> upiResult =
                     parserMap.get("upiSmsParser").parse(message);
 
@@ -78,8 +78,7 @@ public class TransactionSmsServiceImpl implements TransactionSmsService {
             return genericResult;
         }
 
-        //Hard failure
-        throw new SmsParsingFailedException(message.getMessageBody());
+        return Optional.empty();
     }
 
     private boolean isSatisfactory(Optional<ParsedTransaction> result) {
