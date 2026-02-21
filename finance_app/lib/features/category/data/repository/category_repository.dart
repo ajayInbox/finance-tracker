@@ -21,4 +21,13 @@ class CategoryRepository {
     final res = await dio.post(ApiConstants.createCategory, data: data);
     return Category.fromJson(res.data as Map<String, dynamic>);
   }
+
+  Future<Category> updateCategory(String id, Map<String, dynamic> data) async {
+    final res = await dio.put('${ApiConstants.getCategories}/$id', data: data);
+    return Category.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> deleteCategory(String id) async {
+    await dio.delete('${ApiConstants.getCategories}/$id');
+  }
 }

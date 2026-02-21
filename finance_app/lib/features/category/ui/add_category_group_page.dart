@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:finance_app/features/category/application/category_controller.dart';
+import 'package:finance_app/features/category/data/models/category.dart';
 
 class AddCategoryGroupPage extends ConsumerStatefulWidget {
-  const AddCategoryGroupPage({super.key});
+  final Category? categoryGroupToEdit;
+
+  const AddCategoryGroupPage({super.key, this.categoryGroupToEdit});
 
   @override
   ConsumerState<AddCategoryGroupPage> createState() =>
@@ -46,6 +49,40 @@ class _AddCategoryGroupPageState extends ConsumerState<AddCategoryGroupPage> {
     Icons.wifi,
     Icons.more_horiz,
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.categoryGroupToEdit != null) {
+      final category = widget.categoryGroupToEdit!;
+      _nameController.text = category.name;
+      _selectedType = category.type;
+
+      List<String> iconParts = category.iconKey.split('+');
+      if (iconParts.length == 2) {
+        int codePoint = int.parse(iconParts[0]);
+        String fontFamily = iconParts[1];
+        _selectedIcon = IconData(codePoint, fontFamily: fontFamily);
+        for (var icon in _availableIcons) {
+          if (icon.codePoint == codePoint && icon.fontFamily == fontFamily) {
+            _selectedIcon = icon;
+            break;
+          }
+        }
+      }
+
+      int colorCode = int.tryParse(category.colorCode) ?? 0;
+      if (colorCode != 0) {
+        Color c = Color(colorCode);
+        int idx = _themeColors.indexWhere(
+          (element) => element.value == c.value,
+        );
+        if (idx != -1) {
+          _selectedColorIndex = idx;
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -124,7 +161,7 @@ class _AddCategoryGroupPageState extends ConsumerState<AddCategoryGroupPage> {
             ),
           ),
           Text(
-            'New Group',
+            widget.categoryGroupToEdit == null ? 'New Group' : 'Edit Group',
             style: GoogleFonts.plusJakartaSans(
               color: textColor,
               fontSize: 18,
@@ -149,14 +186,26 @@ class _AddCategoryGroupPageState extends ConsumerState<AddCategoryGroupPage> {
                       const Center(child: CircularProgressIndicator()),
                 );
 
-                await ref.read(categoryControllerProvider.notifier).createCategory({
+                final data = {
                   "name": name,
                   "type": _selectedType,
                   "parentId": null,
                   "iconKey":
                       '${_selectedIcon.codePoint}+${_selectedIcon.fontFamily ?? ''}',
-                  "colorCode": _themeColors[_selectedColorIndex].toARGB32(),
-                });
+                  "colorCode": _themeColors[_selectedColorIndex]
+                      .toARGB32()
+                      .toString(),
+                };
+
+                if (widget.categoryGroupToEdit == null) {
+                  await ref
+                      .read(categoryControllerProvider.notifier)
+                      .createCategory(data);
+                } else {
+                  await ref
+                      .read(categoryControllerProvider.notifier)
+                      .updateCategory(widget.categoryGroupToEdit!.id, data);
+                }
 
                 if (mounted) {
                   Navigator.of(context).pop(); // dismiss loading
@@ -172,7 +221,7 @@ class _AddCategoryGroupPageState extends ConsumerState<AddCategoryGroupPage> {
               }
             },
             child: Text(
-              'Save',
+              widget.categoryGroupToEdit == null ? 'Save' : 'Update',
               style: GoogleFonts.plusJakartaSans(
                 color: primaryColor,
                 fontSize: 16,

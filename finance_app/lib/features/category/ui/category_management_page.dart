@@ -58,14 +58,6 @@ class _CategoryManagementPageState
                 color: textColor,
               ),
             ),
-            actions: [
-              IconButton(
-                icon: Icon(Icons.search, color: Colors.grey[500]),
-                onPressed: () {
-                  // Focus search or show search bar
-                },
-              ),
-            ],
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -85,7 +77,7 @@ class _CategoryManagementPageState
                     ...categories.map((group) {
                       int codePoint = 0;
                       String fontFamily = '';
-                      List<String> iconParts = group.iconKey!.split('+');
+                      List<String> iconParts = group.iconKey.split('+');
                       if (iconParts.length == 2) {
                         codePoint = int.parse(iconParts[0]);
                         fontFamily = iconParts[1];
@@ -101,6 +93,7 @@ class _CategoryManagementPageState
                           surfaceColor: surfaceColor,
                           primaryColor: primaryColor,
                           textColor: textColor,
+                          group: group,
                         ),
                       );
                     }),
@@ -142,6 +135,62 @@ class _CategoryManagementPageState
         child: const Icon(Icons.add, color: Color(0xFF102216)),
       ),
     );
+  }
+
+  Future<void> _confirmDelete(Category category) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Delete ${category.children.isNotEmpty ? 'Group' : 'Category'}',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Are you sure you want to delete "${category.name}"?',
+          style: GoogleFonts.plusJakartaSans(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.plusJakartaSans(color: Colors.grey[600]),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              'Delete',
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.red,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+      try {
+        await ref
+            .read(categoryControllerProvider.notifier)
+            .deleteCategory(category.id);
+        if (mounted) Navigator.of(context).pop(); // dismiss loading
+      } catch (e) {
+        if (mounted) {
+          Navigator.of(context).pop(); // dismiss loading
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
+      }
+    }
   }
 
   Widget _buildSearchBar(Color surfaceColor, Color primaryColor) {
@@ -190,6 +239,7 @@ class _CategoryManagementPageState
     required Color surfaceColor,
     required Color primaryColor,
     required Color textColor,
+    required Category group,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -226,24 +276,55 @@ class _CategoryManagementPageState
                   child: Icon(icon, color: iconColor),
                 ),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${categories.length} sub-categories',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: textColor,
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, size: 20),
+                      color: Colors.grey[400],
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AddCategoryGroupPage(
+                              categoryGroupToEdit: group,
+                            ),
+                          ),
+                        );
+                      },
+                      splashRadius: 20,
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(8),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${categories.length} sub-categories',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, size: 20),
+                      color: Colors.grey[400],
+                      onPressed: () => _confirmDelete(group),
+                      splashRadius: 20,
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(8),
                     ),
                   ],
                 ),
@@ -355,7 +436,14 @@ class _CategoryManagementPageState
                 IconButton(
                   icon: const Icon(Icons.edit, size: 20),
                   color: Colors.grey[400],
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            AddCategoryPage(categoryToEdit: category),
+                      ),
+                    );
+                  },
                   splashRadius: 20,
                   constraints: const BoxConstraints(),
                   padding: const EdgeInsets.all(8),
@@ -363,7 +451,7 @@ class _CategoryManagementPageState
                 IconButton(
                   icon: const Icon(Icons.delete, size: 20),
                   color: Colors.grey[400],
-                  onPressed: () {},
+                  onPressed: () => _confirmDelete(category),
                   splashRadius: 20,
                   constraints: const BoxConstraints(),
                   padding: const EdgeInsets.all(8),

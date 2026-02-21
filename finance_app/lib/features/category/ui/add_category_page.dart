@@ -6,7 +6,9 @@ import 'package:finance_app/features/category/data/models/category.dart';
 import 'package:finance_app/features/category/application/category_controller.dart';
 
 class AddCategoryPage extends ConsumerStatefulWidget {
-  const AddCategoryPage({super.key});
+  final Category? categoryToEdit;
+
+  const AddCategoryPage({super.key, this.categoryToEdit});
 
   @override
   ConsumerState<AddCategoryPage> createState() => _AddCategoryPageState();
@@ -46,6 +48,42 @@ class _AddCategoryPageState extends ConsumerState<AddCategoryPage> {
     Icons.wifi,
     Icons.more_horiz,
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.categoryToEdit != null) {
+      final category = widget.categoryToEdit!;
+      _nameController.text = category.name;
+
+      List<String> iconParts = category.iconKey.split('+');
+      if (iconParts.length == 2) {
+        int codePoint = int.parse(iconParts[0]);
+        String fontFamily = iconParts[1];
+        _selectedIcon = IconData(codePoint, fontFamily: fontFamily);
+        for (var icon in _availableIcons) {
+          if (icon.codePoint == codePoint && icon.fontFamily == fontFamily) {
+            _selectedIcon = icon;
+            break;
+          }
+        }
+      }
+
+      int colorCode = int.tryParse(category.colorCode) ?? 0;
+      if (colorCode != 0) {
+        Color c = Color(colorCode);
+        int idx = _themeColors.indexWhere(
+          (element) => element.value == c.value,
+        );
+        if (idx != -1) {
+          _selectedColorIndex = idx;
+        }
+      }
+
+      // the parent group will be set in the build method when the groups are loaded
+      // we'll use a post frame callback or just rely on the future builder
+    }
+  }
 
   @override
   void dispose() {
@@ -124,7 +162,7 @@ class _AddCategoryPageState extends ConsumerState<AddCategoryPage> {
             ),
           ),
           Text(
-            'New Category',
+            widget.categoryToEdit == null ? 'New Category' : 'Edit Category',
             style: GoogleFonts.plusJakartaSans(
               color: textColor,
               fontSize: 18,
@@ -155,14 +193,26 @@ class _AddCategoryPageState extends ConsumerState<AddCategoryPage> {
                       const Center(child: CircularProgressIndicator()),
                 );
 
-                await ref.read(categoryControllerProvider.notifier).createCategory({
+                final data = {
                   "name": name,
                   "type": _selectedParentGroup!.type,
                   "parentId": _selectedParentGroup!.id,
                   "iconKey":
                       '${_selectedIcon.codePoint}+${_selectedIcon.fontFamily ?? ''}',
-                  "colorCode": _themeColors[_selectedColorIndex].toARGB32(),
-                });
+                  "colorCode": _themeColors[_selectedColorIndex]
+                      .toARGB32()
+                      .toString(),
+                };
+
+                if (widget.categoryToEdit == null) {
+                  await ref
+                      .read(categoryControllerProvider.notifier)
+                      .createCategory(data);
+                } else {
+                  await ref
+                      .read(categoryControllerProvider.notifier)
+                      .updateCategory(widget.categoryToEdit!.id, data);
+                }
 
                 if (mounted) {
                   Navigator.of(context).pop(); // dismiss loading
@@ -178,7 +228,7 @@ class _AddCategoryPageState extends ConsumerState<AddCategoryPage> {
               }
             },
             child: Text(
-              'Save',
+              widget.categoryToEdit == null ? 'Save' : 'Update',
               style: GoogleFonts.plusJakartaSans(
                 color: primaryColor,
                 fontSize: 16,
@@ -309,9 +359,25 @@ class _AddCategoryPageState extends ConsumerState<AddCategoryPage> {
                 );
               }
 
-              // Only top-level groups (assumed here by checking parentId, or just listing them all since API says they are returned if they have children)
-              // Since the API returns top-level groups, we'll just use the list returned directly.
+              // Only top-level groups
               final groups = categories;
+
+              // Pre-select parent group if editing
+              if (widget.categoryToEdit != null &&
+                  _selectedParentGroup == null) {
+                try {
+                  final parent = groups.firstWhere(
+                    (g) => g.id == widget.categoryToEdit!.parentId,
+                  );
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() {
+                        _selectedParentGroup = parent;
+                      });
+                    }
+                  });
+                } catch (_) {}
+              }
 
               return ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 20),

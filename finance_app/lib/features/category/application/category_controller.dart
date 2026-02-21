@@ -26,4 +26,14 @@ class CategoryController extends AsyncNotifier<List<Category>> {
     await ref.read(categoryRepositoryProvider).createCategory(data);
     await refresh();
   }
+
+  Future<void> updateCategory(String id, Map<String, dynamic> data) async {
+    await ref.read(categoryRepositoryProvider).updateCategory(id, data);
+    await refresh();
+  }
+
+  Future<void> deleteCategory(String id) async {
+    await ref.read(categoryRepositoryProvider).deleteCategory(id);
+    await refresh();
+  }
 }
