@@ -10,8 +10,9 @@ public enum CategoryType {
     UNKNOWN("unknown");
 
     private final String value;
-    CategoryType(String value){
-        this.value=value;
+
+    CategoryType(String value) {
+        this.value = value;
     }
 
     // Cached map for fast lookup
@@ -29,19 +30,5 @@ public enum CategoryType {
     public static CategoryType fromValueIgnoreCase(String value) {
         if (value == null) return UNKNOWN;
         return LOOKUP.getOrDefault(value.toLowerCase(), UNKNOWN);
-    }
-
-    /**
-     * Strict lookup — throws on invalid value.
-     */
-    public static CategoryType fromValue(String value) {
-        if (value == null) {
-            throw new IllegalArgumentException("value is null");
-        }
-        CategoryType t = LOOKUP.get(value.toLowerCase());
-        if (t == null || t == UNKNOWN) {
-            throw new IllegalArgumentException("Unknown value: " + value);
-        }
-        return t;
     }
 }
