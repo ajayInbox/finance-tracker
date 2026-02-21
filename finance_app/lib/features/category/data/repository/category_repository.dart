@@ -13,10 +13,12 @@ class CategoryRepository {
     final data = res.data;
     final List list = data is List ? data : (data['content'] as List);
 
-    return list
-        .cast<Map<String, dynamic>>()
-        .map(Category.fromJson)
-        .toList();
+    return list.cast<Map<String, dynamic>>().map(Category.fromJson).toList();
   }
 
+  Future<Category> createCategory(Map<String, dynamic> data) async {
+    print(data);
+    final res = await dio.post(ApiConstants.createCategory, data: data);
+    return Category.fromJson(res.data as Map<String, dynamic>);
+  }
 }

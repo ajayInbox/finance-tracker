@@ -1,38 +1,50 @@
 class Category {
-
   final String id;
-  final String key;
-  final String label;
-  final String categoryType;
-  final bool active;
-  // final bool isExpense;
-  // final bool isIncome;
+  final String name;
+  final String? description;
+  final String type;
+  final bool isActive;
+  final String? parentId;
+  final List<Category> children;
+  final String iconKey;
+  final String colorCode;
 
-  Category({required this.id, 
-    required this.key, 
-    required this.label,
-    required this.categoryType,
-    required this.active,
-    // required this.isExpense,
-    // required this.isIncome
+  Category({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.type,
+    required this.isActive,
+    this.parentId,
+    this.children = const [],
+    required this.iconKey,
+    required this.colorCode,
   });
 
-  factory Category.fromJson(Map<String,dynamic> j) => Category(
-    id: j['id'] as String,
-    key: j['key'] as String,
-    label: j['label'] as String,
-    active: j['active'] as bool,
-    // isExpense: j['isExpense'] as bool,
-    // isIncome: j['isIncome'] as bool,
-    categoryType: j['categoryType'] as String
-  );
+  factory Category.fromJson(Map<String, dynamic> j) {
+    List<Category> parsedChildren = [];
+    if (j['children'] != null && j['children'] is List) {
+      parsedChildren = (j['children'] as List)
+          .map(
+            (childProps) =>
+                Category.fromJson(childProps as Map<String, dynamic>),
+          )
+          .toList();
+    }
 
-  bool isExpense(){
-    return categoryType=='EXPENSE';
-  } 
+    return Category(
+      id: j['id']?.toString() ?? '',
+      name: j['name']?.toString() ?? '',
+      description: j['description']?.toString(),
+      type: j['type']?.toString() ?? 'EXPENSE',
+      isActive: (j['isActive'] ?? j['active'] ?? true) == true,
+      parentId: j['parentId']?.toString(),
+      children: parsedChildren,
+      iconKey: j['iconKey'].toString(),
+      colorCode: j['colorCode'].toString(),
+    );
+  }
 
-  bool isIncome(){
-    return categoryType=='INCOME';
-  } 
-  
+  bool isExpense() => type == 'EXPENSE';
+  bool isIncome() => type == 'INCOME';
 }
