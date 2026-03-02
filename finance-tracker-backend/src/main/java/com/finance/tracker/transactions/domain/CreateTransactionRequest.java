@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -18,12 +19,12 @@ public class CreateTransactionRequest {
     String merchant;
     String notes;
     String transactionName;
-    String account;
-    String category;
+    UUID account;
+    UUID category;
     List<String> tags;
     String occurredAt;
     String postedAt;
-    String currency;
+    String currency = "INR";
     String attachments;
     String externalRef;
 }

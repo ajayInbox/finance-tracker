@@ -37,7 +37,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         if (dto.getParentId() != null) {
             // Validation ensures the parent belongs to the same user AND has the same type
-            Category parent = validateAndGet(dto.getParentId().toString(), userId.toString(), CategoryType.fromValueIgnoreCase(dto.getType()));
+            Category parent = validateAndGet(dto.getParentId(), userId, CategoryType.fromValueIgnoreCase(dto.getType()));
             category.setParent(parent);
         }
 
@@ -93,7 +93,7 @@ public class CategoryServiceImpl implements CategoryService {
         // 3. Handle moving to a different parent (if allowed)
         if (updateDto.getParentId() != null && !updateDto.getParentId().equals(category.getParent().getId())) {
             // Ensure the NEW parent also belongs to the user and matches the category's type
-            Category newParent = validateAndGet(updateDto.getParentId().toString(), userId.toString(), category.getType());
+            Category newParent = validateAndGet(updateDto.getParentId(), userId, category.getType());
             category.setParent(newParent);
         }
 
@@ -129,13 +129,22 @@ public class CategoryServiceImpl implements CategoryService {
         }
     }
 
+    @Override
+    public List<CategoryResponseDto> getAllSubCategories(UUID userId) {
+        List<Category> children = repository.findByUserIdAndParentIsNotNullAndDeletedAtIsNull(userId);
+
+        return children.stream()
+                .map(this::mapToResponseDto)
+                .collect(Collectors.toList());
+    }
+
     /**
      * Validates existence and ownership.
      * Returns the category if valid, otherwise throws an exception.
      */
     @Override
-    public Category validateAndGet(String id, String userId, CategoryType categoryType) {
-        return repository.findByIdAndUserIdAndType(UUID.fromString(id), UUID.fromString(userId), categoryType)
+    public Category validateAndGet(UUID id, UUID userId, CategoryType categoryType) {
+        return repository.findByIdAndUserIdAndType(id, userId, categoryType)
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found or access denied"));
     }
 

@@ -12,7 +12,7 @@ import java.util.UUID;
 
 public interface CategoryService {
 
-    Category validateAndGet(String userId, String categoryId, CategoryType type);
+    Category validateAndGet(UUID userId, UUID categoryId, CategoryType type);
 
     CategoryResponseDto save(CategoryRequestDto dto, UUID userId);
 
@@ -21,4 +21,6 @@ public interface CategoryService {
     CategoryResponseDto update(UUID id, CategoryUpdateDto updateDto, UUID userId);
 
     void deleteRecursive(UUID id);
+
+    List<CategoryResponseDto> getAllSubCategories(UUID userId);
 }

@@ -3,7 +3,6 @@ package com.finance.tracker.category.controller;
 import com.finance.tracker.category.domain.dtos.CategoryRequestDto;
 import com.finance.tracker.category.domain.dtos.CategoryResponseDto;
 import com.finance.tracker.category.domain.dtos.CategoryUpdateDto;
-import com.finance.tracker.category.domain.entities.Category;
 import com.finance.tracker.category.mapper.CategoryMapper;
 import com.finance.tracker.category.service.CategoryService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +31,13 @@ public class CategoryController {
     @GetMapping()
     public ResponseEntity<List<CategoryResponseDto>> getAll() {
         return ResponseEntity.ok(categoryService.getAllTree(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4")));
+    }
+
+    // GET ALL CHILDREN ONLY
+    @GetMapping("/subcategories")
+    public ResponseEntity<List<CategoryResponseDto>> getAllChildren() {
+        List<CategoryResponseDto> subCategories = categoryService.getAllSubCategories(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"));
+        return ResponseEntity.ok(subCategories);
     }
 
     // UPDATE
