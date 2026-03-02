@@ -4,13 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 public class SnapshotCreateRequest {
 
-    private String accountId;
-    private String transactionId;
+    private UUID accountId;
+    private UUID transactionId;
     private BigDecimal previousBalance;
     private BigDecimal newBalance;
     private BigDecimal transactionAmount;
