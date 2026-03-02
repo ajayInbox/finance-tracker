@@ -4,17 +4,18 @@ import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Getter
 public class ATSnapshotCreateEvent extends ApplicationEvent {
 
-    private final String accountId;
-    private final String transactionId;
+    private final UUID accountId;
+    private final UUID transactionId;
     private final BigDecimal previousBalance;
     private final BigDecimal newBalance;
     private final BigDecimal transactionAmount;
 
-    public ATSnapshotCreateEvent(Object source, String accountId, String transactionId,
+    public ATSnapshotCreateEvent(Object source, UUID accountId, UUID transactionId,
                                  BigDecimal previousBalance, BigDecimal newBalance, BigDecimal transactionAmount) {
         super(source);
         this.accountId=accountId;

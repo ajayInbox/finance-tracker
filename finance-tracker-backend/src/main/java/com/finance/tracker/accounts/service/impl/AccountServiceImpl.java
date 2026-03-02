@@ -6,6 +6,7 @@ import com.finance.tracker.accounts.exceptions.*;
 import com.finance.tracker.accounts.mapper.AccountMapper;
 import com.finance.tracker.accounts.repository.AccountRepository;
 import com.finance.tracker.accounts.service.AccountService;
+import com.finance.tracker.transactions.domain.Currency;
 import com.finance.tracker.transactions.domain.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -14,8 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,96 +28,80 @@ public class AccountServiceImpl implements AccountService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public Account getAccountByIdAndUser(String accountId, String userId) {
+    public Account getAccountByIdAndUser(UUID accountId, UUID userId) {
         return accountRepository.findAccountByIdForUser(accountId, userId)
-                .orElseThrow(() -> new AccountNotFoundException("Account not found"));
-    }
-
-    protected List<Account> getAccountsByUserId(String userId) {
-        return accountRepository.findByUserIdAndIsActive(userId);
+                .orElseThrow(() -> new AccountNotFoundException("Account not found or access denied"));
     }
 
     @Override
     @Transactional
-    public void updateBalanceForTransaction(BalanceUpdateRequest request) {
+    public void updateBalanceForTransaction(BalanceUpdateRequest request, UUID userId) {
+        // 1. Pre-fetch to identify Category and initial state
+        Account account = getAccountByIdAndUser(request.getAccountId(), userId);
 
-        String userId = null;
-        // 1. Lock the account for transaction
-        Account lockedAccount = accountRepository.lockAccount(request.getAccountId(), userId)
-                .orElseThrow(() -> new AccountNotFoundException("Account not found"));
+        BigDecimal delta;
+        int rowsUpdated;
 
-        BigDecimal amount = request.getAmount();
-        BigDecimal previousBalance = getEffectiveBalance(lockedAccount);
-        BigDecimal newBalance = BigDecimal.ZERO;
-
-        // 2. APPLY CORRECT EFFECT BASED ON CATEGORY
-        if (lockedAccount.getCategory() == AccountCategory.ASSET) {
-
-            // Bank/Cash/Wallet
-            BigDecimal delta = (request.getTransactionType() == TransactionType.EXPENSE)
-                    ? amount.negate()
-                    : amount;
-
-            newBalance = previousBalance.add(delta);
-            if(newBalance.doubleValue()<0){
-                throw new AccountAmountNegativeException("Account balance should not be negative");
-            }
-            lockedAccount.setCurrentBalance(newBalance);
-
-        } else if (lockedAccount.getCategory() == AccountCategory.LIABILITY) {
-
-            // Credit Card / Loan
-            // EXPENSE → increase outstanding
-            // INCOME → reduce outstanding
-            BigDecimal creditLimit = lockedAccount.getCreditLimit();
-            BigDecimal delta = (request.getTransactionType() == TransactionType.EXPENSE)
-                    ? amount
-                    : amount.negate();
-            BigDecimal currentCreditLimit = creditLimit.add(newBalance.negate());
-            
-            newBalance = previousBalance.add(delta);
-            if(delta.doubleValue()>currentCreditLimit.doubleValue()){
-                throw new AmountGtCurrentBalance("Amount is greater than current credit limit");
-            }
-            if(newBalance.doubleValue()<0){
-                throw new AccountAmountNegativeException("Current outstanding should not be negative");
-            }
-            lockedAccount.setCurrentOutstanding(newBalance);
+        if (account.isAsset()) {
+            delta = (request.getTransactionType() == TransactionType.EXPENSE)
+                    ? request.getAmount().negate() : request.getAmount();
+            rowsUpdated = accountRepository.updateAssetBalance(account.getId(), userId, delta);
+        } else {
+            delta = (request.getTransactionType() == TransactionType.EXPENSE)
+                    ? request.getAmount() : request.getAmount().negate();
+            rowsUpdated = accountRepository.updateLiabilityBalance(account.getId(), userId, delta);
         }
 
-        lockedAccount.setBalanceAsOf(Instant.now());
-        accountRepository.save(lockedAccount);
+        if (rowsUpdated == 0) {
+            throw new AccountUpdateFailedException("Update failed: Insufficient funds or credit limit reached.");
+        }
 
-        // 3. Create Snapshot
-        eventPublisher.publishEvent(
-                new ATSnapshotCreateEvent(
-                        this,
-                        lockedAccount.getId(),
-                        request.getTransactionId(),
-                        previousBalance,
-                        newBalance,
-                        request.getAmount()
-                )
-        );
+        // 2. Audit Snapshot
+        BigDecimal oldBalance = getEffectiveBalance(account);
+        eventPublisher.publishEvent(new ATSnapshotCreateEvent(
+                this, account.getId(), request.getTransactionId(),
+                oldBalance, oldBalance.add(delta), request.getAmount()
+        ));
     }
 
     @Override
-    public Account create(String userId, AccountCreateUpdateRequest req) {
+    @Transactional
+    public Account create(UUID userId, AccountCreateUpdateRequest req) {
         ensureLastFourNotDuplicate(req.lastFour(), userId, req.accountType());
 
-        Account account = mapper.toEntity(req, userId);
+        Account account = Account.builder()
+                .accountName(req.accountName())
+                .currency(Currency.valueOf(req.currency()))
+                .lastFour(req.lastFour())
+                .accountType(req.accountType())
+                .notes(req.notes())
+                .category(req.category())
+                .active(true)
+                .readOnly(false)
+                .userId(userId)
+                .status(AccountStatus.ACTIVE)
+                .createdAt(Instant.now())
+                .openingDate(LocalDate.now())
+                .build();
+        if(req.category() == AccountCategory.ASSET) {
+            account.setStartingBalance(req.startingBalance());
+            account.setCurrentBalance(req.startingBalance());
+        }else {
+            account.setCreditLimit(req.creditLimit());
+            account.setCurrentOutstanding(req.currentOutstanding());
+            account.setDueDayOfMonth(req.dueDayOfMonth());
+            account.setStatementDayOfMonth(req.statementDayOfMonth());
+        }
         return accountRepository.save(account);
     }
 
     @Override
-    public Account update(String userId, String id, AccountCreateUpdateRequest req) {
-        Account entity = accountRepository.findByIdAndUserId(id, userId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+    @Transactional
+    public Account update(UUID userId, UUID id, AccountCreateUpdateRequest req) {
+        Account entity = getAccountByIdAndUser(id, userId);
 
-        // If lastFour changed → enforce duplicate check for same type
-        if (!entity.getLastFour().equals(req.lastFour()) ||
-                entity.getAccountType() != req.accountType()) {
-
+        // Logic check: if lastFour or type changed, re-validate duplicates
+        if (!entity.getLastFour().equals(req.lastFour()) || entity.getAccountType() != req.accountType()) {
             ensureLastFourNotDuplicate(req.lastFour(), userId, req.accountType());
         }
 
@@ -124,87 +110,54 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public List<Account> getAccounts() {
-        return getAccountsByUserId(null);
+    public List<Account> getAccounts(UUID userId) {
+        return accountRepository.findByUserIdAndActiveTrue(userId);
     }
 
     @Override
-    public String getAccountByLastFour(String lastFour){
-        Account account = accountRepository.findByLastFour(lastFour)
-                .orElseThrow(() -> new AccountNotFoundException("not found"));
-        return account.getId();
-    }
+    public NetworthSummary getNetWorth(UUID userId) {
+        List<Account> accounts = getAccounts(userId);
 
-    // -------------------------------------------------------------------------
-    // Net Worth
-    // -------------------------------------------------------------------------
+        BigDecimal assetTotal = BigDecimal.ZERO;
+        BigDecimal liabilityTotal = BigDecimal.ZERO;
 
-    @Override
-    public NetworthSummary getNetWorth(String userId) {
-        List<Account> accounts = getAccountsByUserId(userId);
-
-        BigDecimal assetValue = BigDecimal.ZERO;
-        BigDecimal liabilityValue = BigDecimal.ZERO;
-        int assetAccounts = 0;
-        int liabilityAccounts = 0;
-
-        for (Account account : accounts) {
-            BigDecimal balance = getEffectiveBalance(account);
-
-            if (account.isAsset()) {
-                assetAccounts += 1;
-                assetValue = assetValue.add(balance);
-            } else if (account.isLiability()) {
-                liabilityAccounts += 1;
-                liabilityValue = liabilityValue.add(balance);
-            }
+        for (Account acc : accounts) {
+            BigDecimal bal = getEffectiveBalance(acc);
+            if (acc.isAsset()) assetTotal = assetTotal.add(bal);
+            else liabilityTotal = liabilityTotal.add(bal);
         }
 
-        BigDecimal totalNetWorth = assetValue.subtract(liabilityValue);
-
         return NetworthSummary.builder()
-                .assets(new NetworthSummary.ValueNumber(
-                        assetValue,
-                        assetAccounts
-                ))
-                .liabilities(new NetworthSummary.ValueNumber(
-                        liabilityValue,
-                        liabilityAccounts
-                ))
-                .netWorth(totalNetWorth)
+                .assets(new NetworthSummary.ValueNumber(assetTotal, (int) accounts.stream().filter(Account::isAsset).count()))
+                .liabilities(new NetworthSummary.ValueNumber(liabilityTotal, (int) accounts.stream().filter(Account::isLiability).count()))
+                .netWorth(assetTotal.subtract(liabilityTotal))
                 .build();
     }
 
     @Override
-    public void deleteAccount(String accountId) {
-        Account account = getAccountByIdAndUser(accountId, null);
+    @Transactional
+    public void deleteAccount(UUID accountId, UUID userId) {
+        Account account = getAccountByIdAndUser(accountId, userId);
         account.setActive(false);
         account.setClosedAt(Instant.now());
         account.setStatus(AccountStatus.INACTIVE);
         accountRepository.save(account);
     }
 
-    private void ensureLastFourNotDuplicate(String lastFour, String userId, AccountType type) {
-        accountRepository
-                .findByLastFourAndUserIdAndAccountType(lastFour, userId, type)
+    // --- Helpers ---
+
+    private void ensureLastFourNotDuplicate(String lastFour, UUID userId, AccountType type) {
+        accountRepository.findByLastFourAndUserIdAndAccountType(lastFour, userId, type)
                 .ifPresent(a -> {
-                    throw new DuplicateLastFourException(
-                            "Another " + type + " account already has last four digits " + lastFour
-                    );
+                    throw new DuplicateLastFourException("Another " + type + " account with last four " + lastFour + " exists.");
                 });
     }
 
     private BigDecimal getEffectiveBalance(Account account) {
-
-        // 1 — Credit Card Logic (Liability)
         if (account.isLiability()) {
-            return Optional.ofNullable(account.getCurrentOutstanding())
-                    .orElse(BigDecimal.ZERO);
+            return account.getCurrentOutstanding() != null ? account.getCurrentOutstanding() : BigDecimal.ZERO;
         }
-
-        // 2 — Bank / Asset Logic
-        return Optional.ofNullable(account.getCurrentBalance())
-                .or(() -> Optional.ofNullable(account.getStartingBalance()))
-                .orElse(BigDecimal.ZERO);
+        return account.getCurrentBalance() != null ? account.getCurrentBalance() :
+                (account.getStartingBalance() != null ? account.getStartingBalance() : BigDecimal.ZERO);
     }
 }

@@ -6,6 +6,8 @@ import com.finance.tracker.accounts.domain.dto.AccountResponse;
 import com.finance.tracker.accounts.domain.entities.Account;
 import org.mapstruct.*;
 
+import java.util.UUID;
+
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface AccountMapper {
 
@@ -19,7 +21,7 @@ public interface AccountMapper {
     @Mapping(target = "balanceAsOf", ignore = true)
     @Mapping(target = "currentBalance", ignore = true)
     @Mapping(target = "userId", source = "userId")
-    Account toEntity(AccountCreateUpdateRequest req, String userId);
+    Account toEntity(AccountCreateUpdateRequest req, UUID userId);
 
     // ---------- UPDATE EXISTING ENTITY ----------
 

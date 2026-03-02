@@ -5,13 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data@AllArgsConstructor
 public class BalanceUpdateRequest {
 
-    private String accountId;
+    private UUID accountId;
     private BigDecimal amount;
     private TransactionType transactionType;
-    private String transactionId;
+    private UUID transactionId;
 
 }

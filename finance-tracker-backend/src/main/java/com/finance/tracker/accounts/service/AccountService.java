@@ -6,22 +6,21 @@ import com.finance.tracker.accounts.domain.NetworthSummary;
 import com.finance.tracker.accounts.domain.dto.AccountResponse;
 import com.finance.tracker.accounts.domain.entities.Account;
 import java.util.List;
+import java.util.UUID;
 
 public interface AccountService {
 
-    Account getAccountByIdAndUser(String accountId, String userId);
+    Account getAccountByIdAndUser(UUID accountId, UUID userId);
 
-    void updateBalanceForTransaction(BalanceUpdateRequest request);
+    void updateBalanceForTransaction(BalanceUpdateRequest request, UUID userId);
 
-    Account create(String userId, AccountCreateUpdateRequest req);
+    Account create(UUID userId, AccountCreateUpdateRequest req);
 
-    Account update(String userId, String id, AccountCreateUpdateRequest req);
+    Account update(UUID userId, UUID id, AccountCreateUpdateRequest req);
 
-    List<Account> getAccounts();
+    List<Account> getAccounts(UUID userId);
 
-    String getAccountByLastFour(String lastFour);
+    NetworthSummary getNetWorth(UUID userId);
 
-    NetworthSummary getNetWorth(String userId);
-
-    void deleteAccount(String accountId);
+    void deleteAccount(UUID userId, UUID accountId);
 }

@@ -1,30 +1,33 @@
 package com.finance.tracker.accounts.domain.entities;
 
-import com.finance.tracker.accounts.domain.AccountCategory;
-import com.finance.tracker.accounts.domain.AccountStatus;
-import com.finance.tracker.accounts.domain.AccountType;
+import com.finance.tracker.accounts.domain.*;
+import com.finance.tracker.transactions.domain.Currency;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "accounts", indexes = {
+        @Index(name = "idx_account_user", columnList = "user_id"),
+        @Index(name = "idx_account_status", columnList = "status")
+})
 public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "_id")
-    private String id;
+    private UUID id;
 
+    @Column(nullable = false)
     private String accountName;
 
     @Enumerated(EnumType.STRING)
@@ -33,14 +36,22 @@ public class Account {
     @Column(length = 4, nullable = false)
     private String lastFour;
 
-    private String currency;
+    @Enumerated(EnumType.STRING)
+    private Currency currency;
 
     private LocalDate openingDate;
 
+    // Use explicit defaults
+    @Builder.Default
     private boolean active = true;
+
+    @Builder.Default
     private boolean readOnly = false;
 
+    @CreationTimestamp
+    @Column(updatable = false)
     private Instant createdAt;
+
     private Instant closedAt;
 
     private String notes;
@@ -48,24 +59,35 @@ public class Account {
     @Enumerated(EnumType.STRING)
     private AccountCategory category;
 
-    // ------ ASSET fields ------
+    // Concurrency control: Crucial for financial balance updates
+    @Version
+    private Long version;
+
+    // Precision for financial accuracy (19 digits total, 4 after decimal)
+    @Column(precision = 19, scale = 2)
     private BigDecimal startingBalance;
+
+    @Column(precision = 19, scale = 2)
     private BigDecimal currentBalance;
 
-    // ------ LIABILITY fields ------
+    @Column(precision = 19, scale = 2)
     private BigDecimal currentOutstanding;
+
+    @Column(precision = 19, scale = 2)
     private BigDecimal creditLimit;
-    private String statementDayOfMonth;
-    private String dueDayOfMonth;
+
+    private Integer statementDayOfMonth; // Changed from String
+    private Integer dueDayOfMonth;       // Changed from String
 
     private Instant balanceAsOf;
 
-    private String userId;
+    // Use UUID for foreign keys to ensure DB performance
+    @Column(nullable = false)
+    private UUID userId;
 
     @Enumerated(EnumType.STRING)
     private AccountStatus status;
 
-    // Helpers
     public boolean isAsset() {
         return category == AccountCategory.ASSET;
     }
