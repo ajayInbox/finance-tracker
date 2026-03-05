@@ -1,20 +1,48 @@
 package com.finance.tracker.transactions.domain.dtos;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 public record UpdateTransactionRequestDto (
+        @NotBlank(message = "Transaction name is required")
+        @Size(max = 255)
+        String transactionName,
+
+        @NotNull(message = "Amount is required")
+        @Positive(message = "Amount must be positive")
         BigDecimal amount,
-        String type,
-        String account,
-        String category,
+
+        @NotBlank(message = "Transaction type is required")
+        String type, // "INCOME" or "EXPENSE"
+
+        @NotNull(message = "Category ID is required")
+        UUID categoryId,
+
+        @NotNull(message = "Account ID is required")
+        UUID accountId,
+
+        @NotNull(message = "Occurrence date is required")
+        LocalDateTime occurredAt,
+
         String merchant,
         String notes,
-        String transactionName,
         List<String> tags,
-        String occurredAt,
-        String postedAt,
-        String currency,
-        String attachments,
-        String externalRef
-){}
+
+        @NotBlank
+        @Size(min = 3, max = 3)
+        String currency // e.g., "INR", "USD"
+){
+    public UpdateTransactionRequestDto {
+        if (currency == null) {
+            currency = "INR";
+        }
+    }
+}

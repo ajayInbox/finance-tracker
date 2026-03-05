@@ -33,18 +33,4 @@ public enum TransactionType {
         if (value == null) return UNKNOWN;
         return LOOKUP.getOrDefault(value.toLowerCase(), UNKNOWN);
     }
-
-    /**
-     * Strict lookup — throws on invalid value.
-     */
-    public static TransactionType fromValue(String value) {
-        if (value == null) {
-            throw new IllegalArgumentException("value is null");
-        }
-        TransactionType t = LOOKUP.get(value.toLowerCase());
-        if (t == null || t == UNKNOWN) {
-            throw new IllegalArgumentException("Unknown value: " + value);
-        }
-        return t;
-    }
 }

@@ -1,12 +1,18 @@
 package com.finance.tracker.transactions.service.impl;
 
 import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
+import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.accounts.service.AccountService;
+import com.finance.tracker.category.domain.CategoryType;
+import com.finance.tracker.category.domain.entities.Category;
+import com.finance.tracker.category.service.CategoryService;
 import com.finance.tracker.transactions.domain.*;
+import com.finance.tracker.transactions.domain.dtos.CreateTransactionRequestDto;
+import com.finance.tracker.transactions.domain.dtos.TransactionResponseDto;
+import com.finance.tracker.transactions.domain.dtos.UpdateTransactionRequestDto;
 import com.finance.tracker.transactions.domain.entities.Transaction;
 import com.finance.tracker.transactions.domain.entities.UnparsedSmsLog;
-import com.finance.tracker.transactions.exceptions.SmsNotParsedException;
-import com.finance.tracker.transactions.mapper.TransactionMapper;
+import com.finance.tracker.transactions.exceptions.TransactionNotFoundException;
 import com.finance.tracker.transactions.repository.TransactionRepository;
 import com.finance.tracker.transactions.repository.UnparsedSmsLogsRepository;
 import com.finance.tracker.transactions.service.*;
@@ -19,8 +25,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -28,42 +37,59 @@ import java.util.Optional;
 public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionRepository transactionRepository;
-    private final TransactionValidationService validationService;
-    private final TransactionReversalService reversalService;
     private final TransactionSmsService smsService;
     private final TransactionAnalyticsService analyticsService;
     private final AccountService accountService;
-    private final TransactionMapper transactionMapper;
     private final UnparsedSmsLogsRepository unparsedSmsLogsRepository;
+    private final CategoryService categoryService;
 
     @Transactional
     @Override
-    public Transaction createNewTransaction(CreateTransactionRequest request) {
-        validationService.validate(request);
-        // TODO: actual user id
-        String userId = null;
-        log.debug("Request Body: {}", request);
+    public TransactionResponseDto create(CreateTransactionRequestDto request, UUID userId) {
 
-        Transaction transaction = transactionMapper.toNewEntity(request, userId);
+        Category category = categoryService.validateAndGet(userId, request.categoryId(), CategoryType.fromValueIgnoreCase(request.type()));
+        Account account = accountService.getAccountByIdAndUser(request.accountId(), userId);
+
+        log.debug("Request Body for Create: {}", request);
+
+        Transaction transaction = Transaction.builder()
+                .transactionName(request.transactionName())
+                .amount(request.amount())
+                .type(TransactionType.valueOf(request.type()))
+                .currency(Currency.valueOf(request.currency()))
+                .category(category)
+                .account(account)
+                .userId(userId)
+                .occurredAt(OffsetDateTime.of(request.occurredAt(), ZoneOffset.UTC))
+                .merchant(request.merchant())
+                .notes(request.notes())
+                .tags(request.tags())
+                .status(TransactionStatus.CONFIRMED)
+                .source(TransactionSource.Manual)
+                .build();
         Transaction saved = transactionRepository.save(transaction);
-        updateBalanceFor(saved);
+        updateBalanceFor(saved, userId);
 
-        return saved;
+        return mapToResponseDto(saved);
     }
 
     @Override
-    public Optional<Transaction> getTransaction(String id) {
+    public Optional<Transaction> getTransaction(UUID id) {
         return transactionRepository.findById(id);
     }
 
     @Override
-    public Page<Transaction> getTransactions(Pageable pageable) {
-        return transactionRepository.findAllTransactions(pageable);
+    public List<TransactionResponseDto> getTransactions(Pageable pageable) {
+        log.debug("Request Body for Get All: {}", pageable);
+        Page<Transaction> res = transactionRepository.findAll(pageable);
+        if(res.getContent().isEmpty()) {return List.of();}
+        return res.map(this::mapToResponseDto)
+                .toList();
     }
 
     @Override
-    public Page<TransactionsWithCategoryAndAccount> getTransactionsV2(Pageable pageable) {
-        return transactionRepository.fetchTransactions(pageable);
+    public Page<TransactionsWithCategoryAndAccount> getTransactionsV2(String status, Pageable pageable) {
+        return transactionRepository.fetchTransactions(status, pageable);
     }
 
     @Override
@@ -96,13 +122,95 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public String deleteTransaction(Transaction transaction) {
-        return reversalService.deleteTransaction(transaction);
+    public void deleteTransaction(UUID userId, Transaction transaction) {
+        // 1. Guard Clause
+        if (transaction.getStatus() == TransactionStatus.DELETED ||
+                transaction.getStatus() == TransactionStatus.REVERSAL) {
+            throw new RuntimeException("Transaction has been deleted");
+        }
+
+        // 2. Build and Save Reversal
+        // This restores the funds to the Account balance
+        Transaction reversal = buildReversalTransaction(transaction);
+        Transaction savedReversal = transactionRepository.save(reversal);
+
+        // 3. Update Account Balance
+        // It's vital this happens inside the transaction
+        updateBalanceFor(savedReversal, userId);
+
+        // 4. Update Original Transaction
+        // We mark it DELETED so it no longer shows up in user's active history
+        transaction.setLastAction("DELETED");
+        transaction.setStatus(TransactionStatus.DELETED);
+        transaction.setUpdatedAt(Instant.now());
+        transactionRepository.save(transaction);
     }
 
     @Override
-    public Transaction updateTransaction(String transactionId, UpdateTransactionRequest request) {
-        return reversalService.updateTransaction(transactionId, request);
+    public TransactionResponseDto update(UUID userId, UUID trxId, UpdateTransactionRequestDto request) {
+        Transaction original = transactionRepository.findByIdAndUserId(trxId, userId)
+                .orElseThrow(() -> new TransactionNotFoundException("Transaction not found"));
+
+        // 1. Check for Structural Changes
+        boolean amountChanged = original.getAmount().compareTo(request.amount()) != 0;
+        boolean typeChanged = !original.getType().name().equalsIgnoreCase(request.type());
+        boolean accountChanged = !original.getAccount().getId().equals(request.accountId());
+        boolean categoryChanged = !original.getCategory().getId().equals(request.categoryId());
+
+        if (amountChanged || typeChanged || accountChanged || categoryChanged) {
+
+            // Step A: Neutralize the old impact
+            Transaction reversal = buildReversalTransaction(original);
+            transactionRepository.save(reversal);
+            updateBalanceFor(reversal, userId);
+
+            // Step B: Resolve the Category and Account for the NEW transaction
+            // We always fetch these to ensure we have the most recent validated objects
+            Category category = categoryService.validateAndGet(userId, request.categoryId(),
+                    CategoryType.fromValueIgnoreCase(request.type()));
+            Account account = accountService.getAccountByIdAndUser(request.accountId(), userId);
+
+            // Step C: Create the "corrected" transaction
+            // This takes ALL fields from the request, including non-structural ones
+            Transaction newTxn = Transaction.builder()
+                    .transactionName(request.transactionName())
+                    .amount(request.amount())
+                    .type(TransactionType.valueOf(request.type().toUpperCase()))
+                    .currency(Currency.valueOf(request.currency()))
+                    .category(category)
+                    .account(account)
+                    .userId(userId)
+                    .occurredAt(OffsetDateTime.of(request.occurredAt(), ZoneOffset.UTC))
+                    .merchant(request.merchant())
+                    .notes(request.notes())
+                    .tags(request.tags())
+                    .status(TransactionStatus.CONFIRMED)
+                    .source(original.getSource()) // Keep original source (e.g., SMS)
+                    .externalRef(original.getExternalRef())
+                    .build();
+
+            Transaction savedNewTxn = transactionRepository.save(newTxn);
+            updateBalanceFor(savedNewTxn, userId);
+
+            // Step D: Archive the old transaction
+            original.setStatus(TransactionStatus.SUPERSEDED);
+            original.setLastAction("REPLACED_BY_" + savedNewTxn.getId());
+            transactionRepository.save(original);
+
+            return mapToResponseDto(savedNewTxn);
+        }
+
+        // 4. Non-Structural Changes (In-place update)
+        original.setMerchant(request.merchant());
+        original.setCurrency(Currency.valueOf(request.currency()));
+        original.setNotes(request.notes());
+        original.setOccurredAt(OffsetDateTime.of(request.occurredAt(), ZoneOffset.UTC));
+        original.setTransactionName(request.transactionName());
+        original.setTags(request.tags());
+        original.setLastAction("UPDATED");
+        original.setUpdatedAt(Instant.now());
+
+        return mapToResponseDto(transactionRepository.save(original));
     }
 
     @Override
@@ -135,14 +243,22 @@ public class TransactionServiceImpl implements TransactionService {
                 .build();
     }
 
-    private void updateBalanceFor(Transaction txn) {
+    @Override
+    public List<TransactionResponseDto> getAll(UUID userId, TransactionStatus status, Pageable pageable) {
+        Page<Transaction> res = transactionRepository.findAllByUserIdAndStatus(userId, status, pageable);
+        if(res.getContent().isEmpty()) {return List.of();}
+        return res.map(this::mapToResponseDto)
+                .toList();
+    }
+
+    private void updateBalanceFor(Transaction txn, UUID userId) {
         accountService.updateBalanceForTransaction(
                 new BalanceUpdateRequest(
-                        txn.getAccount(),
+                        txn.getAccount().getId(),
                         txn.getAmount(),
                         txn.getType(),
                         txn.getId()
-                )
+                ), userId
         );
     }
 
@@ -162,10 +278,10 @@ public class TransactionServiceImpl implements TransactionService {
                 .currency(Currency.INR)
                 .transactionName("Auto-detected Transaction")
                 .status(TransactionStatus.DRAFT)
-                .lastAction(LastAction.CREATED)
+                .lastAction("CREATED")
                 // Ensure occurredAt is parsed using a consistent formatter or fallback to now
                 .occurredAt(safeParseDateTime(parsedTransaction.getDateTime()))
-                .postedAt(Instant.now())
+                .postedAt(OffsetDateTime.now())
                 .merchant(parsedTransaction.getMerchant() != null ? parsedTransaction.getMerchant() : "Unknown Merchant")
                 .source(TransactionSource.SMS)
                 .notes(notes)
@@ -192,12 +308,56 @@ public class TransactionServiceImpl implements TransactionService {
         unparsedSmsLogsRepository.save(log);
     }
 
-    private Instant safeParseDateTime(String dateTimeStr) {
+    private OffsetDateTime safeParseDateTime(String dateTimeStr) {
         try {
             // Implementation depends on your parser's output format
-            return Instant.parse(dateTimeStr);
+            return OffsetDateTime.parse(dateTimeStr);
         } catch (Exception e) {
-            return Instant.now(); // Fallback to current time if parsing fails
+            return OffsetDateTime.now(); // Fallback to current time if parsing fails
         }
+    }
+
+    @Override
+    public TransactionResponseDto mapToResponseDto(Transaction txn) {
+        return TransactionResponseDto.builder()
+                .id(txn.getId())
+                .transactionName(txn.getTransactionName())
+                .amount(txn.getAmount())
+                .type(txn.getType().name())
+                .categoryName(txn.getCategory().getName())
+                .accountName(txn.getAccount().getAccountName())
+                .occurredAt(txn.getOccurredAt())
+                .tags(txn.getTags())
+                .status(txn.getStatus().name())
+                .build();
+    }
+
+    private Transaction buildReversalTransaction(Transaction original) {
+        return Transaction.builder()
+                // 1. Audit Details
+                .transactionName("Reversal: " + original.getTransactionName())
+                .notes("System generated reversal for transaction ID: " + original.getId())
+                .amount(original.getAmount())
+                .type(getReversalType(original.getType()))
+                .currency(original.getCurrency())
+                .account(original.getAccount())
+                .category(original.getCategory())
+                .userId(original.getUserId())
+
+                // 4. Timestamps
+                .occurredAt(OffsetDateTime.now()) // The reversal happens "now"
+                .status(TransactionStatus.REVERSAL)
+                .reversalOf(original) // Self-reference link
+                .source(TransactionSource.Manual)
+                .build();
+    }
+
+    private TransactionType getReversalType(TransactionType originalType) {
+        if (originalType == null) return TransactionType.UNKNOWN;
+        return switch (originalType) {
+            case EXPENSE -> TransactionType.INCOME;
+            case INCOME -> TransactionType.EXPENSE;
+            default -> originalType;
+        };
     }
 }

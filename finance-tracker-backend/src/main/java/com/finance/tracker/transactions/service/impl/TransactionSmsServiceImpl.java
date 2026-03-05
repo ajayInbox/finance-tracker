@@ -89,25 +89,4 @@ public class TransactionSmsServiceImpl implements TransactionSmsService {
     private boolean isUpi(String sms) {
         return sms.matches("(?i).*\\bupi\\b.*|.*@.*");
     }
-
-    private CreateTransactionRequest buildTransactionCreateRequest(String accountId, ParsedTransaction parsedTransaction) {
-        LocalDateTime localDateTime =
-                LocalDateTime.parse(parsedTransaction.getDateTime(), SMS_DATE_FORMATTER);
-        Instant when = localDateTime.atZone(APP_ZONE_ID).toInstant();
-
-        return CreateTransactionRequest.builder()
-                .transactionName("New Expense Transaction")
-                .merchant(parsedTransaction.getMerchant())
-                .currency("INR")
-                .account(accountId) // use the lower-case key we inserted
-                .amount(BigDecimal.valueOf(Long.parseLong(parsedTransaction.getAmount())))
-                .type("expense")
-                .attachments("")
-                .tags(List.of())
-                .notes("")
-                .occurredAt(when.toString())
-                .postedAt(when.toString())
-                .category(defaultCategoryId)
-                .build();
-    }
 }

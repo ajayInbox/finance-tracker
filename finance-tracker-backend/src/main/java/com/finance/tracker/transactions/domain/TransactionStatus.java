@@ -1,5 +1,5 @@
 package com.finance.tracker.transactions.domain;
 
 public enum TransactionStatus {
-    ACTIVE, INACTIVE, REVERSAL, DRAFT
+    ACTIVE, INACTIVE, REVERSAL, DRAFT, CONFIRMED, DELETED, SUPERSEDED
 }
