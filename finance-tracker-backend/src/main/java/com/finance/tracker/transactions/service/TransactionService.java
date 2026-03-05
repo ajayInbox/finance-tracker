@@ -1,21 +1,25 @@
 package com.finance.tracker.transactions.service;
 
 import com.finance.tracker.transactions.domain.*;
+import com.finance.tracker.transactions.domain.dtos.CreateTransactionRequestDto;
+import com.finance.tracker.transactions.domain.dtos.TransactionResponseDto;
+import com.finance.tracker.transactions.domain.dtos.UpdateTransactionRequestDto;
 import com.finance.tracker.transactions.domain.entities.Transaction;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface TransactionService {
-    Transaction createNewTransaction(CreateTransactionRequest request);
+    TransactionResponseDto create(CreateTransactionRequestDto request, UUID userId);
 
-    Optional<Transaction> getTransaction(String id);
+    Optional<Transaction> getTransaction(UUID id);
 
-    Page<Transaction> getTransactions(Pageable pageable);
+    List<TransactionResponseDto> getTransactions(Pageable pageable);
 
-    Page<TransactionsWithCategoryAndAccount> getTransactionsV2(Pageable pageable);
+    Page<TransactionsWithCategoryAndAccount> getTransactionsV2(String status, Pageable pageable);
 
     TransactionsAverage search(SearchRequest searchRequest);
 
@@ -27,9 +31,13 @@ public interface TransactionService {
 
     void createTransactionFromQueueMsg(SmsRequest message);
 
-    String deleteTransaction(Transaction transaction);
+    void deleteTransaction(UUID userId, Transaction transaction);
 
-    Transaction updateTransaction(String transactionId, UpdateTransactionRequest request);
+    TransactionResponseDto update(UUID userId, UUID trxId, UpdateTransactionRequestDto request);
 
     ParsedTxnResponse parse(SmsRequest message);
+
+    List<TransactionResponseDto> getAll(UUID userId, TransactionStatus status, Pageable pageable);
+
+    TransactionResponseDto mapToResponseDto(Transaction txn);
 }
