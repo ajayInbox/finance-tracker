@@ -58,12 +58,10 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
                 .toDays();
         int dayCount = Math.toIntExact(days);
 
-        Map<LocalDate, BigDecimal> totalsByDate =
+        Map<OffsetDateTime, BigDecimal> totalsByDate =
                 transactions.stream()
                         .collect(Collectors.groupingBy(
-                                t -> t.getOccurredAt()
-                                        .atZone(APP_ZONE_ID)
-                                        .toLocalDate(),
+                                Transaction::getOccurredAt,
                                 Collectors.reducing(
                                         BigDecimal.ZERO,
                                         Transaction::getAmount,

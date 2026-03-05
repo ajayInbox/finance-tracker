@@ -13,7 +13,7 @@ public final class TransactionQueryBuilder {
 
     public static Specification<Transaction> occurredBetween(Instant fromDate, Instant toDate) {
         return (root, query, cb) -> {
-            Path<Instant> occurredAt = root.get("occurredAt");
+            Path<Instant> occurredAt = root.get("occurred_at");
            // return cb.between(occurredAt, start, end);
             return cb.and(
                     cb.greaterThanOrEqualTo(occurredAt, fromDate),
