@@ -29,7 +29,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Account getAccountByIdAndUser(UUID accountId, UUID userId) {
-        return accountRepository.findAccountByIdForUser(accountId, userId)
+        return accountRepository.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found or access denied"));
     }
 

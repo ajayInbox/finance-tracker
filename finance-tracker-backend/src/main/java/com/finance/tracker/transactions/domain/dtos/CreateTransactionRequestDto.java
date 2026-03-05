@@ -2,6 +2,7 @@ package com.finance.tracker.transactions.domain.dtos;
 
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +26,7 @@ public record CreateTransactionRequestDto(
         UUID accountId,
 
         @NotNull(message = "Occurrence date is required")
-        OffsetDateTime occurredAt,
+        LocalDateTime occurredAt,
 
         String merchant,
         String notes,

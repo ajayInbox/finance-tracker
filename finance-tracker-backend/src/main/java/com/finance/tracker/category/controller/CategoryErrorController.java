@@ -17,7 +17,7 @@ public class CategoryErrorController {
         log.error("caught TransactionNotFoundException exception");
         ErrorDto errorDto = ErrorDto.builder()
                 .statusCode(HttpStatus.NOT_FOUND.value())
-                .errorMessage("Transaction not found")
+                .errorMessage("Category not found or access denied")
                 .build();
         return new ResponseEntity<>(errorDto, HttpStatus.NOT_FOUND);
     }
