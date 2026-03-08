@@ -37,7 +37,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         if (dto.getParentId() != null) {
             // Validation ensures the parent belongs to the same user AND has the same type
-            Category parent = validateAndGet(dto.getParentId(), userId, CategoryType.fromValueIgnoreCase(dto.getType()));
+            Category parent = validateAndGet(userId, dto.getParentId(), CategoryType.fromValueIgnoreCase(dto.getType()));
             category.setParent(parent);
         }
 
@@ -93,7 +93,7 @@ public class CategoryServiceImpl implements CategoryService {
         // 3. Handle moving to a different parent (if allowed)
         if (updateDto.getParentId() != null && !updateDto.getParentId().equals(category.getParent().getId())) {
             // Ensure the NEW parent also belongs to the user and matches the category's type
-            Category newParent = validateAndGet(updateDto.getParentId(), userId, category.getType());
+            Category newParent = validateAndGet(userId, updateDto.getParentId(), category.getType());
             category.setParent(newParent);
         }
 

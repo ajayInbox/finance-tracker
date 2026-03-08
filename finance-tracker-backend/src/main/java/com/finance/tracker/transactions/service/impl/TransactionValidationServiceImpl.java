@@ -41,8 +41,8 @@ public class TransactionValidationServiceImpl implements TransactionValidationSe
         }
 
         categoryService.validateAndGet(
-                request.getCategoryId(),
                 request.getUserId(),
+                request.getCategoryId(),
                 CategoryType.fromValueIgnoreCase(request.getType())
         );
     }

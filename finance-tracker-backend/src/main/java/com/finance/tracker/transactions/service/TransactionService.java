@@ -35,7 +35,7 @@ public interface TransactionService {
 
     TransactionResponseDto update(UUID userId, UUID trxId, UpdateTransactionRequestDto request);
 
-    ParsedTxnResponse parse(SmsRequest message);
+    ParsedTxnResponse parse(UUID userId, SmsRequest message);
 
     List<TransactionResponseDto> getAll(UUID userId, TransactionStatus status, Pageable pageable);
 

@@ -1,5 +1,6 @@
 package com.finance.tracker.transactions.service.impl;
 
+import com.finance.tracker.accounts.domain.AccountType;
 import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
 import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.accounts.service.AccountService;
@@ -67,7 +68,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .status(TransactionStatus.CONFIRMED)
                 .source(TransactionSource.Manual)
                 .build();
-        Transaction saved = transactionRepository.save(transaction);
+        Transaction saved = transactionRepository.saveAndFlush(transaction);
         updateBalanceFor(saved, userId);
 
         return mapToResponseDto(saved);
@@ -214,7 +215,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public ParsedTxnResponse parse(SmsRequest message) {
+    public ParsedTxnResponse parse(UUID userId, SmsRequest message) {
         String uniqueIdentifier = generateSecureId(message);
         Optional<Transaction> optionalTransaction = transactionRepository.findTransactionByUniqueIdentifier(uniqueIdentifier);
         if (optionalTransaction.isPresent()) {
@@ -235,7 +236,7 @@ public class TransactionServiceImpl implements TransactionService {
                     .build();
         }
         // save parsed transaction as draft
-        saveParsedTransaction(uniqueIdentifier, parsedTransaction.get());
+        saveParsedTransaction(userId, uniqueIdentifier, parsedTransaction.get());
         return ParsedTxnResponse.builder()
                 .status("CREATED")
                 .uniqueIdentifier(uniqueIdentifier)
@@ -245,7 +246,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public List<TransactionResponseDto> getAll(UUID userId, TransactionStatus status, Pageable pageable) {
-        Page<Transaction> res = transactionRepository.findAllByUserIdAndStatus(userId, status, pageable);
+        Page<TransactionDraftProjection> res = transactionRepository.findAllTransactions(userId, status.name(), pageable);
         if(res.getContent().isEmpty()) {return List.of();}
         return res.map(this::mapToResponseDto)
                 .toList();
@@ -262,7 +263,7 @@ public class TransactionServiceImpl implements TransactionService {
         );
     }
 
-    private void saveParsedTransaction(String uniqueIdentifier, ParsedTransaction parsedTransaction) {
+    private void saveParsedTransaction(UUID userId, String uniqueIdentifier, ParsedTransaction parsedTransaction) {
         // 1. Sanitize the amount string to handle commas
         String sanitizedAmount = parsedTransaction.getAmount().replace(",", "");
 
@@ -279,6 +280,10 @@ public class TransactionServiceImpl implements TransactionService {
                 .transactionName("Auto-detected Transaction")
                 .status(TransactionStatus.DRAFT)
                 .lastAction("CREATED")
+                .account(dummyAccount())
+                .category(dummyCategory())
+                .userId(userId)
+                .type(TransactionType.UNKNOWN)
                 // Ensure occurredAt is parsed using a consistent formatter or fallback to now
                 .occurredAt(safeParseDateTime(parsedTransaction.getDateTime()))
                 .postedAt(OffsetDateTime.now())
@@ -332,6 +337,20 @@ public class TransactionServiceImpl implements TransactionService {
                 .build();
     }
 
+    private TransactionResponseDto mapToResponseDto(TransactionDraftProjection txn) {
+        return TransactionResponseDto.builder()
+                .id(txn.getId())
+                .transactionName(txn.getTransactionName())
+                .amount(txn.getAmount())
+                .type(txn.getType().name())
+                .categoryName(txn.getCategoryName())
+                .accountName(txn.getAccountName())
+                .occurredAt(txn.getOccurredAt().atOffset(ZoneOffset.UTC))
+                .tags(txn.getTags())
+                .status(txn.getStatus().name())
+                .build();
+    }
+
     private Transaction buildReversalTransaction(Transaction original) {
         return Transaction.builder()
                 // 1. Audit Details
@@ -359,5 +378,24 @@ public class TransactionServiceImpl implements TransactionService {
             case INCOME -> TransactionType.EXPENSE;
             default -> originalType;
         };
+    }
+
+    private Account dummyAccount(){
+        return Account.builder()
+                .accountName("Dummy Account")
+                .id(UUID.fromString("303fcdca-458a-4709-96a1-646f79e00e1b"))
+                .lastFour("0000")
+                .accountType(AccountType.BANK)
+                .version(0L)
+                .build();
+    }
+
+    private Category dummyCategory(){
+        return Category.builder()
+                .id(UUID.fromString("dc9ab23d-5b9f-41c7-b9fb-d043e0e3a835"))
+                .name("Unknown")
+                .description("Dummy Category")
+                .type(CategoryType.UNKNOWN)
+                .build();
     }
 }

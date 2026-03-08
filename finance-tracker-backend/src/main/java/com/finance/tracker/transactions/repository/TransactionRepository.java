@@ -49,27 +49,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
             @Param("userId") Long userId, @Param("startTime") Instant startTime, @Param("endTime") Instant endTime
     );
 
-    @Query(value = "SELECT * from transaction where unique_identifier=:uniqueIdentifier AND (status='DRAFT' OR status='ACTIVE')", nativeQuery = true)
+    @Query(value = "SELECT * from transactions where unique_identifier=:uniqueIdentifier AND (status='DRAFT' OR status='ACTIVE')", nativeQuery = true)
     Optional<Transaction> findTransactionByUniqueIdentifier(@Param("uniqueIdentifier") String uniqueIdentifier);
 
     @Query(value = """
-    SELECT t._id AS id,
-        t.transaction_name AS transactionName,
-        t.amount AS amount,
-        t.type AS type,
-        t.account AS accountId,
-        a.account_name AS accountName,
-        t.category AS categoryId,
-        c.name AS categoryName,
-        t.occurred_at AS occurredAt,
-        t.posted_at AS postedAt,
-        t.currency AS currency,
-        t.original_message AS originalMessage
-    FROM transaction t
-    LEFT JOIN account a ON t.account = a._id LEFT JOIN categories c ON t.category = c.id WHERE t.status = 'DRAFT'
+    SELECT t.id AS id,t.transaction_name AS transactionName,t.amount AS amount,t.type AS type,t.account_id AS accountId,a.account_name AS accountName,t.category_id AS categoryId,
+              c.name AS categoryName,t.occurred_at AS occurredAt,t.posted_at AS postedAt,t.currency AS currency,t.status AS status,t.tags AS tags,t.original_message AS originalMessage FROM transactions t LEFT JOIN accounts a ON t.account_id = a.id LEFT JOIN categories c ON t.category_id = c.id WHERE t.status = :status AND t.user_id = :userId
    """,
             nativeQuery = true)
-    List<TransactionDraftProjection> findDraftTransactions();
+    Page<TransactionDraftProjection> findAllTransactions(@Param("userId") UUID userId, @Param("status") String status, Pageable pageable);
 
     Optional<Transaction> findByIdAndUserId(UUID transactionId, UUID userId);
 

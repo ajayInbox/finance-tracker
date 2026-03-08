@@ -134,7 +134,7 @@ public class TransactionController {
     // -----------------------------------------------------
     @PostMapping("/parse")
     public ResponseEntity<ParsedTxnResponse> parse(@RequestBody SmsRequest message) {
-        return ResponseEntity.ok(transactionService.parse(message));
+        return ResponseEntity.ok(transactionService.parse(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"), message));
     }
 
     // -----------------------------------------------------
