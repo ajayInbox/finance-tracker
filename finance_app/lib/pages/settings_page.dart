@@ -1,3 +1,4 @@
+import 'package:finance_app/features/category/ui/category_management_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -276,6 +277,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 iconBgColor: Colors.purple.withValues(alpha: 0.1),
                 title: 'Manage Categories',
                 showBorder: false,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const CategoryManagementPage(),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -450,9 +458,10 @@ class _SettingsPageState extends State<SettingsPage> {
     String? subtitle,
     bool showBorder = true,
     IconData trailing = Icons.chevron_right,
+    VoidCallback? onTap,
   }) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap ?? () {},
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(

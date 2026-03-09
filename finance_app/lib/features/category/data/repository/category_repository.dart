@@ -9,15 +9,12 @@ class CategoryRepository {
 
   Future<List<Category>> getAllCategories() async {
     final res = await dio.get(ApiConstants.getCategories);
-
     final data = res.data;
     final List list = data is List ? data : (data['content'] as List);
-
     return list.cast<Map<String, dynamic>>().map(Category.fromJson).toList();
   }
 
   Future<Category> createCategory(Map<String, dynamic> data) async {
-    print(data);
     final res = await dio.post(ApiConstants.createCategory, data: data);
     return Category.fromJson(res.data as Map<String, dynamic>);
   }
@@ -29,5 +26,12 @@ class CategoryRepository {
 
   Future<void> deleteCategory(String id) async {
     await dio.delete('${ApiConstants.getCategories}/$id');
+  }
+
+  Future<List<Category>> getAllChildrenCategories() async {
+    final res = await dio.get(ApiConstants.getAllChildrenCategories);
+    final data = res.data;
+    final List list = data is List ? data : (data['content'] as List);
+    return list.cast<Map<String, dynamic>>().map(Category.fromJson).toList();
   }
 }

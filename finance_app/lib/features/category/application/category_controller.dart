@@ -7,6 +7,13 @@ final categoryControllerProvider =
       CategoryController.new,
     );
 
+final childrenCategoriesProvider = FutureProvider.autoDispose<List<Category>>((
+  ref,
+) async {
+  final repo = ref.watch(categoryRepositoryProvider);
+  return repo.getAllChildrenCategories();
+});
+
 class CategoryController extends AsyncNotifier<List<Category>> {
   @override
   Future<List<Category>> build() async {
@@ -20,6 +27,7 @@ class CategoryController extends AsyncNotifier<List<Category>> {
       final repo = ref.read(categoryRepositoryProvider);
       return repo.getAllCategories();
     });
+    ref.invalidate(childrenCategoriesProvider);
   }
 
   Future<void> createCategory(Map<String, dynamic> data) async {
