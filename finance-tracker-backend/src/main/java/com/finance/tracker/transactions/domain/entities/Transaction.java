@@ -96,4 +96,5 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     private TransactionSource source;
     private String uniqueIdentifier;
+    private String originalMessage;
 }

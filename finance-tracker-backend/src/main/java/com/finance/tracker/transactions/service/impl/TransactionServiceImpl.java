@@ -236,7 +236,7 @@ public class TransactionServiceImpl implements TransactionService {
                     .build();
         }
         // save parsed transaction as draft
-        saveParsedTransaction(userId, uniqueIdentifier, parsedTransaction.get());
+        saveParsedTransaction(userId, uniqueIdentifier, parsedTransaction.get(), message.getBody());
         return ParsedTxnResponse.builder()
                 .status("CREATED")
                 .uniqueIdentifier(uniqueIdentifier)
@@ -263,7 +263,7 @@ public class TransactionServiceImpl implements TransactionService {
         );
     }
 
-    private void saveParsedTransaction(UUID userId, String uniqueIdentifier, ParsedTransaction parsedTransaction) {
+    private void saveParsedTransaction(UUID userId, String uniqueIdentifier, ParsedTransaction parsedTransaction, String originalMessage) {
         // 1. Sanitize the amount string to handle commas
         String sanitizedAmount = parsedTransaction.getAmount().replace(",", "");
 
@@ -291,6 +291,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .source(TransactionSource.SMS)
                 .notes(notes)
                 .uniqueIdentifier(uniqueIdentifier)
+                .originalMessage(originalMessage)
                 .build();
 
         transactionRepository.save(draftTransaction);

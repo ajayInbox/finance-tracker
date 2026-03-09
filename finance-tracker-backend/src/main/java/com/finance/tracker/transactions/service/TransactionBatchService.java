@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -62,7 +64,7 @@ public class TransactionBatchService {
             for (BatchUpdateTransactionRequestDto req : chunk) {
                 Transaction trnx = newEntity(req);
                 Category category = categoryService.validateAndGet(userId, req.categoryId(), CategoryType.fromValueIgnoreCase(req.type()));
-                Account account = accountService.getAccountByIdAndUser(userId, req.accountId());
+                Account account = accountService.getAccountByIdAndUser(req.accountId(), userId);
                 trnx.setCategory(category);
                 trnx.setAccount(account);
                 transactions.add(trnx);
@@ -104,7 +106,7 @@ public class TransactionBatchService {
                 .amount(req.amount())
                 .merchant(req.merchant())
                 .type(TransactionType.fromValueIgnoreCase(req.type()))
-                .occurredAt(req.occurredAt())
+                .occurredAt(OffsetDateTime.of(req.occurredAt(), ZoneOffset.UTC))
                 .tags(req.tags())
                 .currency(Currency.valueOf(req.currency()))
                 .status(TransactionStatus.CONFIRMED)

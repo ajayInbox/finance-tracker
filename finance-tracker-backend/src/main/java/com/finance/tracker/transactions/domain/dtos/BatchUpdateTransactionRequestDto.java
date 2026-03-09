@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -32,9 +33,9 @@ public record BatchUpdateTransactionRequestDto(
         UUID accountId,
 
         @NotNull(message = "Occurrence date is required")
-        OffsetDateTime occurredAt,
+        LocalDateTime occurredAt,
 
-        OffsetDateTime postedAt,
+        LocalDateTime postedAt,
 
         String merchant,
         String notes,

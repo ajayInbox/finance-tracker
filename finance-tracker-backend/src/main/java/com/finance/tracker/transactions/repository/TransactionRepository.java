@@ -49,7 +49,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
             @Param("userId") Long userId, @Param("startTime") Instant startTime, @Param("endTime") Instant endTime
     );
 
-    @Query(value = "SELECT * from transactions where unique_identifier=:uniqueIdentifier AND (status='DRAFT' OR status='ACTIVE')", nativeQuery = true)
+    @Query(value = "SELECT * from transactions where unique_identifier=:uniqueIdentifier AND (status='DRAFT' OR status='CONFIRMED')", nativeQuery = true)
     Optional<Transaction> findTransactionByUniqueIdentifier(@Param("uniqueIdentifier") String uniqueIdentifier);
 
     @Query(value = """
