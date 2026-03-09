@@ -2,8 +2,8 @@ class Transaction {
   final String transactionName;
   final double amount;
   final String type;
-  final String account;
-  final String category;
+  final String accountId;
+  final String categoryId;
   final DateTime occurredAt;
   String currency;
   final String notes;
@@ -12,8 +12,8 @@ class Transaction {
     required this.transactionName,
     required this.amount,
     required this.type,
-    required this.account,
-    required this.category,
+    required this.accountId,
+    required this.categoryId,
     required this.occurredAt,
     this.currency = 'INR',
     this.notes = '',
@@ -24,8 +24,8 @@ class Transaction {
       'transactionName': transactionName,
       'amount': amount,
       'type': type,
-      'account': account,
-      'category': category,
+      'accountId': accountId,
+      'categoryId': categoryId,
       'occurredAt': occurredAt.toIso8601String(),
       'notes': notes,
       'currency': currency,

@@ -1,5 +1,4 @@
 import 'package:finance_app/features/account/application/accounts_controller.dart';
-import 'package:finance_app/features/account/provider/accounts_provider.dart';
 import 'package:finance_app/features/account/provider/networth_provider.dart';
 import 'package:finance_app/features/transaction/data/model/transaction.dart';
 import 'package:finance_app/features/transaction/data/model/transaction_summary.dart';
@@ -10,12 +9,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final transactionsControllerProvider =
     AsyncNotifierProvider<TransactionsController, List<TransactionSummary>>(
-  TransactionsController.new,
-);
+      TransactionsController.new,
+    );
 
-class TransactionsController
-    extends AsyncNotifier<List<TransactionSummary>> {
-
+class TransactionsController extends AsyncNotifier<List<TransactionSummary>> {
   @override
   Future<List<TransactionSummary>> build() async {
     final repo = ref.read(transactionRepositoryProvider);
@@ -84,7 +81,7 @@ class TransactionsController
     ref.invalidate(averageDailyExpenseProvider);
     ref.invalidate(expenseReportProvider);
     ref.read(accountsControllerProvider.notifier).refresh();
-  //  ref.invalidate(accountsProvider);
+    //  ref.invalidate(accountsProvider);
     ref.invalidate(networthProvider);
   }
 }

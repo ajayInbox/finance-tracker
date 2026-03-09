@@ -2,7 +2,7 @@
 import 'package:finance_app/features/account/application/accounts_controller.dart';
 import 'package:finance_app/features/account/data/model/account.dart';
 import 'package:finance_app/features/category/data/models/category.dart';
-import 'package:finance_app/features/category/providers/categories_provider.dart';
+import 'package:finance_app/features/category/application/category_controller.dart';
 import 'package:finance_app/features/transaction/application/transaction_controller.dart';
 import 'package:finance_app/features/transaction/data/model/transaction.dart';
 import 'package:finance_app/features/transaction/data/model/transaction_result.dart';
@@ -12,9 +12,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class TransactionFormPage extends ConsumerStatefulWidget {
-  const TransactionFormPage({super.key, this.transaction});
+  const TransactionFormPage({
+    super.key,
+    this.transaction,
+    this.initialData,
+    this.isDraft = false,
+    this.originalMessage,
+  });
 
   final TransactionSummary? transaction;
+  final Transaction? initialData;
+  final bool isDraft;
+  final String? originalMessage;
+
   bool get isEditMode => transaction != null;
 
   @override
@@ -56,33 +66,47 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
 
       // date
       _selectedDate = t.occurredAt;
+    } else if (widget.initialData != null) {
+      final t = widget.initialData!;
+      _amount = t.amount.abs();
+      _amountCtrl.text = _amount.toStringAsFixed(2);
+      _nameCtrl.text = t.transactionName;
 
-      // IMPORTANT:
-      // account & category will be resolved AFTER providers load
+      if (t.type.toUpperCase() == 'INCOME') {
+        _transactionType = 'Income';
+      } else if (t.type.toUpperCase() == 'TRANSFER') {
+        _transactionType = 'Transfer';
+      } else {
+        _transactionType = 'Expense';
+      }
 
-      // Notes logic was missing in strict read of old file but assuming we want to support it if added to model?
-      // The model view showed `String notes` so we can try to populate it if available on TransactionSummary,
-      // but TransactionSummary might not have notes? The view_file for TransactionSummary wasn't done,
-      // but let's safely assume we start empty or if we had it. Use empty for now to be safe.
-      // Wait, let's check if we can populate it. The user didn't ask to fetch it.
-      // I'll leave it empty for now unless I see it on the summary object.
+      _selectedDate = t.occurredAt;
+      _notesCtrl.text = t.notes;
+      _selectedAccount = t.accountId.isNotEmpty ? t.accountId : null;
+      _selectedCategory = t.categoryId.isNotEmpty ? t.categoryId : null;
     }
+    // Notes logic was missing in strict read of old file but assuming we want to support it if added to model?
+    // The model view showed `String notes` so we can try to populate it if available on TransactionSummary,
+    // but TransactionSummary might not have notes? The view_file for TransactionSummary wasn't done,
+    // but let's safely assume we start empty or if we had it. Use empty for now to be safe.
+    // Wait, let's check if we can populate it. The user didn't ask to fetch it.
+    // I'll leave it empty for now unless I see it on the summary object.
   }
 
   @override
   Widget build(BuildContext context) {
     final accountsAsync = ref.watch(accountsControllerProvider);
-    final categoriesAsync = ref.watch(categoriesProvider);
+    final categoriesAsync = ref.watch(childrenCategoriesProvider);
 
     return accountsAsync.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (_, __) => _error(),
+      error: (err, stack) => _buildError(),
       data: (accounts) {
         return categoriesAsync.when(
           loading: () =>
               const Scaffold(body: Center(child: CircularProgressIndicator())),
-          error: (_, __) => _error(),
+          error: (err, stack) => _buildError(),
           data: (categories) {
             return _buildForm(accounts, categories);
           },
@@ -104,7 +128,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       );
 
       final category = categories.firstWhere(
-        (c) => c.label == t.categoryName,
+        (c) => c.name == t.categoryName,
         orElse: () => categories.first,
       );
 
@@ -128,6 +152,9 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   children: [
+                    if (widget.isDraft && widget.originalMessage != null)
+                      _buildOriginalMessage(),
+                    const SizedBox(height: 24),
                     _buildTypeSelector(),
                     const SizedBox(height: 24),
                     _buildLabel('TRANSACTION NAME'),
@@ -560,7 +587,9 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                   const Icon(Icons.check, size: 24),
                   const SizedBox(width: 8),
                   Text(
-                    widget.isEditMode
+                    widget.isDraft
+                        ? 'Confirm Changes'
+                        : widget.isEditMode
                         ? 'Update Transaction'
                         : 'Save Transaction',
                     style: const TextStyle(
@@ -580,7 +609,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       (c) => c.id == _selectedCategory,
       orElse: () => categories.first,
     );
-    return category.label;
+    return category.name;
   }
 
   String _getSelectedAccountName(List<Account> accounts) {
@@ -744,7 +773,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                   setSheetState(() {
                     filteredCategories = filteredCategoriesByTrx
                         .where(
-                          (c) => c.label.toLowerCase().contains(
+                          (c) => c.name.toLowerCase().contains(
                             value.toLowerCase(),
                           ),
                         )
@@ -779,13 +808,18 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                               ? const Color(0xFF10B981)
                               : const Color(0xFF6B7280),
                         ),
-                        title: Text(
-                          category.label,
-                          style: TextStyle(
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: const Color(0xFF111827),
+                        title: Expanded(
+                          child: Text(
+                            category.name,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFF111827),
+                            ),
                           ),
                         ),
                         trailing: isSelected
@@ -937,11 +971,18 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       transactionName: _nameCtrl.text,
       amount: _amount,
       type: _transactionType,
-      account: _selectedAccount!,
-      category: _selectedCategory!,
+      accountId: _selectedAccount!,
+      categoryId: _selectedCategory!,
       occurredAt: _selectedDate,
       notes: _notesCtrl.text,
     );
+
+    if (widget.isDraft) {
+      if (mounted) {
+        Navigator.pop(context, tx);
+      }
+      return;
+    }
 
     try {
       final controller = ref.read(transactionsControllerProvider.notifier);
@@ -969,6 +1010,42 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
     }
   }
 
-  Widget _error() =>
+  Widget _buildError() =>
       const Scaffold(body: Center(child: Text('Failed to load data')));
+
+  Widget _buildOriginalMessage() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9), // slate-100
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)), // slate-200
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'ORIGINAL MESSAGE',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF64748B), // slate-500
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            widget.originalMessage!,
+            style: const TextStyle(
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+              color: Color(0xFF334155), // slate-700
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

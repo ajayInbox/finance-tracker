@@ -14,7 +14,7 @@ class TransactionRepository {
   Future<List<TransactionSummary>> fetchAllTransactions() async {
     final res = await dio.get(
       ApiConstants.getTransactions,
-      queryParameters: {'version': '2'},
+      queryParameters: {'version': '1'},
     );
 
     final data = res.data;
@@ -27,26 +27,29 @@ class TransactionRepository {
   }
 
   Future<void> createTransaction(Transaction transaction) async {
-    await dio.post(
-      ApiConstants.createTransaction,
-      data: transaction.toJson(),
-    );
+    print(transaction.toJson());
+    await dio.post(ApiConstants.createTransaction, data: transaction.toJson());
   }
 
   Future<void> updateTransaction(
-      String transactionId,
-      Transaction transaction,
-      ) async {
+    String transactionId,
+    Transaction transaction,
+  ) async {
     await dio.put(
       '${ApiConstants.updateTransaction}/$transactionId',
       data: transaction.toJson(),
     );
   }
 
+  Future<void> updateBatchTransactions(
+    List<Map<String, dynamic>> updates,
+  ) async {
+    print(updates);
+    await dio.put(ApiConstants.updateBatchTransactions, data: updates);
+  }
+
   Future<void> deleteTransaction(String transactionId) async {
-    await dio.delete(
-      '${ApiConstants.deleteTransaction}/$transactionId',
-    );
+    await dio.delete('${ApiConstants.deleteTransaction}/$transactionId');
   }
 
   Future<AverageDailyExpense> fetchAverageDailyExpense() async {
