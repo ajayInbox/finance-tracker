@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -18,7 +19,7 @@ public class TransactionResponseDto {
     private String type;
     private String categoryName;
     private String accountName;
-    private OffsetDateTime occurredAt;
+    private LocalDateTime occurredAt;
     private List<String> tags;
     private String status;
 

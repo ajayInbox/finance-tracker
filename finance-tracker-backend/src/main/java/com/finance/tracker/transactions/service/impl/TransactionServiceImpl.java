@@ -56,8 +56,8 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = Transaction.builder()
                 .transactionName(request.transactionName())
                 .amount(request.amount())
-                .type(TransactionType.valueOf(request.type()))
-                .currency(Currency.valueOf(request.currency()))
+                .type(TransactionType.fromValueIgnoreCase(request.type()))
+                .currency(Currency.fromValueIgnoreCase(request.currency()))
                 .category(category)
                 .account(account)
                 .userId(userId)
@@ -332,7 +332,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .type(txn.getType().name())
                 .categoryName(txn.getCategory().getName())
                 .accountName(txn.getAccount().getAccountName())
-                .occurredAt(txn.getOccurredAt())
+                .occurredAt(txn.getOccurredAt().toLocalDateTime())
                 .tags(txn.getTags())
                 .status(txn.getStatus().name())
                 .build();
@@ -346,7 +346,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .type(txn.getType().name())
                 .categoryName(txn.getCategoryName())
                 .accountName(txn.getAccountName())
-                .occurredAt(txn.getOccurredAt().atOffset(ZoneOffset.UTC))
+                .occurredAt(txn.getOccurredAt().atOffset(ZoneOffset.UTC).toLocalDateTime())
                 .tags(txn.getTags())
                 .status(txn.getStatus().name())
                 .build();
