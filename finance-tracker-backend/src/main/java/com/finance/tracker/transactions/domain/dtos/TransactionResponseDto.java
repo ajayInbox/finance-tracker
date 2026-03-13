@@ -22,5 +22,6 @@ public class TransactionResponseDto {
     private LocalDateTime occurredAt;
     private List<String> tags;
     private String status;
+    private String originalMessage;
 
 }

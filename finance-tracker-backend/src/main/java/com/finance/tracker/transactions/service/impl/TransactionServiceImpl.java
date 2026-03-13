@@ -99,11 +99,8 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public MonthlyExpenseResponse getExpenseReport(ExpenseReportDuration duration) {
-        if(duration==null){
-            duration = ExpenseReportDuration.THIS_MONTH;
-        }
-        return analyticsService.getExpenseReport(duration);
+    public MonthlyExpenseResponse getExpenseReport(UUID userId, ExpenseReportRequest request) {
+        return analyticsService.getExpenseReport(userId, request);
     }
 
     @Override
@@ -349,6 +346,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .occurredAt(txn.getOccurredAt().atOffset(ZoneOffset.UTC).toLocalDateTime())
                 .tags(txn.getTags())
                 .status(txn.getStatus().name())
+                .originalMessage(txn.getOriginalMessage())
                 .build();
     }
 

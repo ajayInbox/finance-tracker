@@ -23,7 +23,7 @@ public interface TransactionService {
 
     TransactionsAverage search(SearchRequest searchRequest);
 
-    MonthlyExpenseResponse getExpenseReport(ExpenseReportDuration duration);
+    MonthlyExpenseResponse getExpenseReport(UUID userId, ExpenseReportRequest duration);
 
     void exportMessages(List<SmsRequest> messageList);
 

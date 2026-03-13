@@ -1,9 +1,6 @@
 package com.finance.tracker.transactions.repository;
 
-import com.finance.tracker.transactions.domain.CategoryExpenseSummary;
-import com.finance.tracker.transactions.domain.TransactionDraftProjection;
-import com.finance.tracker.transactions.domain.TransactionStatus;
-import com.finance.tracker.transactions.domain.TransactionsWithCategoryAndAccount;
+import com.finance.tracker.transactions.domain.*;
 import com.finance.tracker.transactions.domain.entities.Transaction;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,19 +32,20 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     Page<TransactionsWithCategoryAndAccount> fetchTransactions(@Param("status") String status, Pageable pageable);
 
     @Query(value = """
-            SELECT c.id, c.name, SUM(t.amount), COUNT(t._id)
-           FROM Transaction t
-           INNER JOIN categories c ON t.category=c.id
-           WHERE t.user_id is NULL
-             AND t.type = 'EXPENSE'
+            SELECT c.id, c.name, SUM(t.amount), COUNT(t.id)
+           FROM Transactions t
+           INNER JOIN categories c ON t.category_id=c.id
+           WHERE t.user_id = :userId
+             AND t.type = :type
              AND t.occurred_at >= :startTime
             AND t.occurred_at <= :endTime
-            AND t.status = 'ACTIVE'
+            AND t.status = 'CONFIRMED'
            GROUP BY c.id, c.name
            ORDER BY SUM(t.amount) DESC
         """, nativeQuery = true)
     List<CategoryExpenseSummary> findCategorySummary(
-            @Param("userId") Long userId, @Param("startTime") Instant startTime, @Param("endTime") Instant endTime
+            @Param("userId") UUID userId, @Param("startTime") OffsetDateTime startTime, @Param("endTime") OffsetDateTime endTime,
+            @Param("type") String type
     );
 
     @Query(value = "SELECT * from transactions where unique_identifier=:uniqueIdentifier AND (status='DRAFT' OR status='CONFIRMED')", nativeQuery = true)
