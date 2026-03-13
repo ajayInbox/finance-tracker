@@ -5,7 +5,6 @@ import jakarta.persistence.Enumerated;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,9 +15,9 @@ public interface TransactionDraftProjection {
     BigDecimal getAmount();
     @Enumerated(EnumType.STRING)
     TransactionType getType();
-    String getAccountId();
+    UUID getAccountId();
     String getAccountName();
-    String getCategoryId();
+    UUID getCategoryId();
     String getCategoryName();
     Instant getOccurredAt();
     Instant getPostedAt();

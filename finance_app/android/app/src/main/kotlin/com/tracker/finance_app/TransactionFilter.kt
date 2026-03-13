@@ -3,7 +3,7 @@ package com.tracker.finance_app
 object TransactionFilter {
     private val keywords = listOf(
         "debited", "credited", "spent",
-        "upi", "txn", "transaction", "rs."
+        "upi", "debit", "credit", "txn", "transaction", "rs."
     )
 
     fun isTransaction(text: String): Boolean {

@@ -6,6 +6,7 @@ import com.finance.tracker.transactions.repository.TransactionQueryBuilder;
 import com.finance.tracker.transactions.repository.TransactionRepository;
 import com.finance.tracker.transactions.service.TransactionAnalyticsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsService {
 
     private final TransactionRepository transactionRepository;
@@ -98,15 +100,15 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
     }
 
     @Override
-    public MonthlyExpenseResponse getExpenseReport(ExpenseReportDuration duration) {
+    public MonthlyExpenseResponse getExpenseReport(UUID userId, ExpenseReportRequest request) {
 
-        Instant now = Instant.now();
-        ZonedDateTime nowZdt = now.atZone(APP_ZONE_ID);
-
-        DateRange range = resolveRange(duration, null, null);
+        log.debug("Request Body :: {}" ,request.toString());
+        OffsetDateTime start = OffsetDateTime.of(request.start(), ZoneOffset.UTC);
+        OffsetDateTime end = OffsetDateTime.of(request.end(), ZoneOffset.UTC);
+        TransactionType type = TransactionType.fromValueIgnoreCase(request.type());
 
         List<CategoryExpenseSummary> summaries =
-                transactionRepository.findCategorySummary(null, range.start(), range.end());
+                transactionRepository.findCategorySummary(userId, start, end, type.name());
 
         BigDecimal total = summaries.stream()
                 .map(CategoryExpenseSummary::total)
@@ -132,7 +134,8 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
                 .toList();
 
         return new MonthlyExpenseResponse(
-                nowZdt.toLocalDate().toString(),
+                request.start(),
+                request.end(),
                 "INR",
                 total,
                 breakdown
@@ -164,59 +167,59 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
         };
     }
 
-    private DateRange resolveRange(ExpenseReportDuration duration, Instant customFrom, Instant customTo) {
-
-        ZonedDateTime now = ZonedDateTime.now(APP_ZONE_ID);
-
-        return switch (duration) {
-
-            case THIS_MONTH -> new DateRange(
-                    now.withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS).toInstant(),
-                    now.toInstant()
-            );
-
-            case LAST_MONTH -> {
-                ZonedDateTime start = now.minusMonths(1).withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS);
-                ZonedDateTime end = start.plusMonths(1).minusNanos(1); // last moment of last month
-                yield new DateRange(start.toInstant(), end.toInstant());
-            }
-
-            case LAST_7_DAYS -> new DateRange(
-                    now.minusDays(7).toInstant(),
-                    now.toInstant()
-            );
-
-            case LAST_30_DAYS -> new DateRange(
-                    now.minusDays(30).toInstant(),
-                    now.toInstant()
-            );
-
-            case THIS_YEAR -> new DateRange(
-                    now.withDayOfYear(1).truncatedTo(ChronoUnit.DAYS).toInstant(),
-                    now.toInstant()
-            );
-
-            case LAST_YEAR -> {
-                ZonedDateTime start = now.minusYears(1).withDayOfYear(1).truncatedTo(ChronoUnit.DAYS);
-                ZonedDateTime end = start.plusYears(1).minusNanos(1);
-                yield new DateRange(start.toInstant(), end.toInstant());
-            }
-            case LAST_3_MONTHS -> {
-
-                // last month (full)
-                ZonedDateTime lastMonthStart = now.minusMonths(1).withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS);
-
-                // start = first day of 3 months before last month
-                ZonedDateTime start = lastMonthStart.minusMonths(2);
-
-                // end = last day of last month (23:59:59.999999999)
-                ZonedDateTime end = lastMonthStart.plusMonths(1).minusNanos(1);
-
-                yield new DateRange(start.toInstant(), end.toInstant());
-            }
-
-            case CUSTOM -> new DateRange(customFrom, customTo);
-        };
-    }
+//    private DateRange resolveRange(ExpenseReportDuration duration, Instant customFrom, Instant customTo) {
+//
+//        ZonedDateTime now = ZonedDateTime.now(APP_ZONE_ID);
+//
+//        return switch (duration) {
+//
+//            case THIS_MONTH -> new DateRange(
+//                    now.withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS).toInstant(),
+//                    now.toInstant()
+//            );
+//
+//            case LAST_MONTH -> {
+//                ZonedDateTime start = now.minusMonths(1).withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS);
+//                ZonedDateTime end = start.plusMonths(1).minusNanos(1); // last moment of last month
+//                yield new DateRange(start.toInstant(), end.toInstant());
+//            }
+//
+//            case LAST_7_DAYS -> new DateRange(
+//                    now.minusDays(7).toInstant(),
+//                    now.toInstant()
+//            );
+//
+//            case LAST_30_DAYS -> new DateRange(
+//                    now.minusDays(30).toInstant(),
+//                    now.toInstant()
+//            );
+//
+//            case THIS_YEAR -> new DateRange(
+//                    now.withDayOfYear(1).truncatedTo(ChronoUnit.DAYS).toInstant(),
+//                    now.toInstant()
+//            );
+//
+//            case LAST_YEAR -> {
+//                ZonedDateTime start = now.minusYears(1).withDayOfYear(1).truncatedTo(ChronoUnit.DAYS);
+//                ZonedDateTime end = start.plusYears(1).minusNanos(1);
+//                yield new DateRange(start.toInstant(), end.toInstant());
+//            }
+//            case LAST_3_MONTHS -> {
+//
+//                // last month (full)
+//                ZonedDateTime lastMonthStart = now.minusMonths(1).withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS);
+//
+//                // start = first day of 3 months before last month
+//                ZonedDateTime start = lastMonthStart.minusMonths(2);
+//
+//                // end = last day of last month (23:59:59.999999999)
+//                ZonedDateTime end = lastMonthStart.plusMonths(1).minusNanos(1);
+//
+//                yield new DateRange(start.toInstant(), end.toInstant());
+//            }
+//
+//            case CUSTOM -> new DateRange(customFrom, customTo);
+//        };
+//    }
 
 }

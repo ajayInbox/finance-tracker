@@ -112,11 +112,9 @@ public class TransactionController {
     // -----------------------------------------------------
     // Monthly Expense Analysis
     // -----------------------------------------------------
-    @GetMapping("/analysis")
-    public ResponseEntity<MonthlyExpenseResponse> getExpenseAnalysis(
-            @RequestParam(name = "duration", required = false) ExpenseReportDuration duration
-    ) {
-        MonthlyExpenseResponse response = transactionService.getExpenseReport(duration);
+    @PostMapping("/analysis")
+    public ResponseEntity<MonthlyExpenseResponse> getExpenseAnalysis(@RequestBody ExpenseReportRequest expenseReportRequest) {
+        MonthlyExpenseResponse response = transactionService.getExpenseReport(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"), expenseReportRequest);
         return ResponseEntity.ok(response);
     }
 
