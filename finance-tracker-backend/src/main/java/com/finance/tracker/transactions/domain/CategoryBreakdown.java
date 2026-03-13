@@ -4,12 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 public class CategoryBreakdown {
 
-    private String categoryId;
+    private UUID categoryId;
     private String categoryName;
     private BigDecimal total;
     private BigDecimal percentage;
