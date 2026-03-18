@@ -128,7 +128,8 @@ public class TransactionAnalyticsServiceImpl implements TransactionAnalyticsServ
                             s.categoryName(),
                             subtotal,
                             percentage,
-                            Math.toIntExact(s.transactionCount())
+                            Math.toIntExact(s.transactionCount()),
+                            s.categoryColor()
                     );
                 })
                 .toList();

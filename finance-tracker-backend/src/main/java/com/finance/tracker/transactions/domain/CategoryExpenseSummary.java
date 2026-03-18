@@ -7,6 +7,7 @@ public record CategoryExpenseSummary (
 
         UUID categoryId,
         String categoryName,
+        String categoryColor,
         BigDecimal total,
         Long transactionCount
 ){}

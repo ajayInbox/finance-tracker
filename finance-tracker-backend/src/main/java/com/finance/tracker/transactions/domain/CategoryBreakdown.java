@@ -15,5 +15,6 @@ public class CategoryBreakdown {
     private BigDecimal total;
     private BigDecimal percentage;
     private int transactionCount;
+    String categoryColor;
 
 }

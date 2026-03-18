@@ -32,7 +32,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     Page<TransactionsWithCategoryAndAccount> fetchTransactions(@Param("status") String status, Pageable pageable);
 
     @Query(value = """
-            SELECT c.id, c.name, SUM(t.amount), COUNT(t.id)
+            SELECT c.id, c.name,c.color_code, SUM(t.amount), COUNT(t.id)
            FROM Transactions t
            INNER JOIN categories c ON t.category_id=c.id
            WHERE t.user_id = :userId
