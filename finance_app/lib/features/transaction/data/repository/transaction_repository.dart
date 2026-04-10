@@ -67,11 +67,20 @@ class TransactionRepository {
     return AverageDailyExpense.fromJson(res.data);
   }
 
-  Future<ExpenseReport> fetchExpenseReport() async {
-    final res = await dio.get(
+  Future<ExpenseReport> fetchExpenseReport({
+    required DateTime start,
+    required DateTime end,
+    required String type,
+  }) async {
+    final res = await dio.post(
       ApiConstants.expenseReport,
-      queryParameters: {'duration': null},
+      data: {
+        "start": start.toIso8601String(),
+        "end": end.toIso8601String(),
+        "type": type,
+      },
     );
+    print(res.data);
 
     return ExpenseReport.fromJson(res.data);
   }

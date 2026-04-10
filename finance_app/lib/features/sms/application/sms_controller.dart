@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:finance_app/features/sms/data/model/transaction_draft.dart';
 import 'package:finance_app/features/sms/data/repository/sms_repository.dart';
+import 'package:finance_app/features/transaction/application/transaction_controller.dart';
 import 'package:finance_app/features/transaction/data/model/transaction.dart';
 import 'package:finance_app/features/transaction/data/providers/transaction_repository_provider.dart';
 import 'package:finance_app/platform/parsed_transaction_channel.dart';
@@ -100,6 +101,9 @@ class SmsController extends AsyncNotifier<List<TransactionDraft>> {
 
     try {
       await repo.updateBatchTransactions(updates);
+
+      // On success, refresh transaction list (which handles accounts and derived dashboard data)
+      await ref.read(transactionsControllerProvider.notifier).refresh();
 
       // On success, remove confirmed drafts from local state
       // We can remove all that were in our 'updates' list

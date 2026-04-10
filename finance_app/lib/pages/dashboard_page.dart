@@ -544,6 +544,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 
   Widget _buildSpendingAnalysisCard() {
     final expenseAsync = ref.watch(expenseReportProvider);
+    final selectedPeriod = ref.watch(expenseReportPeriodProvider);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -600,49 +601,48 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        '1W',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF111827),
+              children: ['1W', '1M', '3M', '6M', '1Y'].map((period) {
+                final isSelected = selectedPeriod == period;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      ref
+                          .read(expenseReportPeriodProvider.notifier)
+                          .setPeriod(period);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: isSelected
+                          ? BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            )
+                          : const BoxDecoration(),
+                      child: Center(
+                        child: Text(
+                          period,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: isSelected
+                                ? const Color(0xFF111827)
+                                : Colors.grey[500],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                for (var period in ['1M', '3M', '6M', '1Y']) ...[
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        period,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+                );
+              }).toList(),
             ),
           ),
           const SizedBox(height: 40),
@@ -651,14 +651,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             child: SizedBox(
               height: 250,
               width: 250,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  expenseAsync.when(
-                    loading: () => const CircularProgressIndicator(),
-                    error: (_, __) => const Icon(Icons.error),
-                    data: (report) {
-                      return PieChart(
+              child: expenseAsync.when(
+                loading: () => const CircularProgressIndicator(),
+                error: (_, __) => const Icon(Icons.error),
+                data: (report) {
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      PieChart(
                         PieChartData(
                           sections: _getPieChartSections(
                             report.categoryBreakdown,
@@ -667,83 +667,72 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                           sectionsSpace: 0,
                           startDegreeOffset: -90,
                         ),
-                      );
-                    },
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Total Spend',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.grey[400],
-                          letterSpacing: 0.5,
-                        ),
-                        textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '₹2,100', // dynamic value later
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF111827),
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEE2E2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.arrow_upward,
-                              size: 12,
-                              color: Color(0xFFEF4444),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Total Spend',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.grey[400],
+                              letterSpacing: 0.5,
                             ),
-                            const SizedBox(width: 2),
-                            Text(
-                              '2.4%',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFFEF4444),
-                              ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '₹ ${report.total.toStringAsFixed(2)}', // dynamic value later
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF111827),
+                              letterSpacing: -0.5,
                             ),
-                          ],
-                        ),
+                          ),
+                          // const SizedBox(height: 4),
+                          // Container(
+                          //   padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+                          //   decoration: BoxDecoration(
+                          //     color: const Color(0xFFFEE2E2),
+                          //     borderRadius: BorderRadius.circular(12),
+                          //   ),
+                          //   child: Row(
+                          //     mainAxisSize: MainAxisSize.min,
+                          //     children: [
+                          //       const Icon(
+                          //         Icons.arrow_upward,
+                          //         size: 12,
+                          //         color: Color(0xFFEF4444),
+                          //       ),
+                          //       const SizedBox(width: 2),
+                          //       Text(
+                          //         '2.4%',
+                          //         style: GoogleFonts.plusJakartaSans(
+                          //           fontSize: 10,
+                          //           fontWeight: FontWeight.w700,
+                          //           color: const Color(0xFFEF4444),
+                          //         ),
+                          //       ),
+                          //     ],
+                          //   ),
+                          // ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),
           const SizedBox(height: 40),
-          // Legend (Simplified / Not fully visible in screenshot but assuming standard list)
-          // ... keeping existing legend logic but updating font
           expenseAsync.when(
             loading: () => const SizedBox(),
             error: (_, __) => const Text('Error loading data'),
             data: (report) => Column(
               children: report.categoryBreakdown.take(4).map((category) {
-                final colors = [
-                  const Color(0xFF10B981), // Green
-                  const Color(0xFFFCA5A5), // Red/Pink
-                  const Color(0xFF9CA3AF), // Grey
-                  // Add more or cycle
-                ];
-                // basic cycle color logic similar to before, refined colors
-                final color =
-                    colors[report.categoryBreakdown.indexOf(category) %
-                        colors.length];
+                final color = _parseColorCode(category.categoryColorCode);
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -810,7 +799,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     );
   }
 
-  void _showCategoryPopover(String category) {
+  void _showCategoryPopover(CategoryBreakdown category) {
     showDialog(
       context: context,
       builder: (context) {
@@ -828,13 +817,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                     width: 20,
                     height: 20,
                     decoration: BoxDecoration(
-                      color: _getCategoryColor(category),
+                      color: _parseColorCode(category.categoryColorCode),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    category,
+                    category.categoryName,
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -935,18 +924,23 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     );
   }
 
-  Color _getCategoryColor(String category) {
-    switch (category) {
-      case 'Food & Dining':
-        return const Color(0xFF4A90E2);
-      case 'Transport':
-        return const Color(0xFF28A745);
-      case 'Shopping':
-        return const Color(0xFFFFA726);
-      case 'Others':
-        return const Color(0xFFAB47BC);
-      default:
-        return Colors.grey;
+  Color _parseColorCode(String? colorCode) {
+    if (colorCode == null || colorCode.isEmpty) {
+      return Colors.grey;
+    }
+    try {
+      final intValue = int.tryParse(colorCode);
+      if (intValue != null) {
+        return Color(intValue);
+      }
+      
+      String hexString = colorCode.replaceAll('#', '');
+      if (hexString.length == 6) {
+        hexString = 'FF$hexString'; // append alpha
+      }
+      return Color(int.parse(hexString, radix: 16));
+    } catch (e) {
+      return Colors.grey;
     }
   }
 
@@ -955,7 +949,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   ) {
     return categories.map((category) {
       return PieChartSectionData(
-        color: _getCategoryColor(category.categoryName),
+        color: _parseColorCode(category.categoryColorCode),
         value: category.total,
         title: '$currency${category.total.toStringAsFixed(0)}',
         radius: 70,
@@ -972,8 +966,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     return Column(
       children: categories.map((category) {
         return _buildLegendItem(
-          _getCategoryColor(category.categoryName),
-          category.categoryName,
+          category,
           '${category.percentage.toStringAsFixed(1)}%',
           '$currency${category.total.toStringAsFixed(2)}',
         );
@@ -1014,11 +1007,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   }
 
   Widget _buildLegendItem(
-    Color color,
-    String category,
+    CategoryBreakdown category,
     String percentage,
     String amount,
   ) {
+    final color = _parseColorCode(category.categoryColorCode);
     return GestureDetector(
       onTap: () => _showCategoryPopover(category),
       child: Container(
@@ -1045,7 +1038,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    category,
+                    category.categoryName,
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,

@@ -11,7 +11,6 @@ import 'package:finance_app/pages/settings_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   // Load SMS listening preference
   final prefs = await SharedPreferences.getInstance();
   final smsListeningEnabled = prefs.getBool('sms_listening_enabled') ?? false;

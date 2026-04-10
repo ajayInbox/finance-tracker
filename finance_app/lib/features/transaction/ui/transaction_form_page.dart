@@ -459,9 +459,10 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   }
 
   Widget _buildCategorySelector(List<Category> categories) {
+    final catData = _getSelectedCategoryData(categories);
     return _buildSelector(
-      icon: Icons.category,
-      value: _getSelectedCategoryName(categories),
+      icon: catData.icon,
+      value: catData.name,
       onTap: () => _showCategoryPicker(categories),
       trailingIcon: Icons.expand_more,
     );
@@ -603,13 +604,37 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
     );
   }
 
-  String _getSelectedCategoryName(List<Category> categories) {
-    if (_selectedCategory == null) return 'Select Category';
+  ({String name, IconData icon}) _getSelectedCategoryData(
+    List<Category> categories,
+  ) {
+    if (_selectedCategory == null) {
+      return (name: 'Select Category', icon: Icons.category);
+    }
+
     final category = categories.firstWhere(
       (c) => c.id == _selectedCategory,
       orElse: () => categories.first,
     );
-    return category.name;
+
+    IconData categoryIcon = Icons.category;
+    if (category.iconKey.isNotEmpty) {
+      List<String> iconParts = category.iconKey.split('+');
+      if (iconParts.length == 2) {
+        int? codePoint = int.tryParse(iconParts[0]);
+        String fontFamily = iconParts[1];
+        if (codePoint != null) {
+          categoryIcon = IconData(
+            codePoint,
+            fontFamily: fontFamily,
+            fontPackage: fontFamily == 'CupertinoIcons'
+                ? 'cupertino_icons'
+                : null,
+          );
+        }
+      }
+    }
+
+    return (name: category.name, icon: categoryIcon);
   }
 
   String _getSelectedAccountName(List<Account> accounts) {
@@ -789,6 +814,27 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                     final category = filteredCategories[index];
                     final isSelected = _selectedCategory == category.id;
 
+                    int? codePoint;
+                    String? fontFamily;
+                    if (category.iconKey.isNotEmpty) {
+                      List<String> iconParts = category.iconKey.split('+');
+                      if (iconParts.length == 2) {
+                        codePoint = int.tryParse(iconParts[0]);
+                        fontFamily = iconParts[1];
+                      }
+                    }
+
+                    IconData categoryIcon = Icons.category;
+                    if (codePoint != null && fontFamily != null) {
+                      categoryIcon = IconData(
+                        codePoint,
+                        fontFamily: fontFamily,
+                        fontPackage: fontFamily == 'CupertinoIcons'
+                            ? 'cupertino_icons'
+                            : null,
+                      );
+                    }
+
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
@@ -803,23 +849,21 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                       ),
                       child: ListTile(
                         leading: Icon(
-                          Icons.category,
+                          categoryIcon,
                           color: isSelected
                               ? const Color(0xFF10B981)
                               : const Color(0xFF6B7280),
                         ),
-                        title: Expanded(
-                          child: Text(
-                            category.name,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: isSelected
-                                  ? const Color(0xFF10B981)
-                                  : const Color(0xFF111827),
-                            ),
+                        title: Text(
+                          category.name,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                            color: isSelected
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFF111827),
                           ),
                         ),
                         trailing: isSelected

@@ -344,8 +344,8 @@ class CreditCardDetailsSheet extends StatelessWidget {
   // Helper to format date string assuming specific backend format "Day X of month"
   // For now just returning as is or simplifying if needed.
   // If we had actual Date objects we would use DateFormat.
-  String _formatDate(String? day) {
+  String _formatDate(int? day) {
     if (day == null) return 'N/A';
-    return day;
+    return 'Day $day of month';
   }
 }
