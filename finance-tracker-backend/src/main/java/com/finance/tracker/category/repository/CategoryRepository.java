@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface CategoryRepository extends JpaRepository<Category, UUID> {
 
     // Finds all categories that belong to a parent (sub-categories)
-    List<Category> findByUserIdAndParentIsNotNullAndDeletedAtIsNull(UUID userId);
+    List<Category> findByUserIdAndParentIsNotNullAndDeletedAtIsNullAndIsActiveTrue(UUID userId);
 
     // Find all children of a parent (used for manual cascade)
     List<Category> findByParentId(UUID parentId);
@@ -24,5 +24,5 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
     // Finds a category only if it matches ID, User
     Optional<Category> findByIdAndUserId(UUID id, UUID userId);
 
-    List<Category> findAllByUserIdAndDeletedAtIsNull(UUID userId);
+    List<Category> findAllByUserIdAndDeletedAtIsNullAndIsActiveTrue(UUID userId);
 }

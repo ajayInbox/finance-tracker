@@ -49,7 +49,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public List<CategoryResponseDto> getAllTree(UUID userId) {
         // 1. Fetch flat list
-        List<Category> allCategories = repository.findAllByUserIdAndDeletedAtIsNull(userId);
+        List<Category> allCategories = repository.findAllByUserIdAndDeletedAtIsNullAndIsActiveTrue(userId);
 
         // 2. Map to DTOs using our unified method
         Map<UUID, CategoryResponseDto> dtoMap = allCategories.stream()
@@ -131,7 +131,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<CategoryResponseDto> getAllSubCategories(UUID userId) {
-        List<Category> children = repository.findByUserIdAndParentIsNotNullAndDeletedAtIsNull(userId);
+        List<Category> children = repository.findByUserIdAndParentIsNotNullAndDeletedAtIsNullAndIsActiveTrue(userId);
 
         return children.stream()
                 .map(this::mapToResponseDto)
