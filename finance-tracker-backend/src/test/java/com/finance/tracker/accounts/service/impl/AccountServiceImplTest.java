@@ -85,17 +85,17 @@ class AccountServiceImplTest {
 
     @Test
     void testGetAccountByIdAndUser_Success() {
-        when(accountRepository.findAccountByIdForUser(accountId, userId)).thenReturn(Optional.of(assetAccount));
+        when(accountRepository.findByIdAndUserId(accountId, userId)).thenReturn(Optional.of(assetAccount));
 
         Account result = accountService.getAccountByIdAndUser(accountId, userId);
         assertNotNull(result);
         assertEquals(accountId, result.getId());
-        verify(accountRepository).findAccountByIdForUser(accountId, userId);
+        verify(accountRepository).findByIdAndUserId(accountId, userId);
     }
 
     @Test
     void testGetAccountByIdAndUser_NotFound() {
-        when(accountRepository.findAccountByIdForUser(accountId, userId)).thenReturn(Optional.empty());
+        when(accountRepository.findByIdAndUserId(accountId, userId)).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> accountService.getAccountByIdAndUser(accountId, userId));
     }
@@ -105,7 +105,7 @@ class AccountServiceImplTest {
         UUID transactionId = UUID.randomUUID();
         BalanceUpdateRequest req = new BalanceUpdateRequest(accountId, new BigDecimal("100.00"), TransactionType.EXPENSE, transactionId);
 
-        when(accountRepository.findAccountByIdForUser(accountId, userId)).thenReturn(Optional.of(assetAccount));
+        when(accountRepository.findByIdAndUserId(accountId, userId)).thenReturn(Optional.of(assetAccount));
         when(accountRepository.updateAssetBalance(eq(accountId), eq(userId), eq(new BigDecimal("-100.00")))).thenReturn(1);
 
         accountService.updateBalanceForTransaction(req, userId);
@@ -120,7 +120,7 @@ class AccountServiceImplTest {
         UUID liabilityAccountId = liabilityAccount.getId();
         BalanceUpdateRequest req = new BalanceUpdateRequest(liabilityAccountId, new BigDecimal("100.00"), TransactionType.EXPENSE, transactionId);
 
-        when(accountRepository.findAccountByIdForUser(liabilityAccountId, userId)).thenReturn(Optional.of(liabilityAccount));
+        when(accountRepository.findByIdAndUserId(liabilityAccountId, userId)).thenReturn(Optional.of(liabilityAccount));
         when(accountRepository.updateLiabilityBalance(eq(liabilityAccountId), eq(userId), eq(new BigDecimal("100.00")))).thenReturn(1);
 
         accountService.updateBalanceForTransaction(req, userId);
@@ -134,7 +134,7 @@ class AccountServiceImplTest {
         UUID transactionId = UUID.randomUUID();
         BalanceUpdateRequest req = new BalanceUpdateRequest(accountId, new BigDecimal("2000.00"), TransactionType.EXPENSE, transactionId);
 
-        when(accountRepository.findAccountByIdForUser(accountId, userId)).thenReturn(Optional.of(assetAccount));
+        when(accountRepository.findByIdAndUserId(accountId, userId)).thenReturn(Optional.of(assetAccount));
         when(accountRepository.updateAssetBalance(any(), any(), any())).thenReturn(0);
 
         assertThrows(AccountUpdateFailedException.class, () -> accountService.updateBalanceForTransaction(req, userId));
@@ -162,7 +162,7 @@ class AccountServiceImplTest {
 
     @Test
     void testUpdate_Success() {
-        when(accountRepository.findAccountByIdForUser(accountId, userId)).thenReturn(Optional.of(assetAccount));
+        when(accountRepository.findByIdAndUserId(accountId, userId)).thenReturn(Optional.of(assetAccount));
         when(accountRepository.save(assetAccount)).thenReturn(assetAccount);
 
         Account result = accountService.update(userId, accountId, createRequest);
@@ -194,7 +194,7 @@ class AccountServiceImplTest {
 
     @Test
     void testDeleteAccount() {
-        when(accountRepository.findAccountByIdForUser(accountId, userId)).thenReturn(Optional.of(assetAccount));
+        when(accountRepository.findByIdAndUserId(accountId, userId)).thenReturn(Optional.of(assetAccount));
 
         accountService.deleteAccount(accountId, userId);
 
