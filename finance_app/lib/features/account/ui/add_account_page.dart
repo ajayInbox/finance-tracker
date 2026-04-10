@@ -35,8 +35,8 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
   late String _selectedType;
   final DateTime _openingDate =
       DateTime.now(); // For Asset accounts implicitly today
-  String? _statementDay; // For Credit Card
-  String? _dueDay; // For Credit Card
+  int? _statementDay; // For Credit Card
+  int? _dueDay; // For Credit Card
   bool _isSubmitting = false;
 
   // Defaults
@@ -52,7 +52,6 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
       _nameController.text = acc.accountName;
       _lastFourController.text = acc.lastFour ?? '';
       _selectedType = acc.accountType.apiValue;
-      print(_selectedType);
 
       // Handle Balance/Outstanding
       if (_isLiability) {
@@ -227,7 +226,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
           children: [
             Expanded(
               child: _buildRadioItem(
-                'Checking',
+                'Bank',
                 Icons.account_balance,
                 AccountType.checking.apiValue,
               ),
@@ -235,9 +234,9 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
             const SizedBox(width: 12),
             Expanded(
               child: _buildRadioItem(
-                'Savings',
-                Icons.savings,
-                AccountType.savings.apiValue,
+                'Cash',
+                Icons.money,
+                AccountType.cash.apiValue,
               ),
             ),
           ],
@@ -247,9 +246,9 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
           children: [
             Expanded(
               child: _buildRadioItem(
-                'Cash',
+                'Wallet',
                 Icons.account_balance_wallet,
-                AccountType.cash.apiValue,
+                AccountType.wallet.apiValue,
               ),
             ),
             const SizedBox(width: 12),
@@ -603,15 +602,15 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
     );
   }
 
-  List<String> _generateDayOptions() {
-    return List.generate(31, (index) => 'Day ${index + 1} of month');
+  List<int> _generateDayOptions() {
+    return List.generate(31, (index) => index + 1);
   }
 
   Widget _buildDropdownField({
     required String label,
-    required String? value,
-    required List<String> items,
-    required Function(String?) onChanged,
+    required int? value,
+    required List<int> items,
+    required Function(int?) onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -632,7 +631,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
+            child: DropdownButton<int>(
               value: value,
               isExpanded: true,
               hint: Text(
@@ -643,11 +642,11 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                 ),
               ),
               icon: const Icon(Icons.arrow_drop_down, color: AppColors.primary),
-              items: items.map((String item) {
-                return DropdownMenuItem<String>(
+              items: items.map((int item) {
+                return DropdownMenuItem<int>(
                   value: item,
                   child: Text(
-                    item,
+                    'Day $item of month',
                     style: GoogleFonts.plusJakartaSans(
                       color: AppColors.textPrimary,
                       fontSize: 14,
@@ -738,10 +737,8 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
       // Credit Card specific format
       final cutOffDay = _isLiability && _statementDay != null
           ? _statementDay!
-          : 'Day 1 of month';
-      final dueDay = _isLiability && _dueDay != null
-          ? _dueDay!
-          : 'Day 1 of month';
+          : 1;
+      final dueDay = _isLiability && _dueDay != null ? _dueDay! : 1;
 
       final creditLimit = double.tryParse(_creditLimitController.text) ?? 0.0;
 

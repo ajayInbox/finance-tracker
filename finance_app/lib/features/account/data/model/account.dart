@@ -11,8 +11,8 @@ class Account {
   final DateTime? openingDate;
   final double? startingBalance;
   final double? currentOutstanding;
-  final String? statementDayOfMonth;
-  final String? dueDayOfMonth;
+  final int? statementDayOfMonth;
+  final int? dueDayOfMonth;
   final double? creditLimit;
   final double? currentBalance;
   final bool active;
@@ -58,8 +58,8 @@ class Account {
 
       startingBalance: _toDouble(j['startingBalance']),
       currentOutstanding: _toDouble(j['currentOutstanding']),
-      statementDayOfMonth: j['statementDayOfMonth'],
-      dueDayOfMonth: j['dueDayOfMonth'],
+      statementDayOfMonth: _toInt(j['statementDayOfMonth']),
+      dueDayOfMonth: _toInt(j['dueDayOfMonth']),
       creditLimit: _toDouble(j['creditLimit']),
       currentBalance: _toDouble(j['currentBalance']),
 
@@ -105,4 +105,15 @@ double? _toDouble(dynamic v) {
   if (v is double) return v;
   if (v is int) return v.toDouble();
   return double.tryParse(v.toString());
+}
+
+int? _toInt(dynamic v) {
+  if (v == null) return null;
+  if (v is int) return v;
+  if (v is double) return v.toInt();
+  if (v is String) {
+    final numberString = v.replaceAll(RegExp(r'[^0-9]'), '');
+    return int.tryParse(numberString);
+  }
+  return int.tryParse(v.toString());
 }

@@ -613,12 +613,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
   }
 
   String? _getDueMessage(Account account) {
-    if (account.dueDayOfMonth == null) return null;
-
-    // Parse "Day X of month" to int
-    final parts = account.dueDayOfMonth!.split(' ');
-    if (parts.length < 2) return null;
-    final day = int.tryParse(parts[1]);
+    final day = account.dueDayOfMonth;
     if (day == null) return null;
 
     final now = DateTime.now();

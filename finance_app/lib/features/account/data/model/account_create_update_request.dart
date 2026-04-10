@@ -7,8 +7,8 @@ class AccountCreateUpdateRequest {
   final double currentOutstanding;
   final String currency;
   final double creditLimit;
-  final String statementDayOfMonth;
-  final String dueDayOfMonth;
+  final int statementDayOfMonth;
+  final int dueDayOfMonth;
   final String notes;
   final bool hideFromSelection;
   final bool hideFromReports;
