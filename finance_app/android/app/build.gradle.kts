@@ -16,6 +16,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     compileOptions {
