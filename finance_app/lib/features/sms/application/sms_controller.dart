@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:finance_app/features/sms/data/model/transaction_draft.dart';
 import 'package:finance_app/features/sms/data/repository/sms_repository.dart';
 import 'package:finance_app/features/transaction/application/transaction_controller.dart';
 import 'package:finance_app/features/transaction/data/model/transaction.dart';
 import 'package:finance_app/features/transaction/data/providers/transaction_repository_provider.dart';
-import 'package:finance_app/platform/parsed_transaction_channel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final smsControllerProvider =
@@ -14,20 +11,17 @@ final smsControllerProvider =
     );
 
 class SmsController extends AsyncNotifier<List<TransactionDraft>> {
-  StreamSubscription<String>? _sub;
-
   @override
   Future<List<TransactionDraft>> build() async {
-    // Listen for incoming SMS events from Android
-    _sub = ParsedTxnChannel.stream().listen((_) {
-      // On event, refresh from backend
-      ref.invalidateSelf();
-    });
-
-    ref.onDispose(() => _sub?.cancel());
-
     final repo = ref.read(smsRepositoryProvider);
     return repo.fetchDrafts();
+  }
+
+  Future<void> refresh() async {
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(smsRepositoryProvider);
+      return repo.fetchDrafts();
+    });
   }
 
   void toggleDraft(String id, bool? isChecked) {
