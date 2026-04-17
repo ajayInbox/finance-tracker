@@ -12,9 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
@@ -61,5 +59,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     Optional<Transaction> findByIdAndUserId(UUID transactionId, UUID userId);
 
     Page<Transaction> findAllByUserIdAndStatus(UUID userId, TransactionStatus status, Pageable pageable);
+
+    // Finds all existing identifiers in a single trip to the DB
+    @Query("SELECT t.uniqueIdentifier FROM Transaction t WHERE t.uniqueIdentifier IN :identifiers")
+    Set<String> findExistingIdentifiers(@Param("identifiers") Collection<String> identifiers);
 
 }
