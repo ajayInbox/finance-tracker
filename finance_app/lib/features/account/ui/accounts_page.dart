@@ -11,6 +11,7 @@ import 'package:finance_app/features/account/data/model/account_category.dart';
 import 'package:finance_app/features/account/ui/widgets/account_details_sheet.dart';
 import 'package:finance_app/features/account/ui/widgets/credit_card_details_sheet.dart';
 import 'package:finance_app/features/account/ui/add_account_page.dart';
+import 'package:finance_app/widgets/app_page_header.dart';
 import 'dart:ui';
 
 class AccountsPage extends ConsumerStatefulWidget {
@@ -63,7 +64,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
         child: SingleChildScrollView(
           child: Column(
             children: [
-              _buildHeader(),
+              const AppPageHeader(title: 'Linked Accounts'),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: networthAsync.when(
@@ -225,62 +226,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
     }
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.only(left: 24, right: 24, top: 48, bottom: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Linked Accounts',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 24, // text-2xl
-              fontWeight: FontWeight.w700, // font-bold
-              color: const Color(0xFF111827), // text-primary-light
-            ),
-          ),
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16), // rounded-2xl
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 2,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                const Center(
-                  child: Icon(
-                    Icons.notifications_none_rounded,
-                    color: Color(0xFF4B5563), // text-gray-600
-                    size: 24,
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  right: 14,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEF4444), // bg-red-500
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildNetWorthCard(NetworthSummary netWorth) {
     return Container(

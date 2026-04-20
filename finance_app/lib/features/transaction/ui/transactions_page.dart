@@ -4,6 +4,7 @@ import 'package:finance_app/features/transaction/data/model/transaction_result.d
 import 'package:finance_app/features/transaction/ui/transaction_form_page.dart';
 import 'package:finance_app/features/transaction/ui/widgets/transaction_card.dart';
 import 'package:finance_app/widgets/filter_bottom_sheet.dart';
+import 'package:finance_app/widgets/app_page_header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -191,7 +192,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
       backgroundColor: const Color(0xFFF3F4F6), // background-light
       body: Column(
         children: [
-          _buildHeader(),
+          const AppPageHeader(title: 'Transactions'),
           _buildSearchBar(),
           _buildFilters(),
           Expanded(
@@ -241,9 +242,28 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
                           ),
                         );
                       } else if (item is TransactionSummary) {
-                        return TransactionCard(
-                          transaction: item,
-                          onTap: () => _openTransactionForm(item),
+                        return Dismissible(
+                          key: ValueKey(item.id),
+                          direction: DismissDirection.endToStart,
+                          confirmDismiss: (_) => _confirmDelete(item),
+                          background: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 24),
+                            child: const Icon(
+                              Icons.delete_outline_rounded,
+                              color: Color(0xFFEF4444),
+                              size: 28,
+                            ),
+                          ),
+                          child: TransactionCard(
+                            transaction: item,
+                            onTap: () => _openTransactionForm(item),
+                          ),
                         );
                       }
                       return const SizedBox.shrink();
@@ -275,62 +295,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.only(left: 24, right: 24, top: 48, bottom: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Transactions',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 24, // text-2xl
-              fontWeight: FontWeight.w700, // font-bold
-              color: const Color(0xFF111827), // text-primary-light
-            ),
-          ),
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16), // rounded-2xl
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 2,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                const Center(
-                  child: Icon(
-                    Icons.notifications_none_rounded,
-                    color: Color(0xFF4B5563), // text-gray-600
-                    size: 24,
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  right: 14,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEF4444), // bg-red-500
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildSearchBar() {
     return Padding(
@@ -502,6 +467,87 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  Future<bool> _confirmDelete(TransactionSummary transaction) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Delete Transaction',
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to delete "${transaction.transactionName}"?',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFFFEE2E2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Delete',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFFEF4444),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return false;
+
+    try {
+      await ref
+          .read(transactionsControllerProvider.notifier)
+          .deleteTransaction(transaction.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('"${transaction.transactionName}" deleted'),
+            backgroundColor: const Color(0xFF10B981),
+          ),
+        );
+      }
+      return true;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+      return false;
     }
   }
 }

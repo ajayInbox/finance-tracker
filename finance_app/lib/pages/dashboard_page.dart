@@ -17,6 +17,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:finance_app/features/transaction/ui/transactions_page.dart';
 import 'package:finance_app/features/transaction/ui/widgets/transaction_card.dart';
 import 'dart:math' as math;
+import 'package:finance_app/widgets/app_page_header.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -90,7 +91,58 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildHeader(), // New Header
+                      AppPageHeader(
+                        padding: const EdgeInsets.only(top: 48, bottom: 20),
+                        leading: Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFF10B981), width: 2),
+                              ),
+                              padding: const EdgeInsets.all(2),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(50),
+                                child: Image.network(
+                                  'https://lh3.googleusercontent.com/aida-public/AB6AXuCuWLr3iXcmohbUN1dzVItsdGjg8eWe7ldYfbpv56Jwox266gr4PLp2dx8QfjcKw4h87Zx8jW-6uuR1P7IJbtSUl_2qYiuV-ieL_vCF5nbKgZN0RX5X1Mzvlp7Kt6PgMKbBZZHVnW1sHTiYTMKDqKqR91ALFoJHB0_lQqOaNokVh1O4-5AYAJ5ZUNJrtJ5E6ppyZgGymaNi3NybEm6Ml7JUAHn2IKJmIf-UCf7E73MWXoMKcc60BZbIxeM23pef2QjoeRuqotWNiim1',
+                                  width: 48,
+                                  height: 48,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    width: 48,
+                                    height: 48,
+                                    color: Colors.grey[300],
+                                    child: const Icon(Icons.person, color: Colors.grey),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'WELCOME BACK',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[500],
+                                    letterSpacing: 1.0,
+                                  ),
+                                ),
+                                Text(
+                                  'Alex Johnson',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF111827),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 24),
                       _buildTopSummaryCards(),
                       const SizedBox(height: 24),
@@ -109,103 +161,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.only(top: 48, bottom: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF10B981), width: 2),
-                ),
-                padding: const EdgeInsets.all(2),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(50),
-                  child: Image.network(
-                    'https://lh3.googleusercontent.com/aida-public/AB6AXuCuWLr3iXcmohbUN1dzVItsdGjg8eWe7ldYfbpv56Jwox266gr4PLp2dx8QfjcKw4h87Zx8jW-6uuR1P7IJbtSUl_2qYiuV-ieL_vCF5nbKgZN0RX5X1Mzvlp7Kt6PgMKbBZZHVnW1sHTiYTMKDqKqR91ALFoJHB0_lQqOaNokVh1O4-5AYAJ5ZUNJrtJ5E6ppyZgGymaNi3NybEm6Ml7JUAHn2IKJmIf-UCf7E73MWXoMKcc60BZbIxeM23pef2QjoeRuqotWNiim1',
-                    width: 48,
-                    height: 48,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      width: 48,
-                      height: 48,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.person, color: Colors.grey),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'WELCOME BACK',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[500],
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  Text(
-                    'Alex Johnson',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF111827),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                const Center(
-                  child: Icon(
-                    Icons.notifications_none_rounded,
-                    color: Color(0xFF4B5563),
-                    size: 24,
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  right: 14,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEF4444),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildFloatingActionButton() {
     return Padding(

@@ -9,6 +9,7 @@ import 'package:finance_app/features/transaction/data/model/transaction_result.d
 import 'package:finance_app/features/transaction/data/model/transaction_summary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:finance_app/utils/category_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class TransactionFormPage extends ConsumerStatefulWidget {
@@ -604,9 +605,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
     );
   }
 
-  ({String name, IconData icon}) _getSelectedCategoryData(
-    List<Category> categories,
-  ) {
+  ({String name, IconData icon}) _getSelectedCategoryData(List<Category> categories) {
     if (_selectedCategory == null) {
       return (name: 'Select Category', icon: Icons.category);
     }
@@ -616,23 +615,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       orElse: () => categories.first,
     );
 
-    IconData categoryIcon = Icons.category;
-    if (category.iconKey.isNotEmpty) {
-      List<String> iconParts = category.iconKey.split('+');
-      if (iconParts.length == 2) {
-        int? codePoint = int.tryParse(iconParts[0]);
-        String fontFamily = iconParts[1];
-        if (codePoint != null) {
-          categoryIcon = IconData(
-            codePoint,
-            fontFamily: fontFamily,
-            fontPackage: fontFamily == 'CupertinoIcons'
-                ? 'cupertino_icons'
-                : null,
-          );
-        }
-      }
-    }
+    IconData categoryIcon = CategoryIcons.parseIcon(category.iconKey);
 
     return (name: category.name, icon: categoryIcon);
   }

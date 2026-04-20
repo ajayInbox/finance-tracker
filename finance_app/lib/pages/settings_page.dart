@@ -1,5 +1,6 @@
 import 'package:finance_app/features/category/ui/category_management_page.dart';
 import 'package:flutter/material.dart';
+import 'package:finance_app/widgets/app_page_header.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -25,7 +26,7 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.only(bottom: 100),
         child: Column(
           children: [
-            _buildHeader(), // Preserved Header
+            const AppPageHeader(title: 'Settings'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16), // px-4
               child: Column(
@@ -57,63 +58,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildHeader() {
-    // Existing Header Preserved
-    return Container(
-      padding: const EdgeInsets.only(left: 24, right: 24, top: 48, bottom: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Settings',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF111827),
-            ),
-          ),
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 2,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                const Center(
-                  child: Icon(
-                    Icons.notifications_none_rounded,
-                    color: Color(0xFF4B5563),
-                    size: 24,
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  right: 14,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEF4444),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildProfileSection() {
     return Column(
