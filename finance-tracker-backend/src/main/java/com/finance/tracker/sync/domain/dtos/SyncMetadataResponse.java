@@ -4,6 +4,6 @@ import java.util.UUID;
 
 public record SyncMetadataResponse(
     UUID userId,
-    long lastScannedSmsDate,
+    long latestScannedTimestamp,
     String status
 ) {}

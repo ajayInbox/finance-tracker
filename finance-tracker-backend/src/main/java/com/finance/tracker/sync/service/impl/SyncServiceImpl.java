@@ -150,8 +150,8 @@ public class SyncServiceImpl implements SyncService {
         if (!history.getUserId().equals(userId)) {
             throw new ScanAccessDeniedException("Scan does not belong to the requesting user");
         }
-        if (history.getStatus() != ScanStatus.COMPLETED) {
-            history.setStatus(ScanStatus.FAILED);
+        if (history.getStatus() != ScanStatus.FAILED) {
+            history.setStatus(ScanStatus.COMPLETED);
             history.setEndTime(OffsetDateTime.now());
             ScanHistory scanHistory = scanHistoryRepository.save(history);
             return new ScanResponse(
