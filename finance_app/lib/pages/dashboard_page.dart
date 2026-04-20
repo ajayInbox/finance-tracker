@@ -13,9 +13,9 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 import 'package:finance_app/features/transaction/ui/transactions_page.dart';
+import 'package:finance_app/features/transaction/ui/widgets/transaction_card.dart';
 import 'dart:math' as math;
 
 class DashboardPage extends ConsumerStatefulWidget {
@@ -824,7 +824,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                   const SizedBox(width: 12),
                   Text(
                     category.categoryName,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: Colors.grey[800],
@@ -881,7 +881,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             backgroundColor: Colors.grey[200],
             child: Text(
               merchant[0],
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[600],
@@ -895,7 +895,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
               children: [
                 Text(
                   merchant,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: Colors.grey[800],
@@ -903,7 +903,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 ),
                 Text(
                   transactions,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 10,
                     color: Colors.grey[600],
                   ),
@@ -913,7 +913,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           ),
           Text(
             amount,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: Colors.grey[800],
@@ -953,7 +953,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
         value: category.total,
         title: '$currency${category.total.toStringAsFixed(0)}',
         radius: 70,
-        titleStyle: GoogleFonts.inter(
+        titleStyle: GoogleFonts.plusJakartaSans(
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: Colors.white,
@@ -1039,7 +1039,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 children: [
                   Text(
                     category.categoryName,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Colors.grey[800],
@@ -1047,7 +1047,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                   ),
                   Text(
                     amount,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
                       color: Colors.grey[600],
                     ),
@@ -1057,7 +1057,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             ),
             Text(
               percentage,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: color,
@@ -1074,29 +1074,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Recent Transactions',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
-              ),
-            ),
-            TextButton(
-              onPressed: () => _navigateToTransactions(),
-              child: Text(
-                'See All',
-                style: GoogleFonts.manrope(
-                  color: const Color(0xFF13EC5B),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+        Text(
+          'Recent Transactions',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
         ),
         const SizedBox(height: 8),
         txAsync.when(
@@ -1115,8 +1099,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
               shrinkWrap: true,
               padding: EdgeInsets.zero, // Removed default padding if any
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: transactions.length > 5 ? 5 : transactions.length,
-              itemBuilder: (_, i) => _buildTransactionItem(transactions[i]),
+              itemCount: transactions.length > 10 ? 10 : transactions.length,
+              itemBuilder: (_, i) => TransactionCard(
+                transaction: transactions[i],
+                onTap: () {},
+              ),
             );
           },
         ),
@@ -1194,7 +1181,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           const SizedBox(height: 8),
           Text(
             'Failed to load transactions',
-            style: GoogleFonts.inter(color: Colors.red[600], fontSize: 14),
+            style: GoogleFonts.plusJakartaSans(color: Colors.red[600], fontSize: 14),
           ),
           const SizedBox(height: 8),
           ElevatedButton(onPressed: _handleRefresh, child: Text('Retry')),
@@ -1212,7 +1199,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           const SizedBox(height: 8),
           Text(
             'No transactions yet',
-            style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14),
+            style: GoogleFonts.plusJakartaSans(color: Colors.grey[500], fontSize: 14),
           ),
           const SizedBox(height: 8),
           ElevatedButton(
@@ -1224,118 +1211,4 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     );
   }
 
-  Widget _buildTransactionItem(TransactionSummary transaction) {
-    final isIncome = transaction.type.toLowerCase() == "income";
-    final iconColor = isIncome ? const Color(0xFF13EC5B) : Colors.red;
-    final bgColor = isIncome
-        ? const Color(0xFF13EC5B).withValues(alpha: 0.1)
-        : Colors.red.withValues(alpha: 0.1);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  _getTransactionIcon(transaction.categoryName),
-                  color: iconColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      transaction.transactionName,
-                      style: GoogleFonts.manrope(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: const Color(0xFF0F172A), // Slate 900
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _formatDate(transaction.occurredAt),
-                      style: GoogleFonts.manrope(
-                        color: const Color(0xFF64748B), // Slate 500
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                '${isIncome ? "+" : "-"}₹${transaction.amount.abs().toStringAsFixed(2)}',
-                style: GoogleFonts.manrope(
-                  color: iconColor,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  IconData _getTransactionIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'food & dining':
-        return Icons.restaurant;
-      case 'shopping':
-        return Icons.shopping_bag;
-      case 'transport':
-        return Icons.directions_car;
-      case 'entertainment':
-        return Icons.movie;
-      case 'income':
-      case 'salary':
-        return Icons.trending_up;
-      default:
-        return Icons.receipt;
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return 'Today, ${DateFormat('h:mm a').format(date)}';
-    } else if (difference.inDays == 1) {
-      return 'Yesterday';
-    } else if (difference.inDays < 7) {
-      return DateFormat('EEEE').format(date);
-    } else {
-      return DateFormat('MMM d').format(date);
-    }
-  }
 }

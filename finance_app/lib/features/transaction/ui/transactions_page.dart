@@ -2,7 +2,7 @@
 import 'package:finance_app/features/transaction/application/transaction_controller.dart';
 import 'package:finance_app/features/transaction/data/model/transaction_result.dart';
 import 'package:finance_app/features/transaction/ui/transaction_form_page.dart';
-import 'package:finance_app/utils/category_icon.dart';
+import 'package:finance_app/features/transaction/ui/widgets/transaction_card.dart';
 import 'package:finance_app/widgets/filter_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +26,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
   String _selectedTimeFilter = 'All';
   String _selectedAccountFilter = 'All';
   String _selectedCategoryFilter = 'All';
+  String _selectedTypeFilter = 'All';
 
   // UI state
   ScrollController _scrollController = ScrollController();
@@ -39,6 +40,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
     super.initState();
 
     _fabAnimationController = AnimationController(
+      value: 1.0,
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
@@ -104,7 +106,11 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
             _selectedCategoryFilter.toLowerCase(),
           );
 
-      return matchesSearch && matchesTime && matchesAccount && matchesCategory;
+      // Type filter
+      final matchesType = _selectedTypeFilter == 'All' ||
+          transaction.type.toLowerCase() == _selectedTypeFilter.toLowerCase();
+
+      return matchesSearch && matchesTime && matchesAccount && matchesCategory && matchesType;
     }).toList();
   }
 
@@ -154,6 +160,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
         initialChildSize: 0.7,
         maxChildSize: 0.9,
         builder: (context, scrollController) => FilterBottomSheet(
+          scrollController: scrollController,
           selectedTimeFilter: _selectedTimeFilter,
           selectedAccountFilter: _selectedAccountFilter,
           selectedCategoryFilter: _selectedCategoryFilter,
@@ -206,41 +213,40 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
                 }
 
                 final grouped = _groupTransactions(filteredItems);
+                final flattenedList = [];
+                for (final key in grouped.keys) {
+                  flattenedList.add(key);
+                  flattenedList.addAll(grouped[key]!);
+                }
 
                 return RefreshIndicator(
                   onRefresh: _refreshTransactions,
                   child: ListView.builder(
                     padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
-                    itemCount: grouped.length,
+                    itemCount: flattenedList.length,
                     itemBuilder: (_, index) {
-                      final key = grouped.keys.elementAt(index);
-                      final transactions = grouped[key]!;
+                      final item = flattenedList[index];
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Text(
-                              key.toUpperCase(),
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(
-                                  0xFF6B7280,
-                                ), // text-secondary-light
-                                letterSpacing: 1.0,
-                              ),
+                      if (item is String) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            item.toUpperCase(),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF6B7280),
+                              letterSpacing: 1.0,
                             ),
                           ),
-                          ...transactions.map(
-                            (tx) => GestureDetector(
-                              onTap: () => _openTransactionForm(tx),
-                              child: _buildTransactionCard(tx),
-                            ),
-                          ),
-                        ],
-                      );
+                        );
+                      } else if (item is TransactionSummary) {
+                        return TransactionCard(
+                          transaction: item,
+                          onTap: () => _openTransactionForm(item),
+                        );
+                      }
+                      return const SizedBox.shrink();
                     },
                   ),
                 );
@@ -251,15 +257,18 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80),
-        child: SizedBox(
-          width: 56,
-          height: 56,
-          child: FloatingActionButton(
-            backgroundColor: const Color(0xFF10B981), // primary
-            elevation: 8, // shadow-glow approx
-            shape: const CircleBorder(),
-            onPressed: () => _openTransactionForm(null),
-            child: const Icon(Icons.add, color: Colors.white, size: 28),
+        child: ScaleTransition(
+          scale: _fabAnimationController,
+          child: SizedBox(
+            width: 56,
+            height: 56,
+            child: FloatingActionButton(
+              backgroundColor: const Color(0xFF10B981), // primary
+              elevation: 8, // shadow-glow approx
+              shape: const CircleBorder(),
+              onPressed: () => _openTransactionForm(null),
+              child: const Icon(Icons.add, color: Colors.white, size: 28),
+            ),
           ),
         ),
       ),
@@ -373,13 +382,13 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
         children: [
           _buildFilterChip(
             'All',
-            _selectedTimeFilter == 'All',
-            () => setState(() => _selectedTimeFilter = 'All'),
+            _selectedTypeFilter == 'All',
+            () => setState(() => _selectedTypeFilter = 'All'),
           ),
           const SizedBox(width: 8),
-          _buildFilterChip('Income', false, () {}),
+          _buildFilterChip('Income', _selectedTypeFilter == 'Income', () => setState(() => _selectedTypeFilter = 'Income')),
           const SizedBox(width: 8),
-          _buildFilterChip('Expense', false, () {}),
+          _buildFilterChip('Expense', _selectedTypeFilter == 'Expense', () => setState(() => _selectedTypeFilter = 'Expense')),
           const SizedBox(width: 8),
           GestureDetector(
             onTap: _showFilterDialog,
@@ -460,146 +469,6 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
     );
   }
 
-  Widget _buildTransactionCard(TransactionSummary transaction) {
-    final isIncome = transaction.type.toLowerCase() == "income";
-
-    // Map categories to colors similar to MD
-    Color bgIconColor;
-    Color iconColor;
-    IconData icon;
-
-    switch (transaction.categoryName.toLowerCase()) {
-      case 'food':
-      case 'dining':
-        bgIconColor = const Color(0xFFFFEDD5); // orange-100
-        iconColor = const Color(0xFFF97316); // orange-500
-        icon = Icons.lunch_dining;
-        break;
-      case 'transport':
-      case 'transportation':
-        bgIconColor = const Color(0xFFDBEAFE); // blue-100
-        iconColor = const Color(0xFF3B82F6); // blue-500
-        icon = Icons.local_taxi;
-        break;
-      case 'salary':
-      case 'income':
-        bgIconColor = const Color(0xFFDCFCE7); // green-100
-        iconColor = const Color(0xFF22C55E); // green-500
-        icon = Icons.account_balance;
-        break;
-      case 'shopping':
-        bgIconColor = const Color(0xFFF3E8FF); // purple-100
-        iconColor = const Color(0xFFA855F7); // purple-500
-        icon = Icons.shopping_bag;
-        break;
-      case 'entertainment':
-      case 'movie':
-        bgIconColor = const Color(0xFFFEE2E2); // red-100
-        iconColor = const Color(0xFFEF4444); // red-500
-        icon = Icons.movie;
-        break;
-      case 'health':
-      case 'medical':
-        bgIconColor = const Color(0xFFCCFBF1); // teal-100
-        iconColor = const Color(0xFF14B8A6); // teal-500
-        icon = Icons.pets;
-        break;
-      default:
-        bgIconColor = const Color(0xFFF3F4F6); // gray-100
-        iconColor = const Color(0xFF6B7280); // gray-500
-        icon = CategoryIcons.of(transaction.categoryName.toLowerCase());
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16), // rounded-2xl
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04), // shadow-soft
-            blurRadius: 40,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: bgIconColor,
-              borderRadius: BorderRadius.circular(12), // rounded-xl
-            ),
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        transaction.transactionName,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: const Color(0xFF111827),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${isIncome ? '+' : '-'} ₹${transaction.amount.abs().toStringAsFixed(2)}',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: isIncome
-                            ? const Color(0xFF10B981)
-                            : const Color(0xFF111827),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      transaction.categoryName,
-                      style: GoogleFonts.plusJakartaSans(
-                        color: const Color(0xFF6B7280),
-                        fontSize:
-                            14, // Slightly larger than typical xs for readability
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      DateFormat('hh:mm a').format(transaction.occurredAt),
-                      style: GoogleFonts.plusJakartaSans(
-                        color: const Color(
-                          0xFF9CA3AF,
-                        ), // text-secondary (lighter)
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _openTransactionForm(TransactionSummary? transaction) async {
     final result = await Navigator.push<TransactionResult>(
