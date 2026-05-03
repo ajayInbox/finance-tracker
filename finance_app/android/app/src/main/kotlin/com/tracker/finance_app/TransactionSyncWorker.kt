@@ -55,17 +55,14 @@ class TransactionSyncWorker(
                 "Latest scanned timestamp: $latestTimestamp, effective start: $scanStartTimestamp"
             )
 
-            val scanId = SyncApiClient.startScan()
-            Log.d(TAG, "Scan started with id: $scanId")
-
             val transactions = querySmsInbox(scanStartTimestamp)
             Log.d(TAG, "Found ${transactions.length()} transaction SMS")
 
-            if (transactions.length() > 0) {
-                SyncApiClient.batchUpload(scanId, transactions)
+            val count = if (transactions.length() > 0) {
+                SyncApiClient.batchUpload(transactions, scanStartTimestamp)
+            } else {
+                0
             }
-
-            val count = SyncApiClient.endScan(scanId)
 
             val now = System.currentTimeMillis()
             SyncStatusEmitter.emit("SUCCESS:$count:$now")
@@ -89,15 +86,18 @@ class TransactionSyncWorker(
     }
 
     private fun resolveScanStartTimestamp(latestTimestamp: Long): Long {
-        if (latestTimestamp > 0) {
-            return latestTimestamp
-        }
-
+        // If the user explicitly chose a range, honour it
         val manualBootstrap = inputData.getLong(KEY_BOOTSTRAP_START_TIMESTAMP, 0L)
         if (manualBootstrap > 0) {
             return manualBootstrap
         }
 
+        // Otherwise, continue from the backend watermark
+        if (latestTimestamp > 0) {
+            return latestTimestamp
+        }
+
+        // Fallback for first-ever sync with no explicit range
         return System.currentTimeMillis() -
             TimeUnit.DAYS.toMillis(DEFAULT_INITIAL_SYNC_DAYS)
     }
