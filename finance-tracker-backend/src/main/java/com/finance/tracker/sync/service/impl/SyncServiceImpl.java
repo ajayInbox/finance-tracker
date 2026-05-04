@@ -17,7 +17,9 @@ import com.finance.tracker.sync.service.SyncService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Service
@@ -46,7 +48,7 @@ public class SyncServiceImpl implements SyncService {
     }
 
     @Override
-    public ScanStartResponse startScan(UUID userId) {
+    public ScanStartResponse startScan(UUID userId, long fromTimestamp) {
         ScanHistory existingScan = scanHistoryRepository
                 .findFirstByUserIdAndStatusOrderByStartTimeDesc(userId, ScanStatus.STARTED)
                 .orElse(null);
@@ -62,6 +64,7 @@ public class SyncServiceImpl implements SyncService {
         history.setUserId(userId);
         history.setStatus(ScanStatus.STARTED);
         history.setStartTime(OffsetDateTime.now());
+        history.setFromTimestamp(fromTimestamp(fromTimestamp));
 
         ScanHistory saved = scanHistoryRepository.save(history);
 
@@ -73,7 +76,7 @@ public class SyncServiceImpl implements SyncService {
     }
 
     @Override
-    public ScanResponse finalizeScan(UUID userId, UUID scanId, EndScanRequest endScanRequest) {
+    public ScanResponse finalizeScan(UUID userId, UUID scanId, long toTimestamp, EndScanRequest endScanRequest) {
         if (scanId == null) {
             throw new InvalidSyncRequestException("scanId is required");
         }
@@ -93,6 +96,7 @@ public class SyncServiceImpl implements SyncService {
 
         history.setStatus(ScanStatus.COMPLETED);
         history.setEndTime(OffsetDateTime.now());
+        history.setToTimestamp(fromTimestamp(toTimestamp));
         history.setTotalSmsProcessed(endScanRequest.getTotalSmsProcessed());
         history.setTransactionsCreated(endScanRequest.getTransactionsCreated());
         history.setDuplicatesSkipped(endScanRequest.getDuplicatesSkipped());
@@ -175,5 +179,9 @@ public class SyncServiceImpl implements SyncService {
                 history.getDuplicatesSkipped(),
                 history.getFailedToParse()
         );
+    }
+
+    private OffsetDateTime fromTimestamp(long timestamp) {
+        return Instant.ofEpochMilli(timestamp).atOffset(ZoneOffset.UTC);
     }
 }

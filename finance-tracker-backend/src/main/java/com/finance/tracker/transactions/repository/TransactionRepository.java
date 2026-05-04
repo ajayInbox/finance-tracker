@@ -6,9 +6,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -61,7 +63,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     Page<Transaction> findAllByUserIdAndStatus(UUID userId, TransactionStatus status, Pageable pageable);
 
     // Finds all existing identifiers in a single trip to the DB
-    @Query("SELECT t.uniqueIdentifier FROM Transaction t WHERE t.uniqueIdentifier IN :identifiers")
+    @Query(value = "SELECT t.uniqueIdentifier FROM Transaction t WHERE t.uniqueIdentifier IN :identifiers", nativeQuery = false)
     Set<String> findExistingIdentifiers(@Param("identifiers") Collection<String> identifiers);
+
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM Transaction t WHERE t.id IN :ids", nativeQuery = false)
+    void deleteByIdIn(@Param("ids") List<UUID> ids);
 
 }

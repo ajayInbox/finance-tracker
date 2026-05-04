@@ -144,7 +144,7 @@ public class CategoryServiceImpl implements CategoryService {
      */
     @Override
     public Category validateAndGet(UUID userId, UUID id, CategoryType categoryType) {
-        return repository.findByIdAndUserIdAndType(id, userId, categoryType)
+        return repository.findByIdAndUserIdOrUserIdIsNullAndType(id, userId, categoryType.name().toUpperCase())
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found or access denied"));
     }
 

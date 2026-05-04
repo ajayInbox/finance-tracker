@@ -9,9 +9,9 @@ import java.util.UUID;
 
 public interface SyncService {
     public SyncMetadataResponse getMetadata(UUID userId);
-    ScanStartResponse startScan(UUID userId);
+    ScanStartResponse startScan(UUID userId, long fromTimeStamp);
 
-    ScanResponse finalizeScan(UUID userId, UUID scanId, EndScanRequest endScanRequest);
+    ScanResponse finalizeScan(UUID userId, UUID scanId, long toTimestamp, EndScanRequest endScanRequest);
 
     SyncMetadataResponse updateMetadata(UUID userId, long timestamp);
 

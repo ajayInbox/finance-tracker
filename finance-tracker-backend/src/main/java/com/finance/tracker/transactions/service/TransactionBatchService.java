@@ -8,6 +8,8 @@ import com.finance.tracker.category.domain.CategoryType;
 import com.finance.tracker.category.domain.entities.Category;
 import com.finance.tracker.category.service.CategoryService;
 import com.finance.tracker.sync.domain.EndScanRequest;
+import com.finance.tracker.sync.domain.dtos.ScanResponse;
+import com.finance.tracker.sync.domain.dtos.ScanStartResponse;
 import com.finance.tracker.sync.exceptions.InvalidSyncRequestException;
 import com.finance.tracker.sync.service.SyncService;
 import com.finance.tracker.transactions.domain.*;
@@ -117,14 +119,12 @@ public class TransactionBatchService {
         if (request == null) {
             throw new InvalidSyncRequestException("Batch request is required");
         }
-        if (request.scanId() == null) {
-            throw new InvalidSyncRequestException("scanId is required");
-        }
         if (request.smsList() == null) {
             throw new InvalidSyncRequestException("smsList is required");
         }
 
-        long startTime = System.currentTimeMillis();
+        //long startTime = System.currentTimeMillis();
+        ScanStartResponse startScan =syncService.startScan(userId, request.fromTimestamp());
 
         // 1. Bulk Deduplication
         Map<String, SmsRequest> incomingMap = request.smsList().stream()
@@ -148,7 +148,7 @@ public class TransactionBatchService {
                 .map(msg -> CompletableFuture.supplyAsync(() -> {
                     String uid = generateSecureId(msg);
                     return smsService.parseTransactionFromSms(msg)
-                            .map(parsed -> getDraftTransaction(userId, uid, parsed, msg.getBody(), request.scanId()))
+                            .map(parsed -> getDraftTransaction(userId, uid, parsed, msg.getBody(), startScan.scanId()))
                             .orElseGet(() -> {
                                 failedToParse.incrementAndGet();
                                 auditService.logFailedParsing(msg, "NO_REGEX_MATCH");
@@ -169,6 +169,12 @@ public class TransactionBatchService {
             transactionRepository.saveAll(transactionsToSave);
         }
 
+        // Use the timestamp of the latest SMS in the batch (regardless of if it parsed)
+        long latestTimestamp = request.smsList().stream()
+                .mapToLong(SmsRequest::getTimestamp)
+                .max()
+                .orElse(0L);
+
         // 4. AUTOMATIC END SCAN: Update History
         EndScanRequest endScanRequest = EndScanRequest.builder()
                 .transactionsCreated(transactionsToSave.size())
@@ -178,22 +184,17 @@ public class TransactionBatchService {
                 .build();
 
         syncService.finalizeScan(
-                userId, request.scanId(),
+                userId, startScan.scanId(),
+                latestTimestamp,
                 endScanRequest
         );
 
         // 5. UPDATE METADATA: Move the "Bookmark" forward
-        // Use the timestamp of the latest SMS in the batch (regardless of if it parsed)
-        long latestTimestamp = request.smsList().stream()
-                .mapToLong(SmsRequest::getTimestamp)
-                .max()
-                .orElse(0L);
-
         if (latestTimestamp > 0) {
             syncService.updateMetadata(userId, latestTimestamp);
         }
 
-        log.info("Scan {} completed: {} new txns, {} ms", request.scanId(), transactionsToSave.size(), (System.currentTimeMillis() - startTime));
+        log.info("Scan {} completed: {} new txns, {} ms", startScan.scanId(), transactionsToSave.size(), (System.currentTimeMillis() - startScan.startTime().toEpochSecond()));
 
         return new BatchSyncResponse(
                 transactionsToSave.size(),
@@ -254,5 +255,13 @@ public class TransactionBatchService {
         } catch (Exception e) {
             return OffsetDateTime.now(); // Fallback to current time if parsing fails
         }
+    }
+
+    @Transactional
+    public void deleteDraftTransactions(List<UUID> transactionIds) {
+        if (transactionIds == null || transactionIds.isEmpty()) {
+            return;
+        }
+        transactionRepository.deleteByIdIn(transactionIds);
     }
 }
