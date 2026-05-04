@@ -13,10 +13,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
@@ -33,6 +35,8 @@ public class AuthServiceImpl implements AuthService {
         );
 
         User user = (User) authentication.getPrincipal();
+
+        refreshService.deleteTokenForUser(user.getId());
 
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = refreshService.create(user.getId()).getToken();
@@ -77,6 +81,7 @@ public class AuthServiceImpl implements AuthService {
         refreshService.delete(req.refreshToken());
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Optional<User> findByEmail(String email) {
         return userRepo.findByEmail(email);

@@ -9,6 +9,7 @@ import com.finance.tracker.accounts.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,33 +25,38 @@ public class AccountController {
     private final AccountMapper accountMapper;
 
     @PostMapping("/account")
-    public ResponseEntity<AccountResponse> add(@RequestBody AccountCreateUpdateRequest request){
-        Account account = accountService.create(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"), request);
+    public ResponseEntity<AccountResponse> add(@RequestBody AccountCreateUpdateRequest request, Authentication auth) {
+        String userId = (String) auth.getPrincipal();
+        Account account = accountService.create(UUID.fromString(userId), request);
         return new ResponseEntity<>(accountMapper.toResponse(account), HttpStatus.CREATED);
     }
 
     @GetMapping("/accounts")
-    public ResponseEntity<List<AccountResponse>> getAccounts(){
-        List<Account> accounts = accountService.getAccounts(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"));
+    public ResponseEntity<List<AccountResponse>> getAccounts(Authentication auth){
+        String userId = (String) auth.getPrincipal();
+        List<Account> accounts = accountService.getAccounts(UUID.fromString(userId));
         List<AccountResponse> res = accounts.stream().map(accountMapper::toResponse).toList();
         return ResponseEntity.ok(res);
     }
 
     @GetMapping("/networth")
-    public ResponseEntity<NetworthSummary> getNetWorth(){
-        NetworthSummary netWorth = accountService.getNetWorth(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"));
+    public ResponseEntity<NetworthSummary> getNetWorth(Authentication auth){
+        String userId = (String) auth.getPrincipal();
+        NetworthSummary netWorth = accountService.getNetWorth(UUID.fromString(userId));
         return ResponseEntity.ok(netWorth);
     }
 
     @DeleteMapping("/accounts/{id}")
-    public ResponseEntity<?> delete(@PathVariable("id") UUID accountId){
-        accountService.deleteAccount(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"), accountId);
+    public ResponseEntity<?> delete(@PathVariable("id") UUID accountId,  Authentication auth) {
+        String userId = (String) auth.getPrincipal();
+        accountService.deleteAccount(UUID.fromString(userId), accountId);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/accounts/{id}")
-    public ResponseEntity<AccountResponse> update(@PathVariable("id") UUID accountId, @RequestBody AccountCreateUpdateRequest request){
-        Account account = accountService.update(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"), accountId, request);
+    public ResponseEntity<AccountResponse> update(@PathVariable("id") UUID accountId, @RequestBody AccountCreateUpdateRequest request,  Authentication auth) {
+        String userId = (String) auth.getPrincipal();
+        Account account = accountService.update(UUID.fromString(userId), accountId, request);
         return ResponseEntity.ok(accountMapper.toResponse(account));
     }
 }

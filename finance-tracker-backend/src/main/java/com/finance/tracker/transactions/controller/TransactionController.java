@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,9 +30,10 @@ public class TransactionController {
     // Create
     // -----------------------------------------------------
     @PostMapping
-    public ResponseEntity<TransactionResponseDto> create(@Valid @RequestBody CreateTransactionRequestDto dto) {
+    public ResponseEntity<TransactionResponseDto> create(@Valid @RequestBody CreateTransactionRequestDto dto, Authentication auth) {
+        UUID userId = UUID.fromString((String) auth.getPrincipal());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(transactionService.create(dto, UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4")));
+                .body(transactionService.create(dto, userId));
     }
 
     // -----------------------------------------------------
@@ -52,11 +54,12 @@ public class TransactionController {
             @RequestParam(name = "page", required = false, defaultValue = "1") int page,
             @RequestParam(name = "size", required = false, defaultValue = "50") int size,
             @RequestParam(name = "version", required = false, defaultValue = "1") int version,
-            @RequestParam(name = "status", required = false, defaultValue = "CONFIRMED") String status
+            @RequestParam(name = "status", required = false, defaultValue = "CONFIRMED") String status,
+            Authentication auth
     ) {
         PageRequest pageRequest =
                 PageRequest.of(page - 1, size, Sort.by("occurredAt").descending());
-        UUID userId = UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4");
+        UUID userId = UUID.fromString((String) auth.getPrincipal());
 
         return switch (version) {
             case 1 -> {
@@ -89,10 +92,11 @@ public class TransactionController {
     // Delete
     // -----------------------------------------------------
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable("id") UUID id) {
+    public ResponseEntity<?> delete(@PathVariable("id") UUID id, Authentication auth) {
+        UUID userId = UUID.fromString((String) auth.getPrincipal());
         return transactionService.getTransaction(id)
                 .map(trx -> {
-                    transactionService.deleteTransaction(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"), trx);
+                    transactionService.deleteTransaction(userId, trx);
                     return ResponseEntity.noContent().build();
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -113,8 +117,9 @@ public class TransactionController {
     // Monthly Expense Analysis
     // -----------------------------------------------------
     @PostMapping("/analysis")
-    public ResponseEntity<MonthlyExpenseResponse> getExpenseAnalysis(@RequestBody ExpenseReportRequest expenseReportRequest) {
-        MonthlyExpenseResponse response = transactionService.getExpenseReport(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"), expenseReportRequest);
+    public ResponseEntity<MonthlyExpenseResponse> getExpenseAnalysis(@RequestBody ExpenseReportRequest expenseReportRequest,  Authentication auth) {
+        UUID userId = UUID.fromString((String) auth.getPrincipal());
+        MonthlyExpenseResponse response = transactionService.getExpenseReport(userId, expenseReportRequest);
         return ResponseEntity.ok(response);
     }
 
@@ -131,16 +136,30 @@ public class TransactionController {
     // Parse SMS Messages
     // -----------------------------------------------------
     @PostMapping("/parse")
-    public ResponseEntity<ParsedTxnResponse> parse(@RequestBody SmsRequest message) {
-        return ResponseEntity.ok(transactionService.parse(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"), message));
+    public ResponseEntity<ParsedTxnResponse> parse(@RequestBody SmsRequest message,  Authentication auth) {
+        UUID userId = UUID.fromString((String) auth.getPrincipal());
+        return ResponseEntity.ok(transactionService.parse(userId, message));
     }
 
     // -----------------------------------------------------
     // Parse SMS Messages
     // -----------------------------------------------------
     @PutMapping("/batch")
-    public ResponseEntity<Void> batchUpdate(@RequestBody List<BatchUpdateTransactionRequestDto> requests) {
-        batchService.batchConfirmAndUpdate(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"), requests);
+    public ResponseEntity<Void> batchUpdate(@RequestBody List<BatchUpdateTransactionRequestDto> requests, Authentication auth) {
+        UUID userId = UUID.fromString((String) auth.getPrincipal());
+        batchService.batchConfirmAndUpdate(userId, requests);
         return ResponseEntity.ok().build();
+    }
+
+    // -----------------------------------------------------
+    // Delete Draft Transactions
+    // -----------------------------------------------------
+    @PostMapping("/drafts/batch-delete")
+    public ResponseEntity<Void> batchDelete(@RequestBody List<UUID> transactionIds) {
+        if (transactionIds == null || transactionIds.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        batchService.deleteDraftTransactions(transactionIds);
+        return ResponseEntity.noContent().build(); // 204 No Content is standard for successful deletes
     }
 }
