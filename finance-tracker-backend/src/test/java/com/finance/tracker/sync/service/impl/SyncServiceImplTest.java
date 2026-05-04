@@ -65,7 +65,7 @@ class SyncServiceImplTest {
         when(scanHistoryRepository.findFirstByUserIdAndStatusOrderByStartTimeDesc(userId, ScanStatus.STARTED))
                 .thenReturn(Optional.of(existing));
 
-        ScanStartResponse response = syncService.startScan(userId);
+        ScanStartResponse response = syncService.startScan(userId, 0L);
 
         assertEquals(scanId, response.scanId());
         assertEquals(ScanStatus.STARTED.name(), response.status());
@@ -82,7 +82,7 @@ class SyncServiceImplTest {
         when(scanHistoryRepository.findById(scanId)).thenReturn(Optional.of(existing));
 
         assertThrows(ScanAccessDeniedException.class,
-                () -> syncService.finalizeScan(userId, scanId, EndScanRequest.builder().build()));
+                () -> syncService.finalizeScan(userId, scanId, 0L, EndScanRequest.builder().build()));
     }
 
     @Test
@@ -95,7 +95,7 @@ class SyncServiceImplTest {
         when(scanHistoryRepository.findById(scanId)).thenReturn(Optional.of(existing));
 
         assertThrows(InvalidScanStateException.class,
-                () -> syncService.finalizeScan(userId, scanId, EndScanRequest.builder().build()));
+                () -> syncService.finalizeScan(userId, scanId, 0L, EndScanRequest.builder().build()));
     }
 
     @Test
@@ -116,7 +116,7 @@ class SyncServiceImplTest {
         when(scanHistoryRepository.findById(scanId)).thenReturn(Optional.of(existing));
         when(scanHistoryRepository.save(existing)).thenReturn(existing);
 
-        ScanResponse response = syncService.finalizeScan(userId, scanId, request);
+        ScanResponse response = syncService.finalizeScan(userId, scanId, 0L, request);
 
         assertEquals(ScanStatus.COMPLETED, response.status());
         assertEquals(10, response.totalSmsProcessed());
@@ -131,7 +131,7 @@ class SyncServiceImplTest {
         when(scanHistoryRepository.findById(scanId)).thenReturn(Optional.empty());
 
         assertThrows(ScanNotFoundException.class,
-                () -> syncService.finalizeScan(userId, scanId, EndScanRequest.builder().build()));
+                () -> syncService.finalizeScan(userId, scanId, 0L, EndScanRequest.builder().build()));
     }
 
     @Test

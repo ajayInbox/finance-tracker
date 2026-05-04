@@ -33,6 +33,11 @@ public class ScanHistory {
     @Column(name = "end_time")
     private OffsetDateTime endTime;
 
+    @Column(name = "from_timestamp")
+    private OffsetDateTime fromTimestamp;
+    @Column(name = "to_timestamp")
+    private OffsetDateTime toTimestamp;
+
     // Detailed stats for the developer dashboard
     private int totalSmsProcessed;
     private int transactionsCreated;

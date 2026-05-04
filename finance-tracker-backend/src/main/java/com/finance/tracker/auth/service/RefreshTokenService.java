@@ -37,4 +37,8 @@ public class RefreshTokenService {
     public void delete(String token) {
         repo.deleteByToken(token);
     }
+
+    public void deleteTokenForUser(UUID userId) {
+        repo.deleteByUserId(userId);
+    }
 }
