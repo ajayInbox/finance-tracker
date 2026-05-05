@@ -1,19 +1,22 @@
 import 'package:finance_app/features/category/ui/category_management_page.dart';
+import 'package:finance_app/features/auth/application/auth_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_app/widgets/app_page_header.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState extends ConsumerState<SettingsPage> {
   // Toggle states
   bool _darkMode = false;
   bool _faceId = false;
+  bool _isLoggingOut = false;
 
   // App version
   final String _appVersion = '2.4.1 (Build 202)';
@@ -57,8 +60,6 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
-
-
 
   Widget _buildProfileSection() {
     return Column(
@@ -370,17 +371,27 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {},
+          onTap: _isLoggingOut ? null : _logout,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.logout, color: Colors.red),
+                if (_isLoggingOut)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.red,
+                    ),
+                  )
+                else
+                  const Icon(Icons.logout, color: Colors.red),
                 const SizedBox(width: 8),
                 Text(
-                  'Log Out',
+                  _isLoggingOut ? 'Logging Out' : 'Log Out',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -393,6 +404,28 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _logout() async {
+    setState(() => _isLoggingOut = true);
+
+    try {
+      await ref.read(authControllerProvider.notifier).logout();
+      // AppRoot reactively navigates to SignInPage when isAuthenticated becomes false.
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoggingOut = false);
+      }
+    }
   }
 
   Widget _buildMenuItem({
