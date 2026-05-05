@@ -2,11 +2,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:finance_app/features/auth/application/auth_controller.dart';
+import 'package:finance_app/features/auth/ui/landing_page.dart';
+import 'package:finance_app/features/auth/ui/sign_in_page.dart';
+import 'package:finance_app/features/auth/ui/sign_up_page.dart';
 import 'package:finance_app/features/transaction/ui/transactions_page.dart';
 import 'package:finance_app/pages/dashboard_page.dart';
 import 'package:finance_app/features/account/ui/accounts_page.dart';
 import 'package:finance_app/features/sms/ui/sms_review_page.dart';
 import 'package:finance_app/pages/settings_page.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,11 +19,11 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'Finance Tracker',
       debugShowCheckedModeBanner: false,
@@ -45,7 +50,136 @@ class MyApp extends StatelessWidget {
         ),
         textTheme: GoogleFonts.plusJakartaSansTextTheme(),
       ),
-      home: MyHomePage(title: "Finance Tracker"),
+      home: const AppRoot(),
+    );
+  }
+}
+
+/// Controls whether the auth flow shows SignInPage or SignUpPage.
+final showSignUpProvider = NotifierProvider<ShowSignUpNotifier, bool>(
+  ShowSignUpNotifier.new,
+);
+
+class ShowSignUpNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void show() => state = true;
+  void hide() => state = false;
+}
+
+class AppRoot extends ConsumerWidget {
+  const AppRoot({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authControllerProvider);
+    final showSignUp = ref.watch(showSignUpProvider);
+
+    return authState.when(
+      loading: () => const _StartupLoadingPage(),
+      error: (error, stackTrace) => _StartupErrorPage(
+        onRetry: () => ref.invalidate(authControllerProvider),
+      ),
+      data: (state) {
+        if (state.isAuthenticated) {
+          return const MyHomePage(title: 'Finance Tracker');
+        }
+
+        if (!state.hasSeenLanding) {
+          return const LandingPage();
+        }
+
+        return showSignUp ? const SignUpPage() : const SignInPage();
+      },
+    );
+  }
+}
+
+class _StartupLoadingPage extends StatelessWidget {
+  const _StartupLoadingPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFFF8FAFC),
+      body: Center(child: CircularProgressIndicator(color: Color(0xFF10B981))),
+    );
+  }
+}
+
+class _StartupErrorPage extends StatelessWidget {
+  const _StartupErrorPage({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.error_outline_rounded,
+                  color: Color(0xFFEF4444),
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Something went wrong',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'We couldn\'t start the app. Please try again.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF6B7280),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: 160,
+                height: 48,
+                child: FilledButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh_rounded, size: 20),
+                  label: const Text('Try Again'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: GoogleFonts.plusJakartaSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
