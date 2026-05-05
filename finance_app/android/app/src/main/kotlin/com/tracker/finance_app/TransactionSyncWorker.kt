@@ -48,7 +48,7 @@ class TransactionSyncWorker(
         return try {
             setForeground(createForegroundInfo())
 
-            val latestTimestamp = SyncApiClient.getLatestTimestamp()
+            val latestTimestamp = SyncApiClient.getLatestTimestamp(applicationContext)
             val scanStartTimestamp = resolveScanStartTimestamp(latestTimestamp)
             Log.d(
                 TAG,
@@ -59,7 +59,11 @@ class TransactionSyncWorker(
             Log.d(TAG, "Found ${transactions.length()} transaction SMS")
 
             val count = if (transactions.length() > 0) {
-                SyncApiClient.batchUpload(transactions, scanStartTimestamp)
+                SyncApiClient.batchUpload(
+                    applicationContext,
+                    transactions,
+                    scanStartTimestamp
+                )
             } else {
                 0
             }
