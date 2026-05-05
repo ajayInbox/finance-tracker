@@ -228,7 +228,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
               child: _buildRadioItem(
                 'Bank',
                 Icons.account_balance,
-                AccountType.checking.apiValue,
+                AccountType.bank.apiValue,
               ),
             ),
             const SizedBox(width: 12),

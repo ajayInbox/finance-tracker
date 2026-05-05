@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:finance_app/core/dio_provider.dart';
 import 'package:finance_app/features/sms/data/model/transaction_draft.dart';
+import 'package:finance_app/utils/api_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final smsRepositoryProvider = Provider<SmsRepository>((ref) {
@@ -30,4 +31,18 @@ class SmsRepository {
       throw Exception('Failed to fetch drafts: $e');
     }
   }
+
+  Future<void> deleteDrafts(List<String> ids) async {
+  try {
+    await _dio.post(
+      ApiConstants.deleteDraftsBatch,
+      data: ids, // Dio now knows this is application/json
+      options: Options(contentType: Headers.jsonContentType),
+    );
+  } on DioException catch (e) {
+    // It's usually a good idea to handle or rethrow network errors
+    print('Error deleting drafts: ${e.message}');
+    rethrow;
+  }
+}
 }

@@ -115,11 +115,36 @@ class SmsController extends AsyncNotifier<List<TransactionDraft>> {
     }
   }
 
-  void removeDraft(String id) {
+  Future<void> deleteDrafts(List<String> ids) async {
     if (!state.hasValue) return;
 
     final currentDrafts = state.value!;
-    final updatedDrafts = currentDrafts.where((d) => d.id != id).toList();
+
+    // Optimistic remove
+    final updatedDrafts =
+        currentDrafts.where((d) => !ids.contains(d.id)).toList();
+    state = AsyncData(updatedDrafts);
+
+    try {
+      final repo = ref.read(smsRepositoryProvider);
+      await repo.deleteDrafts(ids);
+    } catch (e) {
+      // Rollback on failure
+      state = AsyncData(currentDrafts);
+      rethrow;
+    }
+  }
+
+  void deselectAll() {
+    if (!state.hasValue) return;
+
+    final updatedDrafts = state.value!.map((draft) {
+      return draft.copyWith(
+        isChecked: false,
+        categoryId: draft.categoryId ?? '',
+        accountId: draft.accountId ?? '',
+      );
+    }).toList();
 
     state = AsyncData(updatedDrafts);
   }

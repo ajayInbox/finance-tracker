@@ -53,18 +53,14 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
 
   Future<void> _startSync() async {
     final syncController = ref.read(syncControllerProvider.notifier);
-    int? bootstrapStartTimestampMillis;
 
-    if (syncController.isFirstSync) {
-      bootstrapStartTimestampMillis =
-          await _showFirstSyncRangeSheet(syncController);
-      if (bootstrapStartTimestampMillis == null) {
-        return;
-      }
-    }
+    // Always show the range sheet — returns null (cancelled), 0 (continue), or timestamp (range override)
+    final result = await _showSyncRangeSheet(syncController);
+    if (result == null) return; // user cancelled
 
+    final bootstrapOverride = result > 0 ? result : null;
     final error = await syncController.startSync(
-      bootstrapStartTimestampMillis: bootstrapStartTimestampMillis,
+      bootstrapStartTimestampMillis: bootstrapOverride,
     );
     if (error != null && mounted) {
       _showSnackBar(error, isError: true);
@@ -158,6 +154,141 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
     }
   }
 
+  Future<bool> _confirmDeleteDraft(TransactionDraft draft) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Delete Draft',
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to delete "${draft.transactionName}"? This cannot be undone.',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFFFEE2E2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Delete',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFFEF4444),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return false;
+
+    try {
+      await ref.read(smsControllerProvider.notifier).deleteDrafts([draft.id]);
+      if (mounted) {
+        _showSnackBar('"${draft.transactionName}" deleted.');
+      }
+      return true;
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Failed to delete: $e', isError: true);
+      }
+      return false;
+    }
+  }
+
+  Future<void> _deleteSelectedDrafts(List<TransactionDraft> selectedDrafts) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Delete ${selectedDrafts.length} Draft${selectedDrafts.length == 1 ? '' : 's'}',
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to delete ${selectedDrafts.length} selected draft${selectedDrafts.length == 1 ? '' : 's'}? This cannot be undone.',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFFFEE2E2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Delete All',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFFEF4444),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final ids = selectedDrafts.map((d) => d.id).toList();
+    try {
+      await ref.read(smsControllerProvider.notifier).deleteDrafts(ids);
+      if (mounted) {
+        _showSnackBar('${ids.length} draft(s) deleted.');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Failed to delete drafts: $e', isError: true);
+      }
+    }
+  }
+
   void _handleSyncStateChange(SyncState? previous, SyncState next) async {
     if (!mounted) return;
 
@@ -188,9 +319,11 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
     );
   }
 
-  Future<int?> _showFirstSyncRangeSheet(
+  Future<int?> _showSyncRangeSheet(
     SyncController syncController,
   ) async {
+    final isFirstSync = syncController.isFirstSync;
+
     return showModalBottomSheet<int>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -220,7 +353,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                 ),
                 const SizedBox(height: 22),
                 Text(
-                  'Choose first sync range',
+                  'Choose sync range',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
@@ -230,7 +363,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Pick how much history to scan the first time. Future syncs will only catch up from the last successful watermark.',
+                  'Pick how far back to scan your SMS inbox. Choosing a range will override the last sync watermark.',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -239,9 +372,21 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                   ),
                 ),
                 const SizedBox(height: 20),
+                if (!isFirstSync) ...[
+                  _buildBootstrapOption(
+                    title: 'Continue from last sync',
+                    subtitle: 'Pick up right where the last scan finished.',
+                    tag: 'FASTEST',
+                    tagColor: const Color(0xFF06B6D4),
+                    onTap: () {
+                      Navigator.pop(context, 0); // sentinel: use backend watermark
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 _buildBootstrapOption(
                   title: 'Last 7 days',
-                  subtitle: 'Fastest first pass with minimal draft noise.',
+                  subtitle: 'Quick pass with minimal draft noise.',
                   tag: 'QUICK',
                   tagColor: const Color(0xFF0EA5E9),
                   onTap: () {
@@ -267,7 +412,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                 const SizedBox(height: 12),
                 _buildBootstrapOption(
                   title: 'Last 90 days',
-                  subtitle: 'Recover more history with a larger first sync.',
+                  subtitle: 'Recover more history with a larger sync.',
                   tag: 'DEEPER',
                   tagColor: const Color(0xFF8B5CF6),
                   onTap: () {
@@ -993,10 +1138,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
     return Dismissible(
       key: Key(draft.id),
       direction: DismissDirection.endToStart,
-      onDismissed: (_) {
-        ref.read(smsControllerProvider.notifier).removeDraft(draft.id);
-        _showSnackBar('${draft.transactionName} removed from review.');
-      },
+      confirmDismiss: (_) => _confirmDeleteDraft(draft),
       background: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.only(right: 28),
@@ -1270,7 +1412,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Confirm ${checkedDrafts.length} selected draft${checkedDrafts.length == 1 ? '' : 's'}',
+                  '${checkedDrafts.length} draft${checkedDrafts.length == 1 ? '' : 's'} selected',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
@@ -1278,7 +1420,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                   ),
                 ),
                 Text(
-                  'Drafts stay editable until you post them to the ledger.',
+                  'Confirm to ledger or delete permanently.',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
@@ -1288,7 +1430,25 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () => _deleteSelectedDrafts(checkedDrafts),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.delete_outline_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           InkWell(
             onTap: () {
               final ids = checkedDrafts.map((draft) => draft.id).toList();
@@ -1302,7 +1462,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
-                'Confirm all',
+                'Confirm',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
