@@ -1,7 +1,11 @@
 class ApiConstants {
   static String baseUrl = "http://10.0.2.2:8080/";
   //static String baseUrl = "http://localhost:8080/";
-  //static String baseUrl = "https://finance-tracker-backend-m1rr.onrender.com";
+  //static String baseUrl = "https://finance-tracker-backend-v1.onrender.com/";
+  static String register = "/auth/register";
+  static String login = "/auth/login";
+  static String refresh = "/auth/refresh";
+  static String logout = "/auth/logout";
   static String getTransactions = "/api/v1/transactions";
   static String createTransaction = "/api/v1/transactions";
   static String updateTransaction = "/api/v1/transactions";
@@ -18,4 +22,11 @@ class ApiConstants {
   static String networthSummary = "/api/v1/networth";
   static String deleteAccount = "/api/v1/accounts";
   static String updateAccount = "/api/v1/accounts";
+
+  // Sync endpoints (used natively via Kotlin, listed here for reference)
+  static String syncLatestTimestamp = "/api/sync/latest-timestamp";
+  static String syncBatchUpload = "/api/sync/batch-upload";
+
+  // Draft management
+  static String deleteDraftsBatch = "/api/v1/transactions/drafts/batch-delete";
 }
