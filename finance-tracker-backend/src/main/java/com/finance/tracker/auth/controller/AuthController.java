@@ -3,22 +3,24 @@ package com.finance.tracker.auth.controller;
 import com.finance.tracker.auth.domain.LoginRequest;
 import com.finance.tracker.auth.domain.RefreshRequest;
 import com.finance.tracker.auth.domain.RegisterRequest;
+import com.finance.tracker.auth.domain.UserResponse;
 import com.finance.tracker.auth.domain.dtos.AuthResponse;
+import com.finance.tracker.auth.service.AuthService;
 import com.finance.tracker.auth.service.AuthServiceImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthServiceImpl authService;
+    private final AuthService authService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody @Valid RegisterRequest req) {
@@ -39,5 +41,12 @@ public class AuthController {
     public ResponseEntity<Void> logout(@RequestBody RefreshRequest req) {
         authService.logout(req);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<UserResponse> getUser(Authentication auth) {
+        String userId = (String) auth.getPrincipal();
+        UserResponse user = authService.getUser(UUID.fromString(userId));
+        return ResponseEntity.ok(user);
     }
 }
