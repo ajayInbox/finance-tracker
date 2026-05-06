@@ -1,9 +1,12 @@
 import 'package:finance_app/features/category/ui/category_management_page.dart';
 import 'package:finance_app/features/auth/application/auth_controller.dart';
+import 'package:finance_app/features/auth/data/model/user_profile.dart';
+import 'package:finance_app/features/auth/data/providers/user_profile_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_app/widgets/app_page_header.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shimmer/shimmer.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -62,111 +65,191 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Widget _buildProfileSection() {
+    final profileAsync = ref.watch(userProfileProvider);
+
+    return profileAsync.when(
+      data: (user) => _buildProfileContent(user),
+      loading: () => _buildProfileShimmer(),
+      error: (e, _) => _buildProfileError(),
+    );
+  }
+
+  Widget _buildProfileContent(UserProfile user) {
     return Column(
       children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: 96, // size-24 = 6rem = 96px
-              height: 96,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 4),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 10),
-                ],
-                image: const DecorationImage(
-                  image: NetworkImage(
-                    'https://lh3.googleusercontent.com/aida-public/AB6AXuCzowYvR4leWE1App8Nvp5p48t7BXzqYfDiTLm7wH3gzgtqrID52U9C3z-fF74NV_bmOtz7LfrvP4umTrNDkaCKmBgeQZbUi5Cu8GvIUockjNX8mGEK6B0YA13wFInEuTN0yevLy4W7QmY-Pv1cnheJvmkIQ-WbXSPD25-wVQWT_ljWBjGpjduqtQMXqOoIV0VlwdcKXqz_PHSkzmVpYtdhMrM4RBUv_BG4ipII3xz8ywrdCg4SLaFM1acZycfU2B_ebMYUyVIIhTM',
-                  ),
-                  fit: BoxFit.cover,
-                ),
+        // ── Initials Avatar ──
+        Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 4),
+            boxShadow: const [
+              BoxShadow(color: Colors.black12, blurRadius: 10),
+            ],
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF10B981), Color(0xFF059669)],
+            ),
+          ),
+          child: Center(
+            child: Text(
+              user.initials,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 32,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 1,
               ),
             ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF13EC5B), // primary from MD
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFFF6F8F6),
-                    width: 4,
-                  ), // border-background-light
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 2,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.edit,
-                  size: 16,
-                  color: Color(0xFF102216), // background-dark
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
         const SizedBox(height: 16),
         Text(
-          'Alex Johnson',
+          user.name,
           style: GoogleFonts.plusJakartaSans(
-            fontSize: 20, // text-xl
+            fontSize: 20,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF111827),
           ),
         ),
+        const SizedBox(height: 2),
         Text(
-          'alex.johnson@finance.com',
+          user.email,
           style: GoogleFonts.plusJakartaSans(
-            fontSize: 14, // text-sm
+            fontSize: 14,
             color: Colors.grey[500],
           ),
         ),
+        if (user.isSubscribed) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF13EC5B).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: const Color(0xFF13EC5B).withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.workspace_premium,
+                  size: 14,
+                  color: Color(0xFF13EC5B),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Pro Member',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF13EC5B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildProfileShimmer() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Column(
+        children: [
+          // Avatar placeholder
+          Container(
+            width: 96,
+            height: 96,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Name placeholder
+          Container(
+            width: 140,
+            height: 20,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Email placeholder
+          Container(
+            width: 200,
+            height: 14,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Badge placeholder
+          Container(
+            width: 100,
+            height: 24,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileError() {
+    return Column(
+      children: [
+        // Fallback avatar with question mark
+        Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 4),
+            boxShadow: const [
+              BoxShadow(color: Colors.black12, blurRadius: 10),
+            ],
+            color: Colors.grey[200],
+          ),
+          child: Center(
+            child: Icon(
+              Icons.person_outline_rounded,
+              size: 40,
+              color: Colors.grey[400],
+            ),
+          ),
+        ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF13EC5B).withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: const Color(0xFF13EC5B).withValues(alpha: 0.2),
-                ),
-              ),
-              child: Text(
-                'Pro Member',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF13EC5B), // primary
-                ),
-              ),
+        Text(
+          'Couldn\'t load profile',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            color: Colors.grey[500],
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () => ref.invalidate(userProfileProvider),
+          child: Text(
+            'Tap to retry',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF10B981),
             ),
-            const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                'Level 4',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );
@@ -203,19 +286,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           child: Column(
             children: [
               _buildMenuItem(
-                icon: Icons.account_balance,
-                iconColor: Colors.blue,
-                iconBgColor: Colors.blue.withValues(alpha: 0.1),
-                title: 'Linked Accounts',
-                subtitle: '3 Banks, 2 Cards',
-                showBorder: true,
-              ),
-              _buildMenuItem(
                 icon: Icons.data_usage,
                 iconColor: Colors.orange,
                 iconBgColor: Colors.orange.withValues(alpha: 0.1),
                 title: 'Spending Limits',
                 showBorder: true,
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Coming soon!'),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: const Color(0xFF10B981),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
               ),
               _buildMenuItem(
                 icon: Icons.category,
@@ -275,14 +363,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 title: 'Dark Mode',
                 value: _darkMode,
                 onChanged: (val) => setState(() => _darkMode = val),
-                showBorder: true,
-              ),
-              _buildValueItem(
-                icon: Icons.notifications,
-                iconColor: Colors.red,
-                iconBgColor: Colors.red.withValues(alpha: 0.1),
-                title: 'Notifications',
-                value: 'On',
                 showBorder: true,
               ),
               _buildValueItem(

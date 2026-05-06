@@ -6,6 +6,7 @@ class ApiConstants {
   static String login = "/auth/login";
   static String refresh = "/auth/refresh";
   static String logout = "/auth/logout";
+  static String userProfile = "/auth/user";
   static String getTransactions = "/api/v1/transactions";
   static String createTransaction = "/api/v1/transactions";
   static String updateTransaction = "/api/v1/transactions";

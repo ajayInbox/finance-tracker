@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:finance_app/features/auth/data/model/auth_tokens.dart';
+import 'package:finance_app/features/auth/data/model/user_profile.dart';
 import 'package:finance_app/utils/api_constants.dart';
 import 'package:finance_app/utils/api_error_handler.dart';
 import 'package:finance_app/utils/app_exception.dart';
@@ -8,6 +9,15 @@ class AuthRepository {
   const AuthRepository(this._dio);
 
   final Dio _dio;
+
+  Future<UserProfile> fetchCurrentUser() async {
+    try {
+      final response = await _dio.get(ApiConstants.userProfile);
+      return UserProfile.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      throw AppException(ApiErrorHandler.getErrorMessage(e));
+    }
+  }
 
   Future<AuthTokens> register({
     required String name,
