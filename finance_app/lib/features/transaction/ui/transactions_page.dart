@@ -153,7 +153,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => DraggableScrollableSheet(
@@ -189,7 +189,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
     final transactionsAsync = ref.watch(transactionsControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6), // background-light
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // background-light
       body: Column(
         children: [
           const AppPageHeader(title: 'Transactions'),
@@ -197,7 +197,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
           _buildFilters(),
           Expanded(
             child: transactionsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(child: Text('Error: $e')),
               data: (items) {
                 final filteredItems = _filterTransactions(items);
@@ -206,7 +206,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
                     child: Text(
                       'No transactions found',
                       style: GoogleFonts.plusJakartaSans(
-                        color: Colors.grey[500],
+                        color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
                         fontSize: 16,
                       ),
                     ),
@@ -223,14 +223,14 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
                 return RefreshIndicator(
                   onRefresh: _refreshTransactions,
                   child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+                    padding: EdgeInsets.fromLTRB(24, 8, 24, 100),
                     itemCount: flattenedList.length,
                     itemBuilder: (_, index) {
                       final item = flattenedList[index];
 
                       if (item is String) {
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(vertical: 12),
                           child: Text(
                             item.toUpperCase(),
                             style: GoogleFonts.plusJakartaSans(
@@ -247,16 +247,16 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
                           direction: DismissDirection.endToStart,
                           confirmDismiss: (_) => _confirmDelete(item),
                           background: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
+                            margin: EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFEE2E2),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 24),
-                            child: const Icon(
+                            padding: EdgeInsets.only(right: 24),
+                            child: Icon(
                               Icons.delete_outline_rounded,
-                              color: Color(0xFFEF4444),
+                              color: Theme.of(context).colorScheme.error,
                               size: 28,
                             ),
                           ),
@@ -266,7 +266,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
                           ),
                         );
                       }
-                      return const SizedBox.shrink();
+                      return SizedBox.shrink();
                     },
                   ),
                 );
@@ -276,18 +276,18 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
         ],
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80),
+        padding: EdgeInsets.only(bottom: 80),
         child: ScaleTransition(
           scale: _fabAnimationController,
           child: SizedBox(
             width: 56,
             height: 56,
             child: FloatingActionButton(
-              backgroundColor: const Color(0xFF10B981), // primary
+              backgroundColor: Theme.of(context).colorScheme.primary, // primary
               elevation: 8, // shadow-glow approx
-              shape: const CircleBorder(),
+              shape: CircleBorder(),
               onPressed: () => _openTransactionForm(null),
-              child: const Icon(Icons.add, color: Colors.white, size: 28),
+              child: Icon(Icons.add, color: Theme.of(context).colorScheme.surface, size: 28),
             ),
           ),
         ),
@@ -299,10 +299,10 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(32), // rounded-2xl
           boxShadow: [
             BoxShadow(
@@ -318,19 +318,19 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
           decoration: InputDecoration(
             hintText: 'Search transactions',
             hintStyle: GoogleFonts.plusJakartaSans(
-              color: Colors.grey[400],
+              color: Theme.of(context).dividerColor,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
-            prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+            prefixIcon: Icon(Icons.search, color: Theme.of(context).dividerColor),
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
+            contentPadding: EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,
             ),
           ),
           style: GoogleFonts.plusJakartaSans(
-            color: const Color(0xFF111827),
+            color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -342,7 +342,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
   Widget _buildFilters() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+      padding: EdgeInsets.fromLTRB(24, 0, 24, 16),
       child: Row(
         children: [
           _buildFilterChip(
@@ -350,19 +350,19 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
             _selectedTypeFilter == 'All',
             () => setState(() => _selectedTypeFilter = 'All'),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           _buildFilterChip('Income', _selectedTypeFilter == 'Income', () => setState(() => _selectedTypeFilter = 'Income')),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           _buildFilterChip('Expense', _selectedTypeFilter == 'Expense', () => setState(() => _selectedTypeFilter = 'Expense')),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           GestureDetector(
             onTap: _showFilterDialog,
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(color: Theme.of(context).dividerColor),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -371,7 +371,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
                   ),
                 ],
               ),
-              child: Icon(Icons.tune, color: Colors.grey[500], size: 20),
+              child: Icon(Icons.tune, color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey, size: 20),
             ),
           ),
         ],
@@ -388,15 +388,15 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF10B981) : Colors.white,
+          color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12), // rounded-xl
-          border: isSelected ? null : Border.all(color: Colors.grey[200]!),
+          border: isSelected ? null : Border.all(color: Theme.of(context).dividerColor),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
                     blurRadius: 20,
                     offset: const Offset(0, 0),
                   ),
@@ -417,15 +417,15 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : Colors.grey[500],
+                color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).textTheme.bodySmall?.color,
               ),
             ),
             if (icon != null) ...[
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               Icon(
                 icon,
                 size: 16,
-                color: isSelected ? Colors.white : Colors.grey[500],
+                color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).textTheme.bodySmall?.color,
               ),
             ],
           ],
@@ -464,7 +464,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
                 ? 'Failed to add transaction'
                 : 'Failed to update transaction',
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -514,7 +514,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
               'Delete',
               style: GoogleFonts.plusJakartaSans(
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFFEF4444),
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
           ),
@@ -533,7 +533,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('"${transaction.transactionName}" deleted'),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -543,7 +543,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to delete: $e'),
-            backgroundColor: const Color(0xFFEF4444),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

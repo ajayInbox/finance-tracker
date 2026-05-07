@@ -23,7 +23,7 @@ class TransactionCard extends ConsumerWidget {
 
     IconData icon = Icons.receipt;
     Color iconColor = const Color(0xFF6B7280);
-    Color bgIconColor = const Color(0xFFF3F4F6);
+    Color bgIconColor = Theme.of(context).scaffoldBackgroundColor;
 
     categoriesAsync.whenData((categories) {
       try {
@@ -32,7 +32,7 @@ class TransactionCard extends ConsumerWidget {
         );
         icon = CategoryIcons.parseIcon(category.iconKey);
         iconColor = CategoryIcons.parseColor(category.colorCode);
-        bgIconColor = iconColor.withOpacity(0.15);
+        bgIconColor = iconColor.withValues(alpha: 0.15);
       } catch (e) {
         // Fallback for unmatched category name
         if (isIncome) {
@@ -46,14 +46,14 @@ class TransactionCard extends ConsumerWidget {
     });
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16), // rounded-2xl
             border: Border.all(color: const Color(0xFFE5E7EB)),
             boxShadow: [
@@ -75,7 +75,7 @@ class TransactionCard extends ConsumerWidget {
                 ),
                 child: Icon(icon, color: iconColor, size: 24),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,26 +89,26 @@ class TransactionCard extends ConsumerWidget {
                             style: GoogleFonts.plusJakartaSans(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
-                              color: const Color(0xFF111827),
+                              color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(
                           '${isIncome ? '+' : '-'} ₹${transaction.amount.abs().toStringAsFixed(2)}',
                           style: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w700,
                             fontSize: 16,
                             color: isIncome
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFF111827),
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).textTheme.titleLarge?.color,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

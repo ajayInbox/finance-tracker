@@ -13,10 +13,21 @@ import 'package:finance_app/features/sms/ui/sms_review_page.dart';
 import 'package:finance_app/pages/settings_page.dart';
 
 
+import 'package:finance_app/core/theme_provider.dart';
+import 'package:finance_app/utils/app_style_constants.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final initialThemeMode = await loadSavedThemeMode();
 
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        initialThemeModeProvider.overrideWithValue(initialThemeMode),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends ConsumerWidget {
@@ -24,32 +35,14 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp(
       title: 'Finance Tracker',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        fontFamily: 'Plus Jakarta Sans',
-        scaffoldBackgroundColor: const Color(0xFFF3F4F6), // background-light
-        primaryColor: const Color(0xFF10B981), // Primary Emerald
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF10B981),
-          primary: const Color(0xFF10B981),
-          secondary: const Color(
-            0xFF10B981,
-          ), // Use primary as secondary for now to match teal vibe
-          surface: Colors.white,
-          brightness: Brightness.light,
-        ),
-        cardTheme: const CardThemeData(
-          color: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
-        ),
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(),
-      ),
+      themeMode: themeMode,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       home: const AppRoot(),
     );
   }
@@ -101,9 +94,13 @@ class _StartupLoadingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFFF8FAFC),
-      body: Center(child: CircularProgressIndicator(color: Color(0xFF10B981))),
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Center(
+        child: CircularProgressIndicator(
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
     );
   }
 }
@@ -115,8 +112,10 @@ class _StartupErrorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -142,7 +141,7 @@ class _StartupErrorPage extends StatelessWidget {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111827),
+                  color: theme.textTheme.titleLarge?.color,
                 ),
               ),
               const SizedBox(height: 8),
@@ -151,7 +150,7 @@ class _StartupErrorPage extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: const Color(0xFF6B7280),
+                  color: theme.textTheme.bodySmall?.color,
                   height: 1.5,
                 ),
               ),
@@ -164,8 +163,8 @@ class _StartupErrorPage extends StatelessWidget {
                   icon: const Icon(Icons.refresh_rounded, size: 20),
                   label: const Text('Try Again'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    foregroundColor: Colors.white,
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -218,7 +217,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Content
@@ -235,14 +234,15 @@ class _MyHomePageState extends State<MyHomePage> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: _buildFloatingBottomBar(),
+            child: _buildFloatingBottomBar(context),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFloatingBottomBar() {
+  Widget _buildFloatingBottomBar(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       child: Center(
@@ -251,7 +251,7 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Container(
             height: 80,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.bottomNavigationBarTheme.backgroundColor,
               borderRadius: BorderRadius.circular(40),
               boxShadow: [
                 BoxShadow(
@@ -264,11 +264,11 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildNavItem(Icons.home, 0),
-                _buildNavItem(Icons.history, 1),
-                _buildNavItem(Icons.donut_large, 2),
-                _buildNavItem(Icons.sms, 3), // SMS Icon
-                _buildNavItem(Icons.settings, 4), // Settings shifts to 4
+                _buildNavItem(context, Icons.home, 0),
+                _buildNavItem(context, Icons.history, 1),
+                _buildNavItem(context, Icons.donut_large, 2),
+                _buildNavItem(context, Icons.sms, 3), // SMS Icon
+                _buildNavItem(context, Icons.settings, 4), // Settings shifts to 4
               ],
             ),
           ),
@@ -277,8 +277,9 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, int index) {
+  Widget _buildNavItem(BuildContext context, IconData icon, int index) {
     bool isSelected = _selectedIndex == index;
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: () => _onItemTapped(index),
       behavior: HitTestBehavior.opaque,
@@ -290,7 +291,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF10B981) : Colors.grey[400],
+              color: isSelected ? theme.bottomNavigationBarTheme.selectedItemColor : theme.bottomNavigationBarTheme.unselectedItemColor,
               size: 28,
             ),
             const SizedBox(height: 4),
@@ -298,8 +299,8 @@ class _MyHomePageState extends State<MyHomePage> {
               duration: const Duration(milliseconds: 200),
               width: isSelected ? 4 : 0,
               height: 4,
-              decoration: const BoxDecoration(
-                color: Color(0xFF10B981),
+              decoration: BoxDecoration(
+                color: theme.bottomNavigationBarTheme.selectedItemColor,
                 shape: BoxShape.circle,
               ),
             ),

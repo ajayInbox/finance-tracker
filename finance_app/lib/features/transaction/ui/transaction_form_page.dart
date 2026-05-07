@@ -139,7 +139,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
 
     // App Colors
     const bgLight = Color(0xFFF3F4F6);
-    // const textPrimary = Color(0xFF111827); // Not used directly but good reference
+    // const textPrimary = Theme.of(context).textTheme.titleLarge?.color; // Not used directly but good reference
 
     return Scaffold(
       backgroundColor: bgLight,
@@ -151,33 +151,33 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
               child: Form(
                 key: _formKey,
                 child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: EdgeInsets.symmetric(horizontal: 24),
                   children: [
                     if (widget.isDraft && widget.originalMessage != null)
                       _buildOriginalMessage(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     _buildTypeSelector(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     _buildLabel('TRANSACTION NAME'),
                     _buildNameField(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     _buildLabel('AMOUNT'),
                     _buildAmountField(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     _buildLabel('ACCOUNT'),
                     _buildAccountSelector(accounts),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     _buildLabel('CATEGORY'),
                     _buildCategorySelector(categories),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     _buildLabel('DATE'),
                     _buildDateSelector(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     _buildLabel('DESCRIPTION / NOTES'),
                     _buildNotesField(),
-                    const SizedBox(height: 48), // Bottom spacing
+                    SizedBox(height: 48), // Bottom spacing
                     _buildSubmitButton(),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -190,20 +190,20 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      padding: EdgeInsets.fromLTRB(24, 16, 24, 24),
       child: Row(
         children: [
           _buildIconButton(
             icon: Icons.arrow_back,
             onTap: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Text(
             widget.isEditMode ? 'Edit Transaction' : 'Add Transaction',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF111827),
+              color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
             ),
           ),
           const Spacer(),
@@ -230,16 +230,16 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: const Color(0xFF111827)),
+        child: Icon(icon, color: Theme.of(context).textTheme.titleLarge?.color),
       ),
     );
   }
 
   Widget _buildTypeSelector() {
     return Container(
-      padding: const EdgeInsets.all(6),
+      padding: EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -256,7 +256,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
               label: 'Expense',
               icon: Icons.arrow_downward,
               isSelected: _transactionType == 'Expense',
-              color: const Color(0xFFEF4444),
+              color: Theme.of(context).colorScheme.error,
               onTap: () => setState(() {
                 _transactionType = 'Expense';
                 _selectedCategory = null;
@@ -268,7 +268,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
               label: 'Income',
               icon: Icons.arrow_upward,
               isSelected: _transactionType == 'Income',
-              color: const Color(0xFF10B981),
+              color: Theme.of(context).colorScheme.primary,
               onTap: () => setState(() {
                 _transactionType = 'Income';
                 _selectedCategory = null;
@@ -302,7 +302,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
@@ -313,15 +313,15 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
             Icon(
               icon,
               size: 20,
-              color: isSelected ? Colors.white : const Color(0xFF6B7280),
+              color: isSelected ? Theme.of(context).colorScheme.surface : const Color(0xFF6B7280),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : const Color(0xFF6B7280),
+                color: isSelected ? Theme.of(context).colorScheme.surface : const Color(0xFF6B7280),
               ),
             ),
           ],
@@ -332,10 +332,10 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
 
   Widget _buildLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 10),
+      padding: EdgeInsets.only(left: 4, bottom: 10),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: Color(0xFF6B7280),
@@ -348,7 +348,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   Widget _buildNameField() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -360,10 +360,10 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       ),
       child: TextFormField(
         controller: _nameCtrl,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF111827),
+          color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
         ),
         decoration: InputDecoration(
           hintText: 'e.g. Grocery shopping',
@@ -371,7 +371,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
             color: const Color(0xFF6B7280).withValues(alpha: 0.5),
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
+          contentPadding: EdgeInsets.symmetric(
             horizontal: 20,
             vertical: 16,
           ),
@@ -389,7 +389,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   Widget _buildAmountField() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -399,10 +399,10 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
         children: [
-          const Text(
+          Text(
             '₹',
             style: TextStyle(
               fontSize: 24,
@@ -410,25 +410,25 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
               color: Color(0xFF6B7280),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: TextFormField(
               controller: _amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(
+              keyboardType: TextInputType.numberWithOptions(
                 decimal: true,
               ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^(\d+)?\.?\d{0,2}')),
               ],
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 28, // Matches text-3xl approx
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF111827),
+                color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
               ),
               decoration: InputDecoration(
                 hintText: '0.00',
                 hintStyle: TextStyle(
-                  color: Colors.grey[300],
+                  color: Theme.of(context).dividerColor,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
@@ -488,7 +488,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -498,18 +498,18 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
             ),
           ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
             Icon(icon, color: const Color(0xFF6B7280)),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF111827),
+                  color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -526,7 +526,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   Widget _buildNotesField() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -539,10 +539,10 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       child: TextFormField(
         controller: _notesCtrl,
         maxLines: 3,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF111827),
+          color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
         ),
         decoration: InputDecoration(
           hintText: 'Additional details...',
@@ -550,7 +550,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
             color: const Color(0xFF6B7280).withValues(alpha: 0.5),
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
+          contentPadding: EdgeInsets.symmetric(
             horizontal: 20,
             vertical: 16,
           ),
@@ -565,36 +565,36 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       child: ElevatedButton(
         onPressed: _submitting ? null : _submit,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFEF4444), // Secondary Red
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: Theme.of(context).colorScheme.error, // Secondary Red
+          foregroundColor: Theme.of(context).colorScheme.surface,
+          padding: EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           elevation: 4,
-          shadowColor: const Color(0xFFEF4444).withValues(alpha: 0.4),
+          shadowColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.4),
         ),
         child: _submitting
-            ? const SizedBox(
+            ? SizedBox(
                 height: 24,
                 width: 24,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   strokeWidth: 2,
                 ),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.check, size: 24),
-                  const SizedBox(width: 8),
+                  Icon(Icons.check, size: 24),
+                  SizedBox(width: 8),
                   Text(
                     widget.isDraft
                         ? 'Confirm Changes'
                         : widget.isEditMode
                         ? 'Update Transaction'
                         : 'Save Transaction',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -641,8 +641,8 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       context: context,
       builder: (context) => _buildCategoryBottomSheet(categories),
       isScrollControlled: true,
-      backgroundColor: const Color(0xFFF3F4F6),
-      shape: const RoundedRectangleBorder(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
     );
@@ -658,8 +658,8 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       context: context,
       builder: (context) => _buildAccountBottomSheet(accounts),
       isScrollControlled: true,
-      backgroundColor: const Color(0xFFF3F4F6),
-      shape: const RoundedRectangleBorder(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
     );
@@ -679,10 +679,10 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF10B981),
-              onPrimary: Colors.white,
-              onSurface: Color(0xFF111827),
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary,
+              onPrimary: Theme.of(context).colorScheme.surface,
+              onSurface: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
             ),
           ),
           child: child!,
@@ -698,10 +698,10 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: Color(0xFF10B981),
-                onPrimary: Colors.white,
-                onSurface: Color(0xFF111827),
+              colorScheme: ColorScheme.light(
+                primary: Theme.of(context).colorScheme.primary,
+                onPrimary: Theme.of(context).colorScheme.surface,
+                onSurface: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
               ),
             ),
             child: child!,
@@ -741,32 +741,32 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       builder: (context, setSheetState) {
         return Container(
           height: MediaQuery.of(context).size.height * 0.8,
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Text(
+                  Text(
                     'Select Category',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF111827),
+                      color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Color(0xFF6B7280)),
+                    icon: Icon(Icons.close, color: Color(0xFF6B7280)),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               TextField(
                 decoration: InputDecoration(
                   hintText: 'Search categories...',
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.search,
                     color: Color(0xFF6B7280),
                   ),
@@ -774,7 +774,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).colorScheme.surface,
                   filled: true,
                 ),
                 onChanged: (value) {
@@ -789,7 +789,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                   });
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Expanded(
                 child: ListView.builder(
                   itemCount: filteredCategories.length,
@@ -819,13 +819,13 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                     }
 
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
+                      margin: EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: isSelected
                             ? Border.all(
-                                color: const Color(0xFF10B981),
+                                color: Theme.of(context).colorScheme.primary,
                                 width: 2,
                               )
                             : null,
@@ -834,7 +834,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                         leading: Icon(
                           categoryIcon,
                           color: isSelected
-                              ? const Color(0xFF10B981)
+                              ? Theme.of(context).colorScheme.primary
                               : const Color(0xFF6B7280),
                         ),
                         title: Text(
@@ -845,12 +845,12 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                                 ? FontWeight.bold
                                 : FontWeight.w500,
                             color: isSelected
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFF111827),
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).textTheme.titleLarge?.color,
                           ),
                         ),
                         trailing: isSelected
-                            ? const Icon(Icons.check, color: Color(0xFF10B981))
+                            ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
                             : null,
                         onTap: () => Navigator.pop(context, category.id),
                         shape: RoundedRectangleBorder(
@@ -875,32 +875,32 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       builder: (context, setSheetState) {
         return Container(
           height: MediaQuery.of(context).size.height * 0.8,
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Text(
+                  Text(
                     'Select Account',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF111827),
+                      color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Color(0xFF6B7280)),
+                    icon: Icon(Icons.close, color: Color(0xFF6B7280)),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               TextField(
                 decoration: InputDecoration(
                   hintText: 'Search accounts...',
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.search,
                     color: Color(0xFF6B7280),
                   ),
@@ -908,7 +908,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).colorScheme.surface,
                   filled: true,
                 ),
                 onChanged: (value) {
@@ -923,7 +923,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                   });
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Expanded(
                 child: ListView.builder(
                   itemCount: filteredAccounts.length,
@@ -932,13 +932,13 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                     final isSelected = _selectedAccount == account.id;
 
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
+                      margin: EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: isSelected
                             ? Border.all(
-                                color: const Color(0xFF10B981),
+                                color: Theme.of(context).colorScheme.primary,
                                 width: 2,
                               )
                             : null,
@@ -947,7 +947,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                         leading: Icon(
                           Icons.account_balance_wallet,
                           color: isSelected
-                              ? const Color(0xFF10B981)
+                              ? Theme.of(context).colorScheme.primary
                               : const Color(0xFF6B7280),
                         ),
                         title: Text(
@@ -956,15 +956,15 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
                             fontWeight: isSelected
                                 ? FontWeight.bold
                                 : FontWeight.normal,
-                            color: const Color(0xFF111827),
+                            color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                           ),
                         ),
                         subtitle: Text(
                           'Balance: ₹${account.remainingBalance}',
-                          style: const TextStyle(color: Color(0xFF6B7280)),
+                          style: TextStyle(color: Color(0xFF6B7280)),
                         ),
                         trailing: isSelected
-                            ? const Icon(Icons.check, color: Color(0xFF10B981))
+                            ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
                             : null,
                         onTap: () => Navigator.pop(context, account.id),
                         shape: RoundedRectangleBorder(
@@ -1043,7 +1043,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   Widget _buildOriginalMessage() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF1F5F9), // slate-100
         borderRadius: BorderRadius.circular(16),
@@ -1052,7 +1052,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'ORIGINAL MESSAGE',
             style: TextStyle(
               fontSize: 10,
@@ -1061,10 +1061,10 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
               letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             widget.originalMessage!,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontStyle: FontStyle.italic,
               color: Color(0xFF334155), // slate-700

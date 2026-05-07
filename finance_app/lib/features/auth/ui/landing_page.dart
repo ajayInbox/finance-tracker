@@ -22,7 +22,7 @@ class LandingPage extends ConsumerWidget {
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+                  padding: EdgeInsets.fromLTRB(24, 18, 24, 24),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 980),
@@ -36,7 +36,7 @@ class LandingPage extends ConsumerWidget {
                                     onGetStarted: () => _getStarted(ref),
                                   ),
                                 ),
-                                const SizedBox(width: 40),
+                                SizedBox(width: 40),
                                 const Expanded(
                                   flex: 5,
                                   child: _InsightPreview(),
@@ -49,8 +49,8 @@ class LandingPage extends ConsumerWidget {
                                 _LandingCopy(
                                   onGetStarted: () => _getStarted(ref),
                                 ),
-                                const SizedBox(height: 28),
-                                const Center(child: _InsightPreview()),
+                                SizedBox(height: 28),
+                                Center(child: _InsightPreview()),
                               ],
                             ),
                     ),
@@ -85,9 +85,9 @@ class _LandingCopy extends StatelessWidget {
                 color: const Color(0xFF0F172A),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.sms_outlined, color: Color(0xFF34D399)),
+              child: Icon(Icons.sms_outlined, color: Color(0xFF34D399)),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Text(
               'Finance Tracker',
               style: GoogleFonts.plusJakartaSans(
@@ -98,7 +98,7 @@ class _LandingCopy extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 42),
+        SizedBox(height: 42),
         Text(
           'Your spending, rebuilt from everyday messages.',
           style: GoogleFonts.plusJakartaSans(
@@ -108,7 +108,7 @@ class _LandingCopy extends StatelessWidget {
             color: const Color(0xFF0F172A),
           ),
         ),
-        const SizedBox(height: 18),
+        SizedBox(height: 18),
         Text(
           'Turn bank SMS alerts into clear transactions, categories, accounts, and net worth snapshots without rebuilding your money life by hand.',
           style: GoogleFonts.inter(
@@ -117,7 +117,7 @@ class _LandingCopy extends StatelessWidget {
             color: const Color(0xFF475569),
           ),
         ),
-        const SizedBox(height: 28),
+        SizedBox(height: 28),
         Wrap(
           spacing: 12,
           runSpacing: 12,
@@ -130,17 +130,17 @@ class _LandingCopy extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 36),
+        SizedBox(height: 36),
         SizedBox(
           height: 56,
           child: FilledButton.icon(
             onPressed: onGetStarted,
-            icon: const Icon(Icons.arrow_forward_rounded),
-            label: const Text('Get Started'),
+            icon: Icon(Icons.arrow_forward_rounded),
+            label: Text('Get Started'),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF10B981),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 22),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.surface,
+              padding: EdgeInsets.symmetric(horizontal: 22),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -165,17 +165,17 @@ class _FeaturePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF10B981)),
-          const SizedBox(width: 8),
+          Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
+          SizedBox(width: 8),
           Text(
             label,
             style: GoogleFonts.inter(
@@ -197,7 +197,7 @@ class _InsightPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       constraints: const BoxConstraints(maxWidth: 420),
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(28),
@@ -215,12 +215,12 @@ class _InsightPreview extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.lock_outline,
                 color: Color(0xFF94A3B8),
                 size: 18,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 'Today from SMS',
                 style: GoogleFonts.inter(
@@ -230,21 +230,21 @@ class _InsightPreview extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           const _SmsBubble(
             sender: 'HDFC Bank',
             body: 'Rs. 620 spent at FreshMart on card ending 4821.',
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           const _SmsBubble(
             sender: 'UPI Alert',
             body: 'Paid Rs. 249 to Metro Transit from savings.',
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
@@ -254,9 +254,9 @@ class _InsightPreview extends StatelessWidget {
                   title: 'FreshMart',
                   subtitle: 'Groceries',
                   amount: '-Rs. 620',
-                  color: const Color(0xFF10B981),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 _InsightRow(
                   icon: Icons.train_outlined,
                   title: 'Metro Transit',
@@ -264,10 +264,10 @@ class _InsightPreview extends StatelessWidget {
                   amount: '-Rs. 249',
                   color: const Color(0xFF3B82F6),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(14),
+                  padding: EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(16),
@@ -300,7 +300,7 @@ class _SmsBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(18),
@@ -316,7 +316,7 @@ class _SmsBubble extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 5),
+          SizedBox(height: 5),
           Text(
             body,
             style: GoogleFonts.inter(
@@ -359,7 +359,7 @@ class _InsightRow extends StatelessWidget {
           ),
           child: Icon(icon, color: color, size: 21),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,7 +384,7 @@ class _InsightRow extends StatelessWidget {
         Text(
           amount,
           style: GoogleFonts.inter(
-            color: const Color(0xFFEF4444),
+            color: Theme.of(context).colorScheme.error,
             fontWeight: FontWeight.w800,
           ),
         ),
