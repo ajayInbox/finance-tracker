@@ -58,7 +58,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
     final accountsAsync = ref.watch(accountsControllerProvider);
     final networthAsync = ref.watch(networthProvider);
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         child: SingleChildScrollView(
@@ -66,15 +66,15 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
             children: [
               const AppPageHeader(title: 'Linked Accounts'),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: 24),
                 child: networthAsync.when(
                   data: (netWorth) => _buildNetWorthCard(netWorth),
                   loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                      Center(child: CircularProgressIndicator()),
                   error: (e, _) => Text('Error: $e'),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               accountsAsync.when(
                 data: (accounts) {
                   final assets = accounts.where((a) => a.isAsset()).toList();
@@ -83,24 +83,24 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                       .toList();
 
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
                       children: [
                         _buildSectionHeader('Bank Accounts', assets.length),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         ...assets.map((a) => _buildAccountCard(a)),
-                        const SizedBox(height: 32),
+                        SizedBox(height: 32),
                         _buildSectionHeader('Credit Cards', liabilities.length),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         ...liabilities.map((a) => _buildCreditCardItem(a)),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         _buildAddAccountButton(),
-                        const SizedBox(height: 100), // Bottom padding
+                        SizedBox(height: 100), // Bottom padding
                       ],
                     ),
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(child: Text('Error: $e')),
               ),
             ],
@@ -115,13 +115,13 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
           'New Account Type',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF111827),
+            color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
           ),
           textAlign: TextAlign.center,
         ),
@@ -131,7 +131,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
             _buildDialogOption(
               icon: Icons.account_balance,
               color: const Color(0xFF22C55E), // green-500
-              bgColor: const Color(0xFFECFDF5), // green-50
+              bgColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), // green-50
               title: 'Asset Account',
               subtitle: 'Bank, Cash, Savings',
               onTap: () {
@@ -139,11 +139,11 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                 _navigateToAddAccount(AccountCategory.asset);
               },
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _buildDialogOption(
               icon: Icons.credit_card,
-              color: const Color(0xFFEF4444), // red-500
-              bgColor: const Color(0xFFFEF2F2), // red-50
+              color: Theme.of(context).colorScheme.error, // red-500
+              bgColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.1), // red-50
               title: 'Liability Account',
               subtitle: 'Credit Card, Loan',
               onTap: () {
@@ -169,7 +169,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
           borderRadius: BorderRadius.circular(16),
@@ -177,14 +177,14 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: bgColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -193,7 +193,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF111827),
+                    color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                   ),
                 ),
                 Text(
@@ -233,7 +233,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
       width: double.infinity,
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
-        color: Colors.white, // bg-card-light
+        color: Theme.of(context).colorScheme.surface, // bg-card-light
         borderRadius: BorderRadius.circular(32), // rounded-[2rem]
         boxShadow: [
           BoxShadow(
@@ -264,7 +264,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -273,20 +273,20 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF6B7280), // text-secondary-light
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   netWorth.formattedNetWorth,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 30, // text-3xl
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111827),
+                    color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                     letterSpacing: -0.5,
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Row(
                   children: [
                     _buildLegendItem(
@@ -294,9 +294,9 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                       label: 'Assets',
                       amount: netWorth.formattedAssets,
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     _buildLegendItem(
-                      color: const Color(0xFFEF4444), // red-500
+                      color: Theme.of(context).colorScheme.error, // red-500
                       label: 'Liabilities',
                       amount: netWorth.formattedLiabilities,
                     ),
@@ -322,7 +322,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
           height: 8,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
         RichText(
           text: TextSpan(
             style: GoogleFonts.plusJakartaSans(
@@ -334,8 +334,8 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
               TextSpan(text: '$label '),
               TextSpan(
                 text: amount,
-                style: const TextStyle(
-                  color: Color(0xFF111827), // text-primary-light
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black, // text-primary-light
                 ),
               ),
             ],
@@ -354,7 +354,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
           style: GoogleFonts.plusJakartaSans(
             fontSize: 18, // text-lg
             fontWeight: FontWeight.w700, // font-bold
-            color: const Color(0xFF111827), // text-primary-light
+            color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black, // text-primary-light
           ),
         ),
       ],
@@ -365,10 +365,10 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
     return GestureDetector(
       onTap: () => _showAccountDetails(account),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(20), // p-5
+        margin: EdgeInsets.only(bottom: 16),
+        padding: EdgeInsets.all(20), // p-5
         decoration: BoxDecoration(
-          color: Colors.white, // bg-card-light
+          color: Theme.of(context).colorScheme.surface, // bg-card-light
           borderRadius: BorderRadius.circular(24), // rounded-3xl
           boxShadow: [
             BoxShadow(
@@ -390,13 +390,13 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                     color: const Color(0xFFEFF6FF), // bg-blue-50
                     borderRadius: BorderRadius.circular(16), // rounded-2xl
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.account_balance,
                     color: Color(0xFF2563EB), // text-blue-600
                     size: 24, // text-2xl
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -407,10 +407,10 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 16, // text-base
                         fontWeight: FontWeight.w700, // font-bold
-                        color: const Color(0xFF111827), // text-primary-light
+                        color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black, // text-primary-light
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2),
                     Text(
                       '**** ${account.lastFour}', // Masked
                       style: GoogleFonts.plusJakartaSans(
@@ -446,11 +446,11 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
     return GestureDetector(
       onTap: () => _showCreditCardDetails(context, account),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(20), // p-5
+        margin: EdgeInsets.only(bottom: 16),
+        padding: EdgeInsets.all(20), // p-5
         clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
-          color: Colors.white, // bg-card-light
+          color: Theme.of(context).colorScheme.surface, // bg-card-light
           borderRadius: BorderRadius.circular(24), // rounded-3xl
           boxShadow: [
             BoxShadow(
@@ -468,7 +468,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
               bottom: 0,
               child: Container(
                 width: 4,
-                color: const Color(0xFFEF4444), // bg-red-500
+                color: Theme.of(context).colorScheme.error, // bg-red-500
               ),
             ),
             Row(
@@ -480,16 +480,16 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                       width: 48, // w-12
                       height: 48, // h-12
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2), // bg-red-50
+                        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1), // bg-red-50
                         borderRadius: BorderRadius.circular(16), // rounded-2xl
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.credit_card,
                         color: Color(0xFFDC2626), // text-red-600
                         size: 24, // text-2xl
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -505,7 +505,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                             ), // text-primary-light
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2),
                         Text(
                           '**** ${account.lastFour}', // Masked
                           style: GoogleFonts.plusJakartaSans(
@@ -521,7 +521,7 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                   ],
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(
+                  padding: EdgeInsets.only(
                     right: 16,
                   ), // Space for red bar
                   child: Column(
@@ -532,10 +532,10 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 18, // text-lg
                           fontWeight: FontWeight.w700, // font-bold
-                          color: const Color(0xFFEF4444), // text-red-500
+                          color: Theme.of(context).colorScheme.error, // text-red-500
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       if (_getDueMessage(account) != null)
                         Text(
                           _getDueMessage(account)!, // Dynamic message
@@ -612,19 +612,19 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
           final confirm = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Delete Account'),
-              content: const Text(
+              title: Text('Delete Account'),
+              content: Text(
                 'Are you sure you want to delete this account? This action cannot be undone.',
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+                  child: Text('Cancel'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Delete'),
+                  style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+                  child: Text('Delete'),
                 ),
               ],
             ),
@@ -681,19 +681,19 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
           final confirm = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Delete Account'),
-              content: const Text(
+              title: Text('Delete Account'),
+              content: Text(
                 'Are you sure you want to delete this account? This action cannot be undone.',
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+                  child: Text('Cancel'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Delete'),
+                  style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+                  child: Text('Delete'),
                 ),
               ],
             ),
@@ -746,11 +746,11 @@ class _AccountsPageState extends ConsumerState<AccountsPage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.add_circle_outline,
                 color: Color(0xFF6B7280), // text-secondary-light
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 'Add New Account',
                 style: GoogleFonts.plusJakartaSans(

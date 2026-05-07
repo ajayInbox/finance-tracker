@@ -53,7 +53,7 @@ class AppPageHeader extends StatelessWidget {
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF111827),
+                color: Theme.of(context).textTheme.titleLarge?.color,
               ),
             ),
 
@@ -78,13 +78,14 @@ class NotificationBell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -93,13 +94,14 @@ class NotificationBell extends StatelessWidget {
               offset: const Offset(0, 1),
             ),
           ],
+          border: Border.all(color: theme.dividerColor),
         ),
         child: Stack(
           children: [
-            const Center(
+            Center(
               child: Icon(
                 Icons.notifications_none_rounded,
-                color: Color(0xFF4B5563),
+                color: theme.iconTheme.color,
                 size: 24,
               ),
             ),
@@ -109,8 +111,8 @@ class NotificationBell extends StatelessWidget {
               child: Container(
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFEF4444),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.error,
                   shape: BoxShape.circle,
                 ),
               ),

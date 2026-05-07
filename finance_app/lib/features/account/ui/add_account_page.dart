@@ -102,7 +102,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
             _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: 24),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -110,9 +110,9 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                       _isLiability
                           ? _buildCreditCardLayout()
                           : _buildBankAccountLayout(),
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32),
                       _buildActionButtons(),
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -126,14 +126,14 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.only(left: 24, right: 24, top: 48, bottom: 24),
+      padding: EdgeInsets.only(left: 24, right: 24, top: 48, bottom: 24),
       color: AppColors.background.withValues(
         alpha: 0.9,
       ), // Glass effect simulation
       child: Row(
         children: [
           _buildBackButton(),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Text(
             widget.account != null
                 ? (_isLiability ? 'Edit Credit Card' : 'Edit Bank Account')
@@ -161,7 +161,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: AppShadows.shadowSm,
         ),
-        child: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+        child: Icon(Icons.arrow_back, color: AppColors.textPrimary),
       ),
     );
   }
@@ -176,9 +176,9 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
           label: 'Current Balance',
           subtitle: 'Current net balance of the account',
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         Container(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(32),
@@ -191,16 +191,16 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                 controller: _nameController,
                 placeholder: 'e.g. Main Checking',
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildAccountTypeSelector(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildTextField(
                 label: 'Bank Name',
                 controller: _bankNameController,
                 placeholder: 'e.g. Chase, Wells Fargo',
                 icon: Icons.business,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildLastFourField(),
             ],
           ),
@@ -221,7 +221,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -231,7 +231,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                 AccountType.bank.apiValue,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: _buildRadioItem(
                 'Cash',
@@ -241,7 +241,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -251,7 +251,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                 AccountType.wallet.apiValue,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: _buildRadioItem(
                 'Other',
@@ -270,7 +270,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
     return GestureDetector(
       onTap: () => setState(() => _selectedType = value),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withValues(alpha: 0.1)
@@ -288,7 +288,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
               size: 28,
               color: isSelected ? AppColors.primary : AppColors.textSecondary,
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               label,
               style: GoogleFonts.plusJakartaSans(
@@ -313,9 +313,9 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
           label: 'Current Outstanding',
           subtitle: 'Total amount currently owed on this card',
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         Container(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(32),
@@ -328,16 +328,16 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                 controller: _nameController,
                 placeholder: 'e.g. Visa Rewards',
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildTextField(
                 label: 'Bank Name',
                 controller: _bankNameController,
                 placeholder: 'e.g. Capital One',
                 icon: Icons.business,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildLastFourField(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildTextField(
                 label: 'Credit Limit',
                 controller: _creditLimitController,
@@ -345,14 +345,14 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                 icon: Icons.speed, // best approximation for gauge/limit
                 inputType: TextInputType.number,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildDropdownField(
                 label: 'Statement Day',
                 value: _statementDay,
                 items: _generateDayOptions(),
                 onChanged: (v) => setState(() => _statementDay = v),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildDropdownField(
                 label: 'Due Day',
                 value: _dueDay,
@@ -370,7 +370,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
 
   Widget _buildAmountCard({required String label, required String subtitle}) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(32),
@@ -388,7 +388,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
               letterSpacing: 1.0,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -400,11 +400,11 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                   color: AppColors.primary,
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: TextFormField(
                   controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(
+                  keyboardType: TextInputType.numberWithOptions(
                     decimal: true,
                   ),
                   style: GoogleFonts.plusJakartaSans(
@@ -425,9 +425,9 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Container(height: 2, color: AppColors.primary.withValues(alpha: 0.2)),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text(
             subtitle,
             style: GoogleFonts.plusJakartaSans(
@@ -458,7 +458,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
             // Use transparent container as the padding logic is inside input decoration if needed,
@@ -525,12 +525,12 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
                 ),
@@ -554,7 +554,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             SizedBox(
               width: 100,
               child: TextFormField(
@@ -562,7 +562,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                 maxLength: 4,
                 textAlign: TextAlign.center,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'monospace',
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -573,7 +573,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                   filled: true,
                   fillColor: AppColors.background,
                   hintText: '0000',
-                  hintStyle: const TextStyle(
+                  hintStyle: TextStyle(
                     fontFamily: 'monospace',
                     color: AppColors.textPlaceholder,
                   ),
@@ -588,7 +588,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                       width: 2,
                     ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  contentPadding: EdgeInsets.symmetric(vertical: 16),
                 ),
                 validator: (value) {
                   if (value == null || value.length != 4) return 'Invalid';
@@ -623,9 +623,9 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
             color: AppColors.textSecondary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
             color: AppColors.background,
             borderRadius: BorderRadius.circular(16),
@@ -641,7 +641,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
                   fontSize: 14,
                 ),
               ),
-              icon: const Icon(Icons.arrow_drop_down, color: AppColors.primary),
+              icon: Icon(Icons.arrow_drop_down, color: AppColors.primary),
               items: items.map((int item) {
                 return DropdownMenuItem<int>(
                   value: item,
@@ -670,7 +670,7 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
         onPressed: _isSubmitting ? null : _saveAccount,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: Theme.of(context).colorScheme.surface,
           elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -678,19 +678,19 @@ class _AddAccountPageState extends ConsumerState<AddAccountPage> {
           shadowColor: AppColors.primary.withValues(alpha: 0.4),
         ),
         child: _isSubmitting
-            ? const SizedBox(
+            ? SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   strokeWidth: 2,
                 ),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.check, size: 24),
-                  const SizedBox(width: 8),
+                  Icon(Icons.check, size: 24),
+                  SizedBox(width: 8),
                   Text(
                     widget.account != null
                         ? (_isLiability

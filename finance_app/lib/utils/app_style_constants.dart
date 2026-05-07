@@ -136,3 +136,127 @@ class AppBorderRadius {
   static const double large = 16.0;
   static const double xlarge = 24.0;
 }
+
+class AppTheme {
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      fontFamily: 'Plus Jakarta Sans',
+      scaffoldBackgroundColor: AppColors.background,
+      primaryColor: AppColors.primary,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        primary: AppColors.primary,
+        onPrimary: AppColors.textPrimary,
+        secondary: AppColors.primary,
+        surface: AppColors.surface,
+        onSurface: AppColors.textPrimary,
+        error: AppColors.error,
+        onError: Colors.white,
+        brightness: Brightness.light,
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        iconTheme: IconThemeData(color: AppColors.textPrimary),
+      ),
+      iconTheme: const IconThemeData(color: AppColors.textPrimary),
+      dividerColor: AppColors.border,
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.surface,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textTertiary,
+      ),
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(color: AppColors.textPrimary),
+        displayMedium: TextStyle(color: AppColors.textPrimary),
+        displaySmall: TextStyle(color: AppColors.textPrimary),
+        headlineLarge: TextStyle(color: AppColors.textPrimary),
+        headlineMedium: TextStyle(color: AppColors.textPrimary),
+        headlineSmall: TextStyle(color: AppColors.textPrimary),
+        titleLarge: TextStyle(color: AppColors.textPrimary),
+        titleMedium: TextStyle(color: AppColors.textPrimary),
+        titleSmall: TextStyle(color: AppColors.textPrimary),
+        bodyLarge: TextStyle(color: AppColors.textPrimary),
+        bodyMedium: TextStyle(color: AppColors.textPrimary),
+        bodySmall: TextStyle(color: AppColors.textSecondary),
+        labelLarge: TextStyle(color: AppColors.textPrimary),
+        labelMedium: TextStyle(color: AppColors.textSecondary),
+        labelSmall: TextStyle(color: AppColors.textSecondary),
+      ),
+    );
+  }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      fontFamily: 'Plus Jakarta Sans',
+      scaffoldBackgroundColor: AppColors.backgroundDark,
+      primaryColor: AppColors.primary,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        primary: AppColors.primary,
+        onPrimary: AppColors.textPrimary,
+        secondary: AppColors.primary,
+        surface: AppColors.surfaceDark,
+        onSurface: AppColors.darkTextPrimary,
+        error: AppColors.error,
+        onError: Colors.white,
+        brightness: Brightness.dark,
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.surfaceDark,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        iconTheme: IconThemeData(color: AppColors.darkTextPrimary),
+      ),
+      iconTheme: const IconThemeData(color: AppColors.darkTextPrimary),
+      dividerColor: AppColors.textSecondary.withValues(alpha: 0.3),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surfaceDark,
+        surfaceTintColor: Colors.transparent,
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.surfaceDark,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textSecondary,
+      ),
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(color: AppColors.darkTextPrimary),
+        displayMedium: TextStyle(color: AppColors.darkTextPrimary),
+        displaySmall: TextStyle(color: AppColors.darkTextPrimary),
+        headlineLarge: TextStyle(color: AppColors.darkTextPrimary),
+        headlineMedium: TextStyle(color: AppColors.darkTextPrimary),
+        headlineSmall: TextStyle(color: AppColors.darkTextPrimary),
+        titleLarge: TextStyle(color: AppColors.darkTextPrimary),
+        titleMedium: TextStyle(color: AppColors.darkTextPrimary),
+        titleSmall: TextStyle(color: AppColors.darkTextPrimary),
+        bodyLarge: TextStyle(color: AppColors.darkTextPrimary),
+        bodyMedium: TextStyle(color: AppColors.darkTextPrimary),
+        bodySmall: TextStyle(color: AppColors.textSecondary),
+        labelLarge: TextStyle(color: AppColors.darkTextPrimary),
+        labelMedium: TextStyle(color: AppColors.textSecondary),
+        labelSmall: TextStyle(color: AppColors.textSecondary),
+      ),
+    );
+  }
+}

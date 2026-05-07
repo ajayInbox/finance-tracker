@@ -19,31 +19,31 @@ class AccountDetailsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     // Determine account specific styling/icons based on type if needed,
     // but for now relying on the standard Bank Account style from spec.
-    final primaryColor = const Color(0xFF10B981); // Emerald green from spec
+    final primaryColor = Theme.of(context).colorScheme.primary; // Emerald green from spec
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Handle bar
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Container(
             width: 48,
             height: 6,
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: Theme.of(context).dividerColor,
               borderRadius: BorderRadius.circular(3),
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // Header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -52,7 +52,7 @@ class AccountDetailsSheet extends StatelessWidget {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF111827),
+                    color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                   ),
                 ),
                 InkWell(
@@ -62,10 +62,10 @@ class AccountDetailsSheet extends StatelessWidget {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
+                      color: Theme.of(context).scaffoldBackgroundColor,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.close,
                       size: 18,
                       color: Color(0xFF6B7280),
@@ -75,7 +75,7 @@ class AccountDetailsSheet extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
 
           // Balance Circle
           Container(
@@ -85,13 +85,13 @@ class AccountDetailsSheet extends StatelessWidget {
               color: const Color(0xFFEFF6FF), // blue-50
               borderRadius: BorderRadius.circular(32),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.account_balance,
               size: 40,
               color: Color(0xFF2563EB), // text-blue-600
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             'Current Balance',
             style: GoogleFonts.plusJakartaSans(
@@ -100,7 +100,7 @@ class AccountDetailsSheet extends StatelessWidget {
               color: const Color(0xFF6B7280),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -111,7 +111,7 @@ class AccountDetailsSheet extends StatelessWidget {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111827),
+                  color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                   letterSpacing: -1,
                 ),
               ),
@@ -125,29 +125,31 @@ class AccountDetailsSheet extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
 
           // Details Card
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            padding: const EdgeInsets.all(20),
+            margin: EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: const Color(0xFFF9FAFB),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFF3F4F6)),
+              border: Border.all(color: Theme.of(context).scaffoldBackgroundColor),
             ),
             child: Column(
               children: [
-                _buildDetailRow('Account Name', account.accountName),
+                _buildDetailRow(context, 'Account Name', account.accountName),
                 _buildDivider(),
-                _buildDetailRow('Bank Name', _extractBankName(account.notes)),
+                _buildDetailRow(context, 'Bank Name', _extractBankName(account.notes)),
                 _buildDivider(),
                 _buildDetailRow(
+                  context,
                   'Account Type',
                   _formatAccountType(account.accountType),
                 ),
                 _buildDivider(),
                 _buildDetailRow(
+                  context,
                   'Account Number',
                   '**** ${account.lastFour}',
                   isMono: true,
@@ -155,11 +157,11 @@ class AccountDetailsSheet extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
 
           // Actions
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
                 SizedBox(
@@ -169,7 +171,7 @@ class AccountDetailsSheet extends StatelessWidget {
                     onPressed: onEdit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(context).colorScheme.surface,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -179,8 +181,8 @@ class AccountDetailsSheet extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.edit, size: 20),
-                        const SizedBox(width: 8),
+                        Icon(Icons.edit, size: 20),
+                        SizedBox(width: 8),
                         Text(
                           'Edit Bank Account',
                           style: GoogleFonts.plusJakartaSans(
@@ -192,14 +194,14 @@ class AccountDetailsSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: TextButton(
                     onPressed: onDelete,
                     style: TextButton.styleFrom(
-                      backgroundColor: const Color(0xFFFEF2F2), // red-50
+                      backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.1), // red-50
                       foregroundColor: const Color(0xFFDC2626), // red-600
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -208,8 +210,8 @@ class AccountDetailsSheet extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.delete_outline, size: 20),
-                        const SizedBox(width: 8),
+                        Icon(Icons.delete_outline, size: 20),
+                        SizedBox(width: 8),
                         Text(
                           'Delete Bank Account',
                           style: GoogleFonts.plusJakartaSans(
@@ -224,15 +226,15 @@ class AccountDetailsSheet extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 48),
+          SizedBox(height: 48),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isMono = false}) {
+  Widget _buildDetailRow(BuildContext context, String label, String value, {bool isMono = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -251,13 +253,13 @@ class AccountDetailsSheet extends StatelessWidget {
                     // Using RobotoMono for monospace needs
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111827),
+                    color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                     letterSpacing: 1,
                   )
                 : GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111827),
+                    color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                   ),
           ),
         ],
@@ -267,7 +269,7 @@ class AccountDetailsSheet extends StatelessWidget {
 
   Widget _buildDivider() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: EdgeInsets.symmetric(vertical: 12),
       child: Container(height: 1, color: const Color(0xFFE5E7EB)),
     );
   }
