@@ -17,7 +17,7 @@ class CreditCardDetailsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFFEF4444); // Red-500 from spec
+    final primaryColor = Theme.of(context).colorScheme.error; // Red-500 from spec
 
     // Calculate usage percentage (current outstanding / credit limit)
     double usagePercent = 0.0;
@@ -29,28 +29,28 @@ class CreditCardDetailsSheet extends StatelessWidget {
     }
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Handle bar
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Container(
             width: 48,
             height: 6,
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: Theme.of(context).dividerColor,
               borderRadius: BorderRadius.circular(3),
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // Header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -61,16 +61,16 @@ class CreditCardDetailsSheet extends StatelessWidget {
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2), // red-50
+                          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1), // red-50
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.credit_card,
                           size: 30,
                           color: Color(0xFFDC2626), // red-600
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,7 +80,7 @@ class CreditCardDetailsSheet extends StatelessWidget {
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF111827),
+                                color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                               ),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
@@ -106,10 +106,10 @@ class CreditCardDetailsSheet extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
+                      color: Theme.of(context).scaffoldBackgroundColor,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.close,
                       size: 20,
                       color: Color(0xFF6B7280),
@@ -119,11 +119,11 @@ class CreditCardDetailsSheet extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
 
           // Outstanding Balance Section
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -135,7 +135,7 @@ class CreditCardDetailsSheet extends StatelessWidget {
                     color: const Color(0xFF6B7280),
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
@@ -145,7 +145,7 @@ class CreditCardDetailsSheet extends StatelessWidget {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF111827),
+                        color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                       ),
                     ),
                     Text(
@@ -158,14 +158,14 @@ class CreditCardDetailsSheet extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // Progress Bar
                 Container(
                   height: 12,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
+                    color: Theme.of(context).scaffoldBackgroundColor,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: FractionallySizedBox(
@@ -179,7 +179,7 @@ class CreditCardDetailsSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -204,11 +204,11 @@ class CreditCardDetailsSheet extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
 
           // Info Grid
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: 24),
             child: GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -217,13 +217,15 @@ class CreditCardDetailsSheet extends StatelessWidget {
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               children: [
-                _buildInfoCard('Bank Name', _extractBankName(account.notes)),
-                _buildInfoCard('Account Type', 'Credit Card'),
+                _buildInfoCard(context, 'Bank Name', _extractBankName(account.notes)),
+                _buildInfoCard(context, 'Account Type', 'Credit Card'),
                 _buildInfoCard(
+                  context,
                   'Statement Date',
                   _formatDate(account.statementDayOfMonth),
                 ),
                 _buildInfoCard(
+                  context,
                   'Payment Due',
                   _formatDate(account.dueDayOfMonth),
                   valueColor: primaryColor,
@@ -233,11 +235,11 @@ class CreditCardDetailsSheet extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
 
           // Actions
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
                 SizedBox(
@@ -249,7 +251,7 @@ class CreditCardDetailsSheet extends StatelessWidget {
                       backgroundColor: const Color(
                         0xFF111827,
                       ), // text-primary-light (dark)
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(context).colorScheme.surface,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -264,14 +266,14 @@ class CreditCardDetailsSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: TextButton(
                     onPressed: onDelete,
                     style: TextButton.styleFrom(
-                      backgroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.surface,
                       foregroundColor: primaryColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -292,13 +294,14 @@ class CreditCardDetailsSheet extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 48),
+          SizedBox(height: 48),
         ],
       ),
     );
   }
 
   Widget _buildInfoCard(
+    BuildContext context,
     String label,
     String value, {
     Color? valueColor,
@@ -306,9 +309,9 @@ class CreditCardDetailsSheet extends StatelessWidget {
     Color? labelColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB), // background-light
+        color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(16),
         border: borderColor != null ? Border.all(color: borderColor) : null,
       ),
@@ -324,13 +327,13 @@ class CreditCardDetailsSheet extends StatelessWidget {
               color: labelColor ?? const Color(0xFF6B7280),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             value,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: valueColor ?? const Color(0xFF111827),
+              color: valueColor ?? Theme.of(context).textTheme.titleLarge?.color,
             ),
             overflow: TextOverflow.ellipsis,
           ),

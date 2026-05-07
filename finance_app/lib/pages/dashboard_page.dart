@@ -75,7 +75,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             onRefresh: _handleRefresh,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
+              padding: EdgeInsets.fromLTRB(
                 20,
                 0,
                 20,
@@ -92,15 +92,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AppPageHeader(
-                        padding: const EdgeInsets.only(top: 48, bottom: 20),
+                        padding: EdgeInsets.only(top: 48, bottom: 20),
                         leading: Row(
                           children: [
                             Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0xFF10B981), width: 2),
+                                border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
                               ),
-                              padding: const EdgeInsets.all(2),
+                              padding: EdgeInsets.all(2),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(50),
                                 child: Image.network(
@@ -111,13 +111,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                                   errorBuilder: (context, error, stackTrace) => Container(
                                     width: 48,
                                     height: 48,
-                                    color: Colors.grey[300],
-                                    child: const Icon(Icons.person, color: Colors.grey),
+                                    color: Theme.of(context).dividerColor,
+                                    child: Icon(Icons.person, color: Colors.grey),
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            SizedBox(width: 16),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -126,7 +126,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.grey[500],
+                                    color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
                                     letterSpacing: 1.0,
                                   ),
                                 ),
@@ -135,7 +135,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF111827),
+                                    color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                                   ),
                                 ),
                               ],
@@ -143,13 +143,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       _buildTopSummaryCards(),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       _buildSpendingAnalysisCard(),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       _buildRecentTransactions(), // Preserved
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -165,16 +165,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 
   Widget _buildFloatingActionButton() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 80),
+      padding: EdgeInsets.only(bottom: 80),
       child: SizedBox(
         width: 56,
         height: 56,
         child: FloatingActionButton(
-          backgroundColor: const Color(0xFF10B981), // primary
+          backgroundColor: Theme.of(context).colorScheme.primary, // primary
           elevation: 8, // shadow-glow approx
-          shape: const CircleBorder(),
+          shape: CircleBorder(),
           onPressed: () => _openTransactionForm(null),
-          child: const Icon(Icons.add, color: Colors.white, size: 28),
+          child: Icon(Icons.add, color: Theme.of(context).colorScheme.surface, size: 28),
         ),
       ),
     );
@@ -209,7 +209,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 ? 'Failed to add transaction'
                 : 'Failed to update transaction',
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -237,7 +237,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   Widget _buildTopLoading() => Row(
     children: [
       Expanded(child: _buildLoadingSummaryCard()),
-      const SizedBox(width: 16),
+      SizedBox(width: 16),
       Expanded(child: _buildLoadingSummaryCard()),
     ],
   );
@@ -245,7 +245,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   Widget _buildTopError() => Row(
     children: [
       Expanded(child: _buildErrorSummaryCard()),
-      const SizedBox(width: 16),
+      SizedBox(width: 16),
       Expanded(child: _buildErrorSummaryCard()),
     ],
   );
@@ -253,17 +253,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   Widget _buildLoadingSummaryCard() {
     return Container(
       height: 180,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(width: 80, height: 12, color: Colors.grey[100]),
-          const SizedBox(height: 12),
-          Container(width: 100, height: 24, color: Colors.grey[100]),
+          Container(width: 80, height: 12, color: Theme.of(context).dividerColor),
+          SizedBox(height: 12),
+          Container(width: 100, height: 24, color: Theme.of(context).dividerColor),
         ],
       ),
     );
@@ -272,12 +272,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   Widget _buildErrorSummaryCard() {
     return Container(
       height: 180,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.red[50],
+        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(24),
       ),
-      child: const Center(child: Text('Error loading data')),
+      child: Center(child: Text('Error loading data')),
     );
   }
 
@@ -291,12 +291,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             trend: '+5%',
             trendUp: true,
             icon: Icons.credit_card,
-            color: const Color(0xFFEF4444), // Red 500
-            bgColor: const Color(0xFFEF4444),
-            glowColor: const Color(0xFFEF4444),
+            color: Theme.of(context).colorScheme.error, // Red 500
+            bgColor: Theme.of(context).colorScheme.error,
+            glowColor: Theme.of(context).colorScheme.error,
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
         Expanded(
           child: _buildGlowCard(
             title: 'Total Balance',
@@ -304,9 +304,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             trend: '+12%',
             trendUp: true,
             icon: Icons.account_balance_wallet,
-            color: const Color(0xFF10B981),
-            bgColor: const Color(0xFF10B981),
-            glowColor: const Color(0xFF10B981),
+            color: Theme.of(context).colorScheme.primary,
+            bgColor: Theme.of(context).colorScheme.primary,
+            glowColor: Theme.of(context).colorScheme.primary,
           ),
         ),
       ],
@@ -327,7 +327,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
       height: 180,
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
@@ -361,7 +361,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -381,14 +381,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                         size: 24,
                       ), // text-xl material icon approx 24
                     ),
-                    const SizedBox(width: 12), // gap-3 = 12px
+                    SizedBox(width: 12), // gap-3 = 12px
                     Expanded(
                       child: Text(
                         title,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14, // text-sm
                           fontWeight: FontWeight.w500, // font-medium
-                          color: Colors.grey[500], // text-secondary
+                          color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey, // text-secondary
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -406,23 +406,23 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 24, // text-2xl
                           fontWeight: FontWeight.w700, // font-bold
-                          color: const Color(0xFF111827),
+                          color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                           letterSpacing: -0.5, // tracking-tight
                         ),
                       ),
                     ),
-                    const SizedBox(
+                    SizedBox(
                       height: 12,
                     ), // mb-3 = 12px margin bottom on h2
                     Container(
-                      padding: const EdgeInsets.symmetric(
+                      padding: EdgeInsets.symmetric(
                         horizontal: 12, // px-3
                         vertical: 4, // py-1
                       ),
                       decoration: BoxDecoration(
                         color: trendUp
-                            ? const Color(0xFFECFDF5)
-                            : const Color(0xFFFEF2F2), // green-50 : red-50
+                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                            : Theme.of(context).colorScheme.error.withValues(alpha: 0.1), // green-50 : red-50
                         borderRadius: BorderRadius.circular(
                           999,
                         ), // rounded-full
@@ -440,19 +440,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                             size:
                                 16, // text-xs is small, but icon needs to be visible. Material default small is often 16-18. text-xs is 12px.
                             color: trendUp
-                                ? const Color(0xFF059669)
+                                ? Theme.of(context).colorScheme.primary
                                 : const Color(
                                     0xFFDC2626,
                                   ), // green-600 : red-600
                           ),
-                          const SizedBox(width: 4), // gap-1
+                          SizedBox(width: 4), // gap-1
                           Text(
                             trend,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 12, // text-xs
                               fontWeight: FontWeight.w700, // font-bold
                               color: trendUp
-                                  ? const Color(0xFF047857)
+                                  ? Theme.of(context).colorScheme.primary
                                   : const Color(
                                       0xFFB91C1C,
                                     ), // green-700 : red-700
@@ -502,13 +502,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     final expenseAsync = ref.watch(expenseReportProvider);
     final selectedPeriod = ref.watch(expenseReportPeriodProvider);
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(40), // rounded-[2.5rem]
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 40,
             offset: const Offset(0, 10),
           ),
@@ -529,31 +529,31 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF111827),
+                      color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     'Monthly Breakdown',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
-                      color: Colors.grey[500],
+                      color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
                     ),
                   ),
                 ],
               ),
               IconButton(
-                icon: const Icon(Icons.more_horiz, color: Colors.grey),
+                icon: Icon(Icons.more_horiz, color: Colors.grey),
                 onPressed: () {},
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           // Time period selector
           Container(
-            padding: const EdgeInsets.all(4),
+            padding: EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6), // gray-100
+              color: Theme.of(context).scaffoldBackgroundColor, // gray-100
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -567,20 +567,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                           .setPeriod(period);
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: EdgeInsets.symmetric(vertical: 8),
                       decoration: isSelected
                           ? BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 4,
                                   offset: const Offset(0, 1),
                                 ),
                               ],
                             )
-                          : const BoxDecoration(),
+                          : BoxDecoration(),
                       child: Center(
                         child: Text(
                           period,
@@ -590,8 +590,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                                 ? FontWeight.w700
                                 : FontWeight.w500,
                             color: isSelected
-                                ? const Color(0xFF111827)
-                                : Colors.grey[500],
+                                ? Theme.of(context).textTheme.titleLarge?.color
+                                : Theme.of(context).textTheme.bodySmall?.color,
                           ),
                         ),
                       ),
@@ -601,7 +601,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
               }).toList(),
             ),
           ),
-          const SizedBox(height: 40),
+          SizedBox(height: 40),
           // Pie chart
           Center(
             child: SizedBox(
@@ -609,7 +609,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
               width: 250,
               child: expenseAsync.when(
                 loading: () => const CircularProgressIndicator(),
-                error: (_, __) => const Icon(Icons.error),
+                error: (_, __) => Icon(Icons.error),
                 data: (report) {
                   return Stack(
                     alignment: Alignment.center,
@@ -632,24 +632,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: Colors.grey[400],
+                              color: Theme.of(context).dividerColor,
                               letterSpacing: 0.5,
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2),
                           Text(
                             '₹ ${report.total.toStringAsFixed(2)}', // dynamic value later
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 24,
                               fontWeight: FontWeight.w800,
-                              color: const Color(0xFF111827),
+                              color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                               letterSpacing: -0.5,
                             ),
                           ),
-                          // const SizedBox(height: 4),
+                          // SizedBox(height: 4),
                           // Container(
-                          //   padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+                          //   padding: EdgeInsets.fromLTRB(8, 2, 8, 2),
                           //   decoration: BoxDecoration(
                           //     color: const Color(0xFFFEE2E2),
                           //     borderRadius: BorderRadius.circular(12),
@@ -657,18 +657,18 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                           //   child: Row(
                           //     mainAxisSize: MainAxisSize.min,
                           //     children: [
-                          //       const Icon(
+                          //       Icon(
                           //         Icons.arrow_upward,
                           //         size: 12,
-                          //         color: Color(0xFFEF4444),
+                          //         color: Theme.of(context).colorScheme.error,
                           //       ),
-                          //       const SizedBox(width: 2),
+                          //       SizedBox(width: 2),
                           //       Text(
                           //         '2.4%',
                           //         style: GoogleFonts.plusJakartaSans(
                           //           fontSize: 10,
                           //           fontWeight: FontWeight.w700,
-                          //           color: const Color(0xFFEF4444),
+                          //           color: Theme.of(context).colorScheme.error,
                           //         ),
                           //       ),
                           //     ],
@@ -682,16 +682,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
               ),
             ),
           ),
-          const SizedBox(height: 40),
+          SizedBox(height: 40),
           expenseAsync.when(
-            loading: () => const SizedBox(),
-            error: (_, __) => const Text('Error loading data'),
+            loading: () => SizedBox(),
+            error: (_, __) => Text('Error loading data'),
             data: (report) => Column(
               children: report.categoryBreakdown.take(4).map((category) {
                 final color = _parseColorCode(category.categoryColorCode);
 
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
+                  margin: EdgeInsets.only(bottom: 16),
                   child: Row(
                     children: [
                       Container(
@@ -702,14 +702,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                           shape: BoxShape.circle,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           category.categoryName,
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF111827),
+                            color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                           ),
                         ),
                       ),
@@ -718,16 +718,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[500],
+                          color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16),
                       Text(
                         '₹${category.total.toStringAsFixed(0)}',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[500],
+                          color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
                         ),
                       ),
                     ],
@@ -763,7 +763,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          contentPadding: const EdgeInsets.all(20),
+          contentPadding: EdgeInsets.all(20),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -777,20 +777,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Text(
                     category.categoryName,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
+                      color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               const Divider(),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               _buildMerchantItem('Swiggy', '₹2,500', '5 transactions'),
               _buildMerchantItem('Zomato', '₹1,800', '3 transactions'),
               _buildMerchantItem(
@@ -798,12 +798,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 '₹1,200',
                 '2 transactions',
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4A90E2),
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.surface,
                   minimumSize: const Size(double.infinity, 44),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -824,8 +824,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     String transactions,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
@@ -834,17 +834,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
         children: [
           CircleAvatar(
             radius: 16,
-            backgroundColor: Colors.grey[200],
+            backgroundColor: Theme.of(context).dividerColor,
             child: Text(
               merchant[0],
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
+                color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -854,14 +854,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey[800],
+                    color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                   ),
                 ),
                 Text(
                   transactions,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 10,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
                   ),
                 ),
               ],
@@ -872,7 +872,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+              color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
             ),
           ),
         ],
@@ -912,7 +912,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
         titleStyle: GoogleFonts.plusJakartaSans(
           fontSize: 12,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
         ),
       );
     }).toList();
@@ -934,27 +934,27 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     return Column(
       children: List.generate(3, (index) {
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(12),
+          margin: EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
-              Container(width: 16, height: 16, color: Colors.grey[300]),
-              const SizedBox(width: 12),
+              Container(width: 16, height: 16, color: Theme.of(context).dividerColor),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(width: 100, height: 14, color: Colors.grey[300]),
-                    const SizedBox(height: 4),
-                    Container(width: 60, height: 12, color: Colors.grey[300]),
+                    Container(width: 100, height: 14, color: Theme.of(context).dividerColor),
+                    SizedBox(height: 4),
+                    Container(width: 60, height: 12, color: Theme.of(context).dividerColor),
                   ],
                 ),
               ),
-              Container(width: 40, height: 12, color: Colors.grey[300]),
+              Container(width: 40, height: 12, color: Theme.of(context).dividerColor),
             ],
           ),
         );
@@ -971,12 +971,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     return GestureDetector(
       onTap: () => _showCategoryPopover(category),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.grey[50],
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Row(
           children: [
@@ -988,7 +988,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -998,14 +998,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey[800],
+                      color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
                     ),
                   ),
                   Text(
                     amount,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
                     ),
                   ),
                 ],
@@ -1035,10 +1035,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           style: GoogleFonts.plusJakartaSans(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Colors.grey[800],
+            color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         txAsync.when(
           loading: () => SizedBox(
             height: 200,
@@ -1072,10 +1072,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
       itemCount: 3,
       itemBuilder: (context, index) {
         return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(16),
+          margin: EdgeInsets.only(bottom: 8),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -1084,11 +1084,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: Theme.of(context).dividerColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1097,16 +1097,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                       width: 100,
                       height: 16,
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                        color: Theme.of(context).dividerColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Container(
                       width: 60,
                       height: 12,
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                        color: Theme.of(context).dividerColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -1117,7 +1117,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 width: 80,
                 height: 16,
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: Theme.of(context).dividerColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -1133,13 +1133,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, color: Colors.red[300], size: 48),
-          const SizedBox(height: 8),
+          Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5), size: 48),
+          SizedBox(height: 8),
           Text(
             'Failed to load transactions',
-            style: GoogleFonts.plusJakartaSans(color: Colors.red[600], fontSize: 14),
+            style: GoogleFonts.plusJakartaSans(color: Theme.of(context).colorScheme.error, fontSize: 14),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           ElevatedButton(onPressed: _handleRefresh, child: Text('Retry')),
         ],
       ),
@@ -1151,13 +1151,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.receipt_long, color: Colors.grey[300], size: 48),
-          const SizedBox(height: 8),
+          Icon(Icons.receipt_long, color: Theme.of(context).dividerColor, size: 48),
+          SizedBox(height: 8),
           Text(
             'No transactions yet',
-            style: GoogleFonts.plusJakartaSans(color: Colors.grey[500], fontSize: 14),
+            style: GoogleFonts.plusJakartaSans(color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey, fontSize: 14),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           ElevatedButton(
             onPressed: () => _navigateToAddTransaction('expense'),
             child: Text('Add First Transaction'),
