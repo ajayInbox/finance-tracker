@@ -2,6 +2,7 @@ import 'package:finance_app/features/category/ui/category_management_page.dart';
 import 'package:finance_app/features/auth/application/auth_controller.dart';
 import 'package:finance_app/features/auth/data/model/user_profile.dart';
 import 'package:finance_app/features/auth/data/providers/user_profile_provider.dart';
+import 'package:finance_app/core/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_app/widgets/app_page_header.dart';
@@ -17,7 +18,6 @@ class SettingsPage extends ConsumerStatefulWidget {
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   // Toggle states
-  bool _darkMode = false;
   bool _faceId = false;
   bool _isLoggingOut = false;
 
@@ -27,32 +27,32 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8F6), // background-light from MD
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 100),
+        padding: EdgeInsets.only(bottom: 100),
         child: Column(
           children: [
             const AppPageHeader(title: 'Settings'),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16), // px-4
+              padding: EdgeInsets.symmetric(horizontal: 16), // px-4
               child: Column(
                 children: [
-                  _buildProfileSection(),
-                  const SizedBox(height: 24),
-                  _buildFinancesSection(),
-                  const SizedBox(height: 24),
-                  _buildPreferencesSection(),
-                  const SizedBox(height: 24),
-                  _buildSecuritySection(),
-                  const SizedBox(height: 8),
-                  _buildLogoutButton(),
-                  const SizedBox(height: 8),
+                  _buildProfileSection(context),
+                  SizedBox(height: 24),
+                  _buildFinancesSection(context),
+                  SizedBox(height: 24),
+                  _buildPreferencesSection(context),
+                  SizedBox(height: 24),
+                  _buildSecuritySection(context),
+                  SizedBox(height: 8),
+                  _buildLogoutButton(context),
+                  SizedBox(height: 8),
                   Text(
                     'App Version $_appVersion',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
-                      color: Colors.grey[400],
+                      color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
                     ),
                   ),
                 ],
@@ -64,17 +64,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildProfileSection() {
+  Widget _buildProfileSection(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
 
     return profileAsync.when(
-      data: (user) => _buildProfileContent(user),
-      loading: () => _buildProfileShimmer(),
-      error: (e, _) => _buildProfileError(),
+      data: (user) => _buildProfileContent(context, user),
+      loading: () => _buildProfileShimmer(context),
+      error: (e, _) => _buildProfileError(context),
     );
   }
 
-  Widget _buildProfileContent(UserProfile user) {
+  Widget _buildProfileContent(BuildContext context, UserProfile user) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       children: [
         // ── Initials Avatar ──
@@ -83,14 +86,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           height: 96,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 4),
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 10),
+            border: Border.all(color: colorScheme.surface, width: 4),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10),
             ],
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF10B981), Color(0xFF059669)],
+              colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.8)],
             ),
           ),
           child: Center(
@@ -105,49 +108,49 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Text(
           user.name,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF111827),
+            color: theme.textTheme.titleLarge?.color,
           ),
         ),
-        const SizedBox(height: 2),
+        SizedBox(height: 2),
         Text(
           user.email,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
-            color: Colors.grey[500],
+            color: theme.textTheme.bodySmall?.color,
           ),
         ),
         if (user.isSubscribed) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF13EC5B).withValues(alpha: 0.15),
+              color: colorScheme.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(999),
               border: Border.all(
-                color: const Color(0xFF13EC5B).withValues(alpha: 0.3),
+                color: colorScheme.primary.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.workspace_premium,
                   size: 14,
-                  color: Color(0xFF13EC5B),
+                  color: colorScheme.primary,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   'Pro Member',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF13EC5B),
+                    color: colorScheme.primary,
                   ),
                 ),
               ],
@@ -158,48 +161,51 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildProfileShimmer() {
+  Widget _buildProfileShimmer(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
       child: Column(
         children: [
           // Avatar placeholder
           Container(
             width: 96,
             height: 96,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white,
+              color: theme.colorScheme.surface,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           // Name placeholder
           Container(
             width: 140,
             height: 20,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           // Email placeholder
           Container(
             width: 200,
             height: 14,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           // Badge placeholder
           Container(
             width: 100,
             height: 24,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(999),
             ),
           ),
@@ -208,7 +214,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildProfileError() {
+  Widget _buildProfileError(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       children: [
         // Fallback avatar with question mark
@@ -217,29 +224,29 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           height: 96,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 4),
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 10),
+            border: Border.all(color: theme.colorScheme.surface, width: 4),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10),
             ],
-            color: Colors.grey[200],
+            color: theme.dividerColor.withValues(alpha: 0.1),
           ),
           child: Center(
             child: Icon(
               Icons.person_outline_rounded,
               size: 40,
-              color: Colors.grey[400],
+              color: theme.textTheme.bodySmall?.color,
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Text(
           'Couldn\'t load profile',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
-            color: Colors.grey[500],
+            color: theme.textTheme.bodySmall?.color,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         GestureDetector(
           onTap: () => ref.invalidate(userProfileProvider),
           child: Text(
@@ -247,7 +254,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             style: GoogleFonts.plusJakartaSans(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF10B981),
+              color: theme.colorScheme.primary,
             ),
           ),
         ),
@@ -255,27 +262,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildFinancesSection() {
+  Widget _buildFinancesSection(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 8, bottom: 8),
+          padding: EdgeInsets.only(left: 8, bottom: 8),
           child: Text(
             'FINANCES',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: Colors.grey[500],
+              color: theme.textTheme.bodySmall?.color,
               letterSpacing: 1.0,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(16), // rounded-2xl
-            border: Border.all(color: Colors.grey[100]!),
+            border: Border.all(color: theme.dividerColor),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -286,6 +294,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           child: Column(
             children: [
               _buildMenuItem(
+                context: context,
                 icon: Icons.data_usage,
                 iconColor: Colors.orange,
                 iconBgColor: Colors.orange.withValues(alpha: 0.1),
@@ -294,18 +303,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text('Coming soon!'),
+                      content: Text('Coming soon!'),
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      backgroundColor: const Color(0xFF10B981),
+                      backgroundColor: theme.colorScheme.primary,
                       duration: const Duration(seconds: 2),
                     ),
                   );
                 },
               ),
               _buildMenuItem(
+                context: context,
                 icon: Icons.category,
                 iconColor: Colors.purple,
                 iconBgColor: Colors.purple.withValues(alpha: 0.1),
@@ -326,27 +336,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildPreferencesSection() {
+  Widget _buildPreferencesSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final themeMode = ref.watch(themeProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 8, bottom: 8),
+          padding: EdgeInsets.only(left: 8, bottom: 8),
           child: Text(
             'APP PREFERENCES',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: Colors.grey[500],
+              color: theme.textTheme.bodySmall?.color,
               letterSpacing: 1.0,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[100]!),
+            border: Border.all(color: theme.dividerColor),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -356,16 +369,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           child: Column(
             children: [
-              _buildSwitchItem(
-                icon: Icons.dark_mode,
-                iconColor: Colors.grey[600]!,
-                iconBgColor: Colors.grey.withValues(alpha: 0.1),
-                title: 'Dark Mode',
-                value: _darkMode,
-                onChanged: (val) => setState(() => _darkMode = val),
-                showBorder: true,
+              _buildThemeModeItem(
+                context: context,
+                value: themeMode,
+                onChanged: (mode) {
+                  ref.read(themeProvider.notifier).setTheme(mode);
+                },
               ),
               _buildValueItem(
+                context: context,
                 icon: Icons.attach_money,
                 iconColor: Colors.green,
                 iconBgColor: Colors.green.withValues(alpha: 0.1),
@@ -380,27 +392,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildSecuritySection() {
+  Widget _buildSecuritySection(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 8, bottom: 8),
+          padding: EdgeInsets.only(left: 8, bottom: 8),
           child: Text(
             'SECURITY',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: Colors.grey[500],
+              color: theme.textTheme.bodySmall?.color,
               letterSpacing: 1.0,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[100]!),
+            border: Border.all(color: theme.dividerColor),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -411,6 +424,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           child: Column(
             children: [
               _buildSwitchItem(
+                context: context,
                 icon: Icons.face,
                 iconColor: Colors.indigo,
                 iconBgColor: Colors.indigo.withValues(alpha: 0.1),
@@ -420,16 +434,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 showBorder: true,
               ),
               _buildMenuItem(
+                context: context,
                 icon: Icons.lock,
-                iconColor: Colors.grey[600]!,
-                iconBgColor: Colors.grey.withValues(alpha: 0.1),
+                iconColor: theme.textTheme.bodyMedium?.color ?? Colors.grey[600]!,
+                iconBgColor: theme.dividerColor.withValues(alpha: 0.3),
                 title: 'Change Password',
                 showBorder: true,
               ),
               _buildMenuItem(
+                context: context,
                 icon: Icons.policy,
-                iconColor: Colors.grey[600]!,
-                iconBgColor: Colors.grey.withValues(alpha: 0.1),
+                iconColor: theme.textTheme.bodyMedium?.color ?? Colors.grey[600]!,
+                iconBgColor: theme.dividerColor.withValues(alpha: 0.3),
                 title: 'Privacy Policy',
                 showBorder: false,
                 trailing: Icons.open_in_new,
@@ -441,7 +457,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildLogoutButton() {
+  Widget _buildLogoutButton(BuildContext context) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -454,12 +470,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           onTap: _isLoggingOut ? null : _logout,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (_isLoggingOut)
-                  const SizedBox(
+                  SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
@@ -468,8 +484,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     ),
                   )
                 else
-                  const Icon(Icons.logout, color: Colors.red),
-                const SizedBox(width: 8),
+                  Icon(Icons.logout, color: Colors.red),
+                SizedBox(width: 8),
                 Text(
                   _isLoggingOut ? 'Logging Out' : 'Log Out',
                   style: GoogleFonts.plusJakartaSans(
@@ -509,6 +525,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Widget _buildMenuItem({
+    required BuildContext context,
     required IconData icon,
     required Color iconColor,
     required Color iconBgColor,
@@ -518,26 +535,27 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     IconData trailing = Icons.chevron_right,
     VoidCallback? onTap,
   }) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap ?? () {},
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: showBorder
-              ? Border(bottom: BorderSide(color: Colors.grey[100]!))
+              ? Border(bottom: BorderSide(color: theme.dividerColor))
               : null,
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: iconBgColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: iconColor, size: 24),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -547,7 +565,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF111827),
+                      color: theme.textTheme.titleMedium?.color,
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -555,14 +573,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       subtitle,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
-                        color: Colors.grey[500],
+                        color: theme.textTheme.bodySmall?.color,
                       ),
                     ),
                   ],
                 ],
               ),
             ),
-            Icon(trailing, color: Colors.grey[400], size: 20),
+            Icon(trailing, color: theme.textTheme.bodySmall?.color, size: 20),
           ],
         ),
       ),
@@ -570,6 +588,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Widget _buildSwitchItem({
+    required BuildContext context,
     required IconData icon,
     required Color iconColor,
     required Color iconBgColor,
@@ -578,11 +597,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     required ValueChanged<bool> onChanged,
     bool showBorder = true,
   }) {
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: showBorder
-            ? Border(bottom: BorderSide(color: Colors.grey[100]!))
+            ? Border(bottom: BorderSide(color: theme.dividerColor))
             : null,
       ),
       child: Row(
@@ -591,20 +611,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: iconBgColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: iconColor, size: 24),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Text(
                 title,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111827),
+                  color: theme.textTheme.titleMedium?.color,
                 ),
               ),
             ],
@@ -614,8 +634,89 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: const Color(0xFF13EC5B), // primary
-              activeTrackColor: const Color(0xFF13EC5B).withValues(alpha: 0.2),
+              activeTrackColor: theme.colorScheme.primary.withValues(alpha: 0.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeModeItem({
+    required BuildContext context,
+    required ThemeMode value,
+    required ValueChanged<ThemeMode> onChanged,
+  }) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: theme.dividerColor)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.dividerColor.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.contrast,
+                  color: theme.textTheme.bodyMedium?.color ?? Colors.grey[600]!,
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: 12),
+              Text(
+                'Theme',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: theme.textTheme.titleMedium?.color,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(
+                value: ThemeMode.light,
+                icon: Icon(Icons.light_mode),
+                label: Text('Light'),
+              ),
+              ButtonSegment(
+                value: ThemeMode.dark,
+                icon: Icon(Icons.dark_mode),
+                label: Text('Dark'),
+              ),
+              ButtonSegment(
+                value: ThemeMode.system,
+                icon: Icon(Icons.phone_android),
+                label: Text('System'),
+              ),
+            ],
+            selected: {value},
+            onSelectionChanged: (selection) => onChanged(selection.first),
+            style: ButtonStyle(
+              visualDensity: VisualDensity.compact,
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return theme.colorScheme.primary.withValues(alpha: 0.14);
+                }
+                return theme.colorScheme.surface;
+              }),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return theme.colorScheme.primary;
+                }
+                return theme.textTheme.bodySmall?.color;
+              }),
             ),
           ),
         ],
@@ -624,6 +725,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Widget _buildValueItem({
+    required BuildContext context,
     required IconData icon,
     required Color iconColor,
     required Color iconBgColor,
@@ -631,13 +733,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     required String value,
     bool showBorder = true,
   }) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: () {},
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: showBorder
-              ? Border(bottom: BorderSide(color: Colors.grey[100]!))
+              ? Border(bottom: BorderSide(color: theme.dividerColor))
               : null,
         ),
         child: Row(
@@ -646,20 +749,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: iconBgColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: iconColor, size: 24),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Text(
                   title,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111827),
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
               ],
@@ -671,10 +774,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Colors.grey[500],
+                    color: theme.textTheme.bodySmall?.color,
                   ),
                 ),
-                Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+                Icon(Icons.chevron_right, color: theme.textTheme.bodySmall?.color, size: 20),
               ],
             ),
           ],

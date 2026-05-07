@@ -112,7 +112,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -126,7 +126,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
     // TODO: Implement Google sign-in
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Google Sign In coming soon!'),
+        content: Text('Google Sign In coming soon!'),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -151,7 +151,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: EdgeInsets.symmetric(horizontal: 24),
                       child: FadeTransition(
                         opacity: _fadeAnimation,
                         child: SlideTransition(
@@ -219,8 +219,8 @@ class _SignInPageState extends ConsumerState<SignInPage>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF10B981).withValues(alpha: 0.06),
-                      const Color(0xFF10B981).withValues(alpha: 0.0),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.0),
                     ],
                   ),
                 ),
@@ -234,13 +234,13 @@ class _SignInPageState extends ConsumerState<SignInPage>
 
   Widget _buildAppBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              const SizedBox(width: 14),
+              SizedBox(width: 14),
               Text(
                 'Finance Tracker',
                 style: GoogleFonts.manrope(
@@ -258,7 +258,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
             },
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFFABB3B7),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
             child: Text(
               'Help',
@@ -277,13 +277,13 @@ class _SignInPageState extends ConsumerState<SignInPage>
   Widget _buildContent() {
     return Column(
       children: [
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
         // Glass Card
         _buildGlassCard(),
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
         // Footer links
         _buildFooterLinks(),
-        const SizedBox(height: 48),
+        SizedBox(height: 48),
       ],
     );
   }
@@ -294,12 +294,12 @@ class _SignInPageState extends ConsumerState<SignInPage>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          padding: const EdgeInsets.all(32),
+          padding: EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.65),
+            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.65),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
               width: 1.5,
             ),
             boxShadow: [
@@ -316,13 +316,13 @@ class _SignInPageState extends ConsumerState<SignInPage>
             children: [
               // Header
               _buildHeader(),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               // Google SSO
               _buildGoogleButton(),
-              const SizedBox(height: 28),
+              SizedBox(height: 28),
               // Divider
               _buildDivider(),
-              const SizedBox(height: 28),
+              SizedBox(height: 28),
               // Form
               _buildForm(),
             ],
@@ -346,7 +346,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
             height: 1.15,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Text(
           'Sign in to manage your finances and track your spending.',
           style: GoogleFonts.inter(
@@ -372,7 +372,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
           width: double.infinity,
           height: 56,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -390,7 +390,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
             children: [
               // Google "G" logo recreated with paint
               _buildGoogleLogo(),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Text(
                 'Continue with Google',
                 style: GoogleFonts.inter(
@@ -432,7 +432,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'OR USE EMAIL',
             style: GoogleFonts.inter(
@@ -468,9 +468,9 @@ class _SignInPageState extends ConsumerState<SignInPage>
         children: [
           // Email field
           _buildFieldLabel('Email Address'),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           _buildEmailField(),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           // Password label + forgot
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -485,19 +485,19 @@ class _SignInPageState extends ConsumerState<SignInPage>
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF10B981),
+                    color: Theme.of(context).colorScheme.primary,
                     letterSpacing: 1.5,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           _buildPasswordField(),
-          const SizedBox(height: 28),
+          SizedBox(height: 28),
           // Sign In button
           _buildSignInButton(),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           // Create account link
           Center(
             child: RichText(
@@ -507,7 +507,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
                   color: const Color(0xFF586064),
                 ),
                 children: [
-                  const TextSpan(text: "Don't have an account? "),
+                  TextSpan(text: "Don't have an account? "),
                   WidgetSpan(
                     child: GestureDetector(
                       onTap: () {
@@ -518,7 +518,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF10B981),
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
@@ -534,7 +534,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
 
   Widget _buildFieldLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4),
+      padding: EdgeInsets.only(left: 4),
       child: Text(
         label.toUpperCase(),
         style: GoogleFonts.inter(
@@ -555,7 +555,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
         boxShadow: _emailHasFocus
             ? [
                 BoxShadow(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
                   blurRadius: 0,
                   spreadRadius: 3,
                 ),
@@ -580,9 +580,9 @@ class _SignInPageState extends ConsumerState<SignInPage>
           ),
           filled: true,
           fillColor: _emailHasFocus
-              ? Colors.white
+              ? Theme.of(context).colorScheme.surface
               : const Color(0xFFDBE4E7).withValues(alpha: 0.5),
-          contentPadding: const EdgeInsets.symmetric(
+          contentPadding: EdgeInsets.symmetric(
             horizontal: 20,
             vertical: 18,
           ),
@@ -596,15 +596,15 @@ class _SignInPageState extends ConsumerState<SignInPage>
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFF10B981), width: 1.5),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5),
           ),
           focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5),
           ),
         ),
         validator: (value) {
@@ -628,7 +628,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
         boxShadow: _passwordHasFocus
             ? [
                 BoxShadow(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
                   blurRadius: 0,
                   spreadRadius: 3,
                 ),
@@ -653,9 +653,9 @@ class _SignInPageState extends ConsumerState<SignInPage>
           ),
           filled: true,
           fillColor: _passwordHasFocus
-              ? Colors.white
+              ? Theme.of(context).colorScheme.surface
               : const Color(0xFFDBE4E7).withValues(alpha: 0.5),
-          contentPadding: const EdgeInsets.symmetric(
+          contentPadding: EdgeInsets.symmetric(
             horizontal: 20,
             vertical: 18,
           ),
@@ -669,22 +669,22 @@ class _SignInPageState extends ConsumerState<SignInPage>
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFF10B981), width: 1.5),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5),
           ),
           focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5),
           ),
           suffixIcon: GestureDetector(
             onTap: () {
               setState(() => _obscurePassword = !_obscurePassword);
             },
             child: Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: EdgeInsets.only(right: 16),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: Icon(
@@ -727,15 +727,15 @@ class _SignInPageState extends ConsumerState<SignInPage>
           width: double.infinity,
           height: 56,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF10B981), Color(0xFF059669)],
+              colors: [Theme.of(context).colorScheme.primary, Color(0xFF059669)],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
                 spreadRadius: -4,
@@ -744,12 +744,12 @@ class _SignInPageState extends ConsumerState<SignInPage>
           ),
           child: Center(
             child: _isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.surface),
                     ),
                   )
                 : Row(
@@ -760,14 +760,14 @@ class _SignInPageState extends ConsumerState<SignInPage>
                         style: GoogleFonts.manrope(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.surface,
                           letterSpacing: -0.3,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(
+                      SizedBox(width: 8),
+                      Icon(
                         Icons.arrow_forward_rounded,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         size: 20,
                       ),
                     ],
@@ -782,7 +782,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
     return Column(
       children: [
         const Divider(color: Color(0xFFE5E7EB), height: 1),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -793,7 +793,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
             _buildFooterLink('Help Center'),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Text(
           '© ${DateTime.now().year} Finance Tracker',
           style: GoogleFonts.inter(
@@ -824,11 +824,11 @@ class _SignInPageState extends ConsumerState<SignInPage>
 
   Widget _buildFooterDot() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: EdgeInsets.symmetric(horizontal: 12),
       child: Container(
         width: 3,
         height: 3,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Color(0xFFD1D5DB),
           shape: BoxShape.circle,
         ),

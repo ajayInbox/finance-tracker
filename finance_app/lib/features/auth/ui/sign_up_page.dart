@@ -136,7 +136,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       color = const Color(0xFFD1D5DB);
     } else if (strength < 0.3) {
       label = 'Weak';
-      color = const Color(0xFFEF4444);
+      color = Theme.of(context).colorScheme.error;
     } else if (strength < 0.6) {
       label = 'Fair';
       color = const Color(0xFFF59E0B);
@@ -145,7 +145,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       color = const Color(0xFF3B82F6);
     } else {
       label = 'Strong';
-      color = const Color(0xFF10B981);
+      color = Theme.of(context).colorScheme.primary;
     }
 
     setState(() {
@@ -160,7 +160,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
     if (!_acceptedTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please accept the terms and conditions'),
+          content: Text('Please accept the terms and conditions'),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -191,7 +191,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -205,7 +205,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
     // TODO: Implement Google sign-up
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Google Sign Up coming soon!'),
+        content: Text('Google Sign Up coming soon!'),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -231,7 +231,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: EdgeInsets.symmetric(horizontal: 24),
                       child: FadeTransition(
                         opacity: _fadeAnimation,
                         child: SlideTransition(
@@ -296,8 +296,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF10B981).withValues(alpha: 0.07),
-                      const Color(0xFF10B981).withValues(alpha: 0.0),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.07),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.0),
                     ],
                   ),
                 ),
@@ -328,13 +328,13 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
 
   Widget _buildAppBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              const SizedBox(width: 14),
+              SizedBox(width: 14),
               Text(
                 'Finance Tracker',
                 style: GoogleFonts.manrope(
@@ -349,8 +349,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
           TextButton(
             onPressed: _navigateToSignIn,
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF10B981),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              foregroundColor: Theme.of(context).colorScheme.primary,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
             child: Text(
               'Sign In',
@@ -369,11 +369,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
   Widget _buildContent() {
     return Column(
       children: [
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         _buildGlassCard(),
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
         _buildFooterLinks(),
-        const SizedBox(height: 48),
+        SizedBox(height: 48),
       ],
     );
   }
@@ -384,12 +384,12 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          padding: const EdgeInsets.all(32),
+          padding: EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.65),
+            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.65),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
               width: 1.5,
             ),
             boxShadow: [
@@ -405,11 +405,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(),
-              const SizedBox(height: 28),
+              SizedBox(height: 28),
               _buildGoogleButton(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildDivider(),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               _buildForm(),
             ],
           ),
@@ -432,7 +432,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
             height: 1.15,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Text(
           'Start tracking your finances and take control of your spending.',
           style: GoogleFonts.inter(
@@ -457,7 +457,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
           width: double.infinity,
           height: 56,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -478,7 +478,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                 height: 20,
                 child: CustomPaint(painter: _GoogleLogoPainter()),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Text(
                 'Sign up with Google',
                 style: GoogleFonts.inter(
@@ -512,7 +512,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'OR USE EMAIL',
             style: GoogleFonts.inter(
@@ -548,41 +548,41 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
         children: [
           // Full Name
           _buildFieldLabel('Full Name'),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           _buildNameField(),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
 
           // Email
           _buildFieldLabel('Email Address'),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           _buildEmailField(),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
 
           // Password
           _buildFieldLabel('Password'),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           _buildPasswordField(),
 
           // Password strength indicator
           if (_passwordController.text.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             _buildPasswordStrengthIndicator(),
           ],
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
 
           // Confirm Password
           _buildFieldLabel('Confirm Password'),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           _buildConfirmPasswordField(),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           // Terms checkbox
           _buildTermsCheckbox(),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // Sign Up button
           _buildSignUpButton(),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // Already have an account
           Center(
@@ -593,7 +593,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                   color: const Color(0xFF586064),
                 ),
                 children: [
-                  const TextSpan(text: 'Already have an account? '),
+                  TextSpan(text: 'Already have an account? '),
                   WidgetSpan(
                     child: GestureDetector(
                       onTap: _navigateToSignIn,
@@ -602,7 +602,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF10B981),
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
@@ -618,7 +618,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
 
   Widget _buildFieldLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4),
+      padding: EdgeInsets.only(left: 4),
       child: Text(
         label.toUpperCase(),
         style: GoogleFonts.inter(
@@ -645,9 +645,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       ),
       filled: true,
       fillColor: hasFocus
-          ? Colors.white
+          ? Theme.of(context).colorScheme.surface
           : const Color(0xFFDBE4E7).withValues(alpha: 0.5),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
@@ -658,15 +658,15 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF10B981), width: 1.5),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5),
       ),
       suffixIcon: suffixIcon,
       suffixIconConstraints: suffixIcon != null
@@ -683,7 +683,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
         boxShadow: hasFocus
             ? [
                 BoxShadow(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
                   blurRadius: 0,
                   spreadRadius: 3,
                 ),
@@ -772,7 +772,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
               setState(() => _obscurePassword = !_obscurePassword);
             },
             child: Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: EdgeInsets.only(right: 16),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: Icon(
@@ -816,7 +816,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: 6),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -864,7 +864,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
               );
             },
             child: Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: EdgeInsets.only(right: 16),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: Icon(
@@ -904,24 +904,24 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
             duration: const Duration(milliseconds: 200),
             width: 22,
             height: 22,
-            margin: const EdgeInsets.only(top: 1),
+            margin: EdgeInsets.only(top: 1),
             decoration: BoxDecoration(
               color: _acceptedTerms
-                  ? const Color(0xFF10B981)
+                  ? Theme.of(context).colorScheme.primary
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(7),
               border: Border.all(
                 color: _acceptedTerms
-                    ? const Color(0xFF10B981)
+                    ? Theme.of(context).colorScheme.primary
                     : const Color(0xFFABB3B7),
                 width: 2,
               ),
             ),
             child: _acceptedTerms
-                ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                ? Icon(Icons.check_rounded, size: 16, color: Theme.of(context).colorScheme.surface)
                 : null,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: RichText(
               text: TextSpan(
@@ -931,22 +931,22 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                   height: 1.4,
                 ),
                 children: [
-                  const TextSpan(text: 'I agree to the '),
+                  TextSpan(text: 'I agree to the '),
                   TextSpan(
                     text: 'Terms of Service',
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF10B981),
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
-                  const TextSpan(text: ' and '),
+                  TextSpan(text: ' and '),
                   TextSpan(
                     text: 'Privacy Policy',
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF10B981),
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ],
@@ -969,15 +969,15 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
           width: double.infinity,
           height: 56,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF10B981), Color(0xFF059669)],
+              colors: [Theme.of(context).colorScheme.primary, Color(0xFF059669)],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
                 spreadRadius: -4,
@@ -986,12 +986,12 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
           ),
           child: Center(
             child: _isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.surface),
                     ),
                   )
                 : Row(
@@ -1002,14 +1002,14 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
                         style: GoogleFonts.manrope(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.surface,
                           letterSpacing: -0.3,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(
+                      SizedBox(width: 8),
+                      Icon(
                         Icons.arrow_forward_rounded,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         size: 20,
                       ),
                     ],
@@ -1024,7 +1024,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
     return Column(
       children: [
         const Divider(color: Color(0xFFE5E7EB), height: 1),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1035,7 +1035,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
             _buildFooterLink('Help Center'),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Text(
           '© ${DateTime.now().year} Finance Tracker',
           style: GoogleFonts.inter(
@@ -1066,11 +1066,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
 
   Widget _buildFooterDot() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: EdgeInsets.symmetric(horizontal: 12),
       child: Container(
         width: 3,
         height: 3,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Color(0xFFD1D5DB),
           shape: BoxShape.circle,
         ),

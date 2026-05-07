@@ -10,7 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
-
+import 'package:finance_app/widgets/app_page_header.dart';
 class SmsReviewPage extends ConsumerStatefulWidget {
   const SmsReviewPage({super.key});
 
@@ -133,14 +133,14 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Missing details'),
+          title: Text('Missing details'),
           content: Text(
             'Please choose an account and category for ${invalidDrafts.length} draft(s) before confirming.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
+              child: Text('OK'),
             ),
           ],
         ),
@@ -172,7 +172,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
           'Are you sure you want to delete "${draft.transactionName}"? This cannot be undone.',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
-            color: const Color(0xFF6B7280),
+            color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
           ),
         ),
         actions: [
@@ -182,14 +182,14 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               'Cancel',
               style: GoogleFonts.plusJakartaSans(
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF6B7280),
+                color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
               ),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(
-              backgroundColor: const Color(0xFFFEE2E2),
+              backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -198,7 +198,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               'Delete',
               style: GoogleFonts.plusJakartaSans(
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFFEF4444),
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
           ),
@@ -240,7 +240,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
           'Are you sure you want to delete ${selectedDrafts.length} selected draft${selectedDrafts.length == 1 ? '' : 's'}? This cannot be undone.',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
-            color: const Color(0xFF6B7280),
+            color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
           ),
         ),
         actions: [
@@ -250,14 +250,14 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               'Cancel',
               style: GoogleFonts.plusJakartaSans(
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF6B7280),
+                color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
               ),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(
-              backgroundColor: const Color(0xFFFEE2E2),
+              backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -266,7 +266,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               'Delete All',
               style: GoogleFonts.plusJakartaSans(
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFFEF4444),
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
           ),
@@ -314,7 +314,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? const Color(0xFFDC2626) : null,
+        backgroundColor: isError ? Theme.of(context).colorScheme.error : null,
       ),
     );
   }
@@ -330,11 +330,11 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
       isScrollControlled: true,
       builder: (context) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          padding: EdgeInsets.fromLTRB(24, 20, 24, 32),
           child: SafeArea(
             top: false,
             child: Column(
@@ -346,49 +346,49 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                     width: 44,
                     height: 5,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE2E8F0),
+                      color: Theme.of(context).dividerColor,
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                 ),
-                const SizedBox(height: 22),
+                SizedBox(height: 22),
                 Text(
                   'Choose sync range',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFF0F172A),
+                    color: (Theme.of(context).textTheme.titleLarge?.color ?? Colors.black),
                     letterSpacing: -0.4,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   'Pick how far back to scan your SMS inbox. Choosing a range will override the last sync watermark.',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF64748B),
+                    color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
                     height: 1.45,
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 if (!isFirstSync) ...[
                   _buildBootstrapOption(
                     title: 'Continue from last sync',
                     subtitle: 'Pick up right where the last scan finished.',
                     tag: 'FASTEST',
-                    tagColor: const Color(0xFF06B6D4),
+                    tagColor: Theme.of(context).colorScheme.secondary,
                     onTap: () {
                       Navigator.pop(context, 0); // sentinel: use backend watermark
                     },
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                 ],
                 _buildBootstrapOption(
                   title: 'Last 7 days',
                   subtitle: 'Quick pass with minimal draft noise.',
                   tag: 'QUICK',
-                  tagColor: const Color(0xFF0EA5E9),
+                  tagColor: Theme.of(context).colorScheme.secondary,
                   onTap: () {
                     Navigator.pop(
                       context,
@@ -396,12 +396,12 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                     );
                   },
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 _buildBootstrapOption(
                   title: 'Last 30 days',
                   subtitle: 'Best starting point for most users.',
                   tag: 'RECOMMENDED',
-                  tagColor: const Color(0xFF10B981),
+                  tagColor: Theme.of(context).colorScheme.primary,
                   onTap: () {
                     Navigator.pop(
                       context,
@@ -409,12 +409,12 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                     );
                   },
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 _buildBootstrapOption(
                   title: 'Last 90 days',
                   subtitle: 'Recover more history with a larger sync.',
                   tag: 'DEEPER',
-                  tagColor: const Color(0xFF8B5CF6),
+                  tagColor: Theme.of(context).colorScheme.secondary,
                   onTap: () {
                     Navigator.pop(
                       context,
@@ -422,7 +422,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                     );
                   },
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(
@@ -451,11 +451,11 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
       child: Ink(
-        padding: const EdgeInsets.all(18),
+        padding: EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: Theme.of(context).scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Row(
           children: [
@@ -468,28 +468,28 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF0F172A),
+                      color: (Theme.of(context).textTheme.titleLarge?.color ?? Colors.black),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Text(
                     subtitle,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF64748B),
+                      color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
                       height: 1.35,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
+                  padding: EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 6,
                   ),
@@ -507,10 +507,10 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                const Icon(
+                SizedBox(height: 12),
+                Icon(
                   Icons.arrow_forward_rounded,
-                  color: Color(0xFF64748B),
+                  color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
                   size: 20,
                 ),
               ],
@@ -538,35 +538,35 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           Column(
             children: [
-              _buildHeader(draftsState.asData?.value.length ?? 0),
+              const AppPageHeader(title: 'SMS Review'),
               Expanded(
                 child: draftsState.when(
                   data: (drafts) => RefreshIndicator(
                     onRefresh: _refreshDrafts,
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 140),
+                      padding: EdgeInsets.fromLTRB(24, 8, 24, 140),
                       children: [
                         _buildSyncHero(syncState),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         _buildAutoSyncCard(syncState),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         if (drafts.isEmpty)
                           _buildEmptyState()
                         else ...[
                           _buildDraftsListHeader(drafts.length),
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           ...drafts.map(_buildDraftCard),
                         ],
                       ],
                     ),
                   ),
                   loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                      Center(child: CircularProgressIndicator()),
                   error: (error, _) => _buildErrorState(error),
                 ),
               ),
@@ -586,60 +586,6 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
     );
   }
 
-  Widget _buildHeader(int count) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 52, 24, 24),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.96),
-        border: Border(bottom: BorderSide(color: Colors.grey[100]!)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'SMS Draft Review',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF0F172A),
-                    letterSpacing: -0.6,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  count == 0
-                      ? 'Sync transaction alerts, then review and confirm each draft.'
-                      : '$count draft transaction${count == 1 ? '' : 's'} ready for review.',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF64748B),
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.sms_outlined,
-              color: Color(0xFF334155),
-              size: 22,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildSyncHero(SyncState syncState) {
     final isSyncing = syncState.status == SyncStatus.syncing;
@@ -658,64 +604,44 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
       badge = 'NEEDS ATTENTION';
       subtitle =
           syncState.errorMessage ?? 'The last sync did not finish successfully.';
-      badgeColor = const Color(0xFFEF4444);
+      badgeColor = Theme.of(context).colorScheme.error;
     } else if (isSuccess) {
       badge = 'LAST RUN OK';
       subtitle =
           '${syncState.syncedCount ?? 0} message(s) were handed off for draft creation.';
-      badgeColor = const Color(0xFF10B981);
+      badgeColor = Theme.of(context).colorScheme.primary;
     } else if (syncState.lastSyncedAt != null) {
       badge = 'READY';
       subtitle =
           'Last sync ${_formatTimeAgo(syncState.lastSyncedAt!)}. Run a fresh scan any time.';
-      badgeColor = const Color(0xFF10B981);
+      badgeColor = Theme.of(context).colorScheme.primary;
     } else {
       badge = 'NOT RUN YET';
       subtitle =
           'Your first sync will scan the inbox, upload candidate messages, and fetch drafts here.';
-      badgeColor = const Color(0xFF64748B);
+      badgeColor = (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey);
     }
 
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          colors: [Theme.of(context).colorScheme.primary.withValues(alpha: 0.9), Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)],
         ),
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.15),
+            color: (Theme.of(context).textTheme.titleLarge?.color ?? Colors.black).withValues(alpha: 0.15),
             blurRadius: 24,
             offset: const Offset(0, 14),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: badgeColor.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(
-                color: badgeColor.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Text(
-              badge,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-                color: badgeColor,
-              ),
-            ),
-          ),
-          const SizedBox(height: 18),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -728,40 +654,40 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(
                       subtitle,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: const Color(0xFFCBD5E1),
+                        color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
                         height: 1.45,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Container(
                 width: 58,
                 height: 58,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.08),
                   ),
                 ),
                 child: isSyncing
-                    ? const Padding(
+                    ? Padding(
                         padding: EdgeInsets.all(14),
                         child: CircularProgressIndicator(
                           strokeWidth: 2.6,
-                          color: Color(0xFFF8FAFC),
+                          color: Theme.of(context).colorScheme.surface,
                         ),
                       )
                     : Icon(
@@ -770,22 +696,17 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                             : isSuccess
                             ? Icons.check_circle_outline
                             : Icons.sync_outlined,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         size: 28,
                       ),
               ),
             ],
           ),
-          const SizedBox(height: 22),
+          SizedBox(height: 22),
           Wrap(
             spacing: 12,
             runSpacing: 12,
             children: [
-              _buildSyncMetric(
-                label: 'Cadence',
-                value: 'Every 6h',
-                accent: const Color(0xFF38BDF8),
-              ),
               _buildSyncMetric(
                 label: 'Source',
                 value: 'Inbox scan',
@@ -798,17 +719,17 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               ),
             ],
           ),
-          const SizedBox(height: 22),
+          SizedBox(height: 22),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: isSyncing ? null : _startSync,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF0F172A),
-                disabledBackgroundColor: Colors.white.withValues(alpha: 0.75),
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                foregroundColor: (Theme.of(context).textTheme.titleLarge?.color ?? Colors.black),
+                disabledBackgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.75),
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),
@@ -833,11 +754,11 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
     required Color accent,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -847,11 +768,11 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
             style: GoogleFonts.plusJakartaSans(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF94A3B8),
+              color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
               letterSpacing: 0.6,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             value,
             style: GoogleFonts.plusJakartaSans(
@@ -868,9 +789,9 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
   Widget _buildAutoSyncCard(SyncState syncState) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -879,7 +800,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
           ),
         ],
       ),
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -890,8 +811,8 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                 height: 46,
                 decoration: BoxDecoration(
                   color: syncState.autoSyncEnabled
-                      ? const Color(0xFFECFDF5)
-                      : const Color(0xFFF1F5F9),
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                      : Theme.of(context).colorScheme.surface.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
@@ -899,11 +820,11 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                       ? Icons.schedule_send_rounded
                       : Icons.pause_circle_outline_rounded,
                   color: syncState.autoSyncEnabled
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFF64748B),
+                      ? Theme.of(context).colorScheme.primary
+                      : (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -913,10 +834,10 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF0F172A),
+                        color: (Theme.of(context).textTheme.titleLarge?.color ?? Colors.black),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       syncState.autoSyncEnabled
                           ? 'Scheduled scans will keep drafts flowing in even when the app is closed.'
@@ -924,7 +845,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: const Color(0xFF64748B),
+                        color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
                         height: 1.35,
                       ),
                     ),
@@ -934,64 +855,9 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               Switch(
                 value: syncState.autoSyncEnabled,
                 onChanged: _toggleAutoSync,
-                activeColor: const Color(0xFF10B981),
+                activeThumbColor: Theme.of(context).colorScheme.primary,
               ),
             ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildChecklistItem('Worker starts a sync job'),
-                _buildChecklistItem('Backend returns the last scanned watermark'),
-                _buildChecklistItem('Candidate transaction SMS get uploaded as a batch'),
-                _buildChecklistItem('Drafts appear here after parsing finishes'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChecklistItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 20,
-            height: 20,
-            margin: const EdgeInsets.only(top: 1),
-            decoration: BoxDecoration(
-              color: const Color(0xFFDBEAFE),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: const Icon(
-              Icons.check,
-              size: 12,
-              color: Color(0xFF2563EB),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF475569),
-                height: 1.35,
-              ),
-            ),
           ),
         ],
       ),
@@ -1000,11 +866,11 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
 
   Widget _buildEmptyState() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
+      padding: EdgeInsets.fromLTRB(20, 28, 20, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         children: [
@@ -1012,32 +878,32 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
             width: 78,
             height: 78,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(24),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.inbox_rounded,
               size: 34,
-              color: Color(0xFF64748B),
+              color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
             ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           Text(
             'No draft transactions yet',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF0F172A),
+              color: (Theme.of(context).textTheme.titleLarge?.color ?? Colors.black),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'Run a sync to scan your SMS inbox. Drafts will appear here for review before they affect your ledger.',
             textAlign: TextAlign.center,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
+              color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
               height: 1.5,
             ),
           ),
@@ -1049,34 +915,34 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
   Widget _buildErrorState(Object error) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, color: Colors.red[300], size: 48),
-            const SizedBox(height: 12),
+            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error.withValues(alpha: 0.4), size: 48),
+            SizedBox(height: 12),
             Text(
               'Unable to load SMS drafts',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF0F172A),
+                color: (Theme.of(context).textTheme.titleLarge?.color ?? Colors.black),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               error.toString(),
               textAlign: TextAlign.center,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF64748B),
+                color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ElevatedButton(
               onPressed: _refreshDrafts,
-              child: const Text('Retry'),
+              child: Text('Retry'),
             ),
           ],
         ),
@@ -1086,7 +952,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
 
   Widget _buildDraftsListHeader(int count) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: EdgeInsets.symmetric(horizontal: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -1096,13 +962,13 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               fontSize: 12,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.4,
-              color: const Color(0xFF94A3B8),
+              color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFEEF2FF),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
@@ -1110,7 +976,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF4F46E5),
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ),
@@ -1123,14 +989,14 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
     final isSelected = draft.isChecked;
     final isIncome = draft.type.toUpperCase() == 'INCOME';
     final color = isIncome
-        ? const Color(0xFF10B981)
-        : const Color(0xFF4F46E5);
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.primary;
     final amountColor = isIncome
-        ? const Color(0xFF10B981)
-        : const Color(0xFFF43F5E);
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.error;
     final pillColor = isIncome
-        ? const Color(0xFFECFDF5)
-        : const Color(0xFFEEF2FF);
+        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+        : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1);
 
     final accountName = _resolveAccountName(draft.accountId);
     final categoryName = _resolveCategoryName(draft.categoryId);
@@ -1140,14 +1006,14 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
       direction: DismissDirection.endToStart,
       confirmDismiss: (_) => _confirmDeleteDraft(draft),
       background: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.only(right: 28),
+        margin: EdgeInsets.only(bottom: 16),
+        padding: EdgeInsets.only(right: 28),
         alignment: Alignment.centerRight,
         decoration: BoxDecoration(
-          color: const Color(0xFFEF4444),
+          color: Theme.of(context).colorScheme.error,
           borderRadius: BorderRadius.circular(28),
         ),
-        child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+        child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.surface, size: 28),
       ),
       child: GestureDetector(
         onTap: () {
@@ -1156,13 +1022,13 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               .toggleDraft(draft.id, !isSelected);
         },
         child: Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(20),
+          margin: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: isSelected ? color : const Color(0xFFE2E8F0),
+              color: isSelected ? color : Theme.of(context).dividerColor,
               width: isSelected ? 2 : 1,
             ),
             boxShadow: [
@@ -1209,20 +1075,20 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                               color: color,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.surface,
                                 width: 2,
                               ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.check,
                               size: 12,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.surface,
                             ),
                           ),
                         ),
                     ],
                   ),
-                  const SizedBox(width: 14),
+                  SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1232,23 +1098,23 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF0F172A),
+                            color: (Theme.of(context).textTheme.titleLarge?.color ?? Colors.black),
                             height: 1.2,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         Text(
                           DateFormat('MMM d, h:mm a').format(draft.occurredAt),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF64748B),
+                            color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Text(
                     '${isIncome ? '+' : '-'}Rs ${NumberFormat('#,##,##0.00').format(draft.amount)}',
                     style: GoogleFonts.plusJakartaSans(
@@ -1259,7 +1125,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              SizedBox(height: 18),
               Row(
                 children: [
                   Expanded(
@@ -1268,7 +1134,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                       label: categoryName,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Expanded(
                     child: _buildInfoPill(
                       icon: Icons.account_balance_wallet_outlined,
@@ -1277,10 +1143,10 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: pillColor,
                   borderRadius: BorderRadius.circular(18),
@@ -1291,44 +1157,44 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     fontStyle: FontStyle.italic,
-                    color: const Color(0xFF475569),
+                    color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
                     height: 1.45,
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _editDraft(draft),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(color: Theme.of(context).dividerColor),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        foregroundColor: const Color(0xFF475569),
+                        foregroundColor: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
                       ),
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      label: const Text('Edit'),
+                      icon: Icon(Icons.edit_outlined, size: 18),
+                      label: Text('Edit'),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     flex: 2,
                     child: ElevatedButton.icon(
                       onPressed: () => _confirmDrafts([draft.id]),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: color,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        foregroundColor: Theme.of(context).colorScheme.surface,
+                        padding: EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                         elevation: 0,
                       ),
-                      icon: const Icon(Icons.check, size: 18),
+                      icon: Icon(Icons.check, size: 18),
                       label: Text(
                         isIncome ? 'Confirm income' : 'Confirm expense',
                       ),
@@ -1345,16 +1211,16 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
 
   Widget _buildInfoPill({required IconData icon, required String label}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: const Color(0xFF64748B)),
-          const SizedBox(width: 8),
+          Icon(icon, size: 14, color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey)),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
               label,
@@ -1362,7 +1228,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF334155),
+                color: (Theme.of(context).textTheme.titleLarge?.color ?? Colors.black),
               ),
             ),
           ),
@@ -1373,19 +1239,19 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
 
   Widget _buildFloatingSelectionBar(List<TransactionDraft> checkedDrafts) {
     if (checkedDrafts.isEmpty) {
-      return const SizedBox.shrink();
+      return SizedBox.shrink();
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4338CA), Color(0xFF4F46E5)],
+        gradient: LinearGradient(
+          colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4F46E5).withValues(alpha: 0.35),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -1397,16 +1263,16 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.playlist_add_check,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               size: 20,
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1416,7 +1282,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                   ),
                 ),
                 Text(
@@ -1424,13 +1290,13 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFFC7D2FE),
+                    color: (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           InkWell(
             onTap: () => _deleteSelectedDrafts(checkedDrafts),
             borderRadius: BorderRadius.circular(14),
@@ -1438,17 +1304,17 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.delete_outline_rounded,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 size: 20,
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           InkWell(
             onTap: () {
               final ids = checkedDrafts.map((draft) => draft.id).toList();
@@ -1456,9 +1322,9 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
             },
             borderRadius: BorderRadius.circular(16),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
@@ -1466,7 +1332,7 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF4338CA),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),
