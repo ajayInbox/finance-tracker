@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -46,6 +47,7 @@ class AccountControllerTest {
     private Account account;
     private AccountResponse accountResponse;
     private AccountCreateUpdateRequest createRequest;
+    private Authentication auth;
 
     @BeforeEach
     void setUp() {
@@ -84,7 +86,7 @@ class AccountControllerTest {
         when(accountService.create(eq(predefinedUserId), any(AccountCreateUpdateRequest.class))).thenReturn(account);
         when(accountMapper.toResponse(account)).thenReturn(accountResponse);
 
-        ResponseEntity<AccountResponse> response = accountController.add(createRequest);
+        ResponseEntity<AccountResponse> response = accountController.add(createRequest, auth);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(accountResponse, response.getBody());
@@ -95,7 +97,7 @@ class AccountControllerTest {
         when(accountService.getAccounts(predefinedUserId)).thenReturn(List.of(account));
         when(accountMapper.toResponse(account)).thenReturn(accountResponse);
 
-        ResponseEntity<List<AccountResponse>> response = accountController.getAccounts();
+        ResponseEntity<List<AccountResponse>> response = accountController.getAccounts(auth);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1, response.getBody().size());
@@ -112,7 +114,7 @@ class AccountControllerTest {
 
         when(accountService.getNetWorth(predefinedUserId)).thenReturn(summary);
 
-        ResponseEntity<NetworthSummary> response = accountController.getNetWorth();
+        ResponseEntity<NetworthSummary> response = accountController.getNetWorth(auth);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(summary, response.getBody());
@@ -120,7 +122,7 @@ class AccountControllerTest {
 
     @Test
     void testDelete() {
-        ResponseEntity<?> response = accountController.delete(accountId);
+        ResponseEntity<?> response = accountController.delete(accountId,  auth);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(accountService).deleteAccount(predefinedUserId, accountId);
@@ -131,7 +133,7 @@ class AccountControllerTest {
         when(accountService.update(eq(predefinedUserId), eq(accountId), any(AccountCreateUpdateRequest.class))).thenReturn(account);
         when(accountMapper.toResponse(account)).thenReturn(accountResponse);
 
-        ResponseEntity<AccountResponse> response = accountController.update(accountId, createRequest);
+        ResponseEntity<AccountResponse> response = accountController.update(accountId, createRequest, auth);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(accountResponse, response.getBody());

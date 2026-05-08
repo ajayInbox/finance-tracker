@@ -15,12 +15,35 @@ class CategoryManagementPage extends ConsumerStatefulWidget {
 }
 
 class _CategoryManagementPageState
-    extends ConsumerState<CategoryManagementPage> {
-  final TextEditingController _searchController = TextEditingController();
+    extends ConsumerState<CategoryManagementPage> with TickerProviderStateMixin {
+
+  final ScrollController _scrollController = ScrollController();
+  late AnimationController _fabAnimationController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _fabAnimationController = AnimationController(
+      value: 1.0,
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels > 100) {
+      _fabAnimationController.reverse();
+    } else {
+      _fabAnimationController.forward();
+    }
+  }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _scrollController.dispose();
+    _fabAnimationController.dispose();
     super.dispose();
   }
 
@@ -57,12 +80,6 @@ class _CategoryManagementPageState
                 fontWeight: FontWeight.w700,
                 color: textColor,
               ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: _buildSearchBar(surfaceColor, primaryColor),
             ),
           ),
           categoriesAsync.when(
@@ -122,17 +139,28 @@ class _CategoryManagementPageState
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const AddCategoryGroupPage(),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: 80),
+        child: ScaleTransition(
+          scale: _fabAnimationController,
+          child: SizedBox(
+            width: 56,
+            height: 56,
+            child: FloatingActionButton(
+              backgroundColor: Theme.of(context).colorScheme.primary, // primary
+              elevation: 8, // shadow-glow approx
+              shape: CircleBorder(),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AddCategoryGroupPage(),
+                  ),
+                );
+              },
+              child: Icon(Icons.add, color: Theme.of(context).colorScheme.surface, size: 28),
             ),
-          );
-        },
-        backgroundColor: primaryColor,
-        elevation: 4,
-        child: const Icon(Icons.add, color: Color(0xFF102216)),
+          ),
+        ),
       ),
     );
   }
@@ -191,43 +219,6 @@ class _CategoryManagementPageState
         }
       }
     }
-  }
-
-  Widget _buildSearchBar(Color surfaceColor, Color primaryColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        // Removed search logic temporarily as it relies on flattening the tree
-        decoration: InputDecoration(
-          hintText: 'Filter categories...',
-          hintStyle: GoogleFonts.plusJakartaSans(
-            color: Colors.grey[400],
-            fontSize: 14,
-          ),
-          prefixIcon: Icon(Icons.filter_list, color: Colors.grey[400]),
-          border: InputBorder.none,
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: primaryColor, width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildCategoryGroup({

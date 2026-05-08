@@ -1,7 +1,7 @@
 class ApiConstants {
-  static String baseUrl = "http://10.0.2.2:8080/";
+  //static String baseUrl = "http://10.0.2.2:8080/";
   //static String baseUrl = "http://localhost:8080/";
-  //static String baseUrl = "https://finance-tracker-backend-v1.onrender.com/";
+  static String baseUrl = "https://finance-tracker-backend-v1.onrender.com/";
   static String register = "/auth/register";
   static String login = "/auth/login";
   static String refresh = "/auth/refresh";

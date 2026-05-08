@@ -14,9 +14,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:finance_app/features/transaction/ui/transactions_page.dart';
 import 'package:finance_app/features/transaction/ui/widgets/transaction_card.dart';
-import 'dart:math' as math;
 import 'package:finance_app/widgets/app_page_header.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
@@ -471,33 +469,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     );
   }
 
-  Widget _buildSparklineChart(List<double> data, Color color) {
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(show: false),
-        titlesData: FlTitlesData(show: false),
-        borderData: FlBorderData(show: false),
-        minX: 0,
-        maxX: (data.length - 1).toDouble(),
-        minY: data.reduce(math.min) * 0.8,
-        maxY: data.reduce(math.max) * 1.2,
-        lineBarsData: [
-          LineChartBarData(
-            spots: data.asMap().entries.map((e) {
-              return FlSpot(e.key.toDouble(), e.value);
-            }).toList(),
-            isCurved: true,
-            color: color,
-            barWidth: 2,
-            isStrokeCapRound: true,
-            dotData: FlDotData(show: false),
-            belowBarData: BarAreaData(show: false),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSpendingAnalysisCard() {
     final expenseAsync = ref.watch(expenseReportProvider);
     final selectedPeriod = ref.watch(expenseReportPeriodProvider);
@@ -609,7 +580,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
               width: 250,
               child: expenseAsync.when(
                 loading: () => const CircularProgressIndicator(),
-                error: (_, __) => Icon(Icons.error),
+                error: (_, _) => Icon(Icons.error),
                 data: (report) {
                   return Stack(
                     alignment: Alignment.center,
@@ -685,7 +656,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           SizedBox(height: 40),
           expenseAsync.when(
             loading: () => SizedBox(),
-            error: (_, __) => Text('Error loading data'),
+            error: (_, _) => Text('Error loading data'),
             data: (report) => Column(
               children: report.categoryBreakdown.take(4).map((category) {
                 final color = _parseColorCode(category.categoryColorCode);
@@ -748,138 +719,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     );
   }
 
-  void _navigateToTransactions() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const TransactionsPage()),
-    );
-  }
-
-  void _showCategoryPopover(CategoryBreakdown category) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          contentPadding: EdgeInsets.all(20),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: _parseColorCode(category.categoryColorCode),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Text(
-                    category.categoryName,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
-              const Divider(),
-              SizedBox(height: 16),
-              _buildMerchantItem('Swiggy', '₹2,500', '5 transactions'),
-              _buildMerchantItem('Zomato', '₹1,800', '3 transactions'),
-              _buildMerchantItem(
-                'Local Restaurant',
-                '₹1,200',
-                '2 transactions',
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4A90E2),
-                  foregroundColor: Theme.of(context).colorScheme.surface,
-                  minimumSize: const Size(double.infinity, 44),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text('View All Details'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMerchantItem(
-    String merchant,
-    String amount,
-    String transactions,
-  ) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: Theme.of(context).dividerColor,
-            child: Text(
-              merchant[0],
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
-              ),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  merchant,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
-                  ),
-                ),
-                Text(
-                  transactions,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10,
-                    color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            amount,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Color _parseColorCode(String? colorCode) {
     if (colorCode == null || colorCode.isEmpty) {
       return Colors.grey;
@@ -918,118 +757,25 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     }).toList();
   }
 
-  Widget _buildExpenseLegend(List<CategoryBreakdown> categories) {
-    return Column(
-      children: categories.map((category) {
-        return _buildLegendItem(
-          category,
-          '${category.percentage.toStringAsFixed(1)}%',
-          '$currency${category.total.toStringAsFixed(2)}',
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildLoadingLegend() {
-    return Column(
-      children: List.generate(3, (index) {
-        return Container(
-          margin: EdgeInsets.only(bottom: 12),
-          padding: EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Container(width: 16, height: 16, color: Theme.of(context).dividerColor),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(width: 100, height: 14, color: Theme.of(context).dividerColor),
-                    SizedBox(height: 4),
-                    Container(width: 60, height: 12, color: Theme.of(context).dividerColor),
-                  ],
-                ),
-              ),
-              Container(width: 40, height: 12, color: Theme.of(context).dividerColor),
-            ],
-          ),
-        );
-      }),
-    );
-  }
-
-  Widget _buildLegendItem(
-    CategoryBreakdown category,
-    String percentage,
-    String amount,
-  ) {
-    final color = _parseColorCode(category.categoryColorCode);
-    return GestureDetector(
-      onTap: () => _showCategoryPopover(category),
-      child: Container(
-        margin: EdgeInsets.only(bottom: 12),
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).dividerColor),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category.categoryName,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
-                    ),
-                  ),
-                  Text(
-                    amount,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              percentage,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildRecentTransactions() {
     final txAsync = ref.watch(transactionsControllerProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return Container(
+      padding: EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(40), // rounded-[2.5rem]
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 40,
+            offset: const Offset(0, 10),
+          ),
+        ],
+        border: Border.all(color: Colors.transparent),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         Text(
           'Recent Transactions',
           style: GoogleFonts.plusJakartaSans(
@@ -1044,7 +790,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             height: 200,
             child: _buildLoadingTransactions(),
           ), // Keep height for loading state
-          error: (_, __) =>
+          error: (_, _) =>
               SizedBox(height: 200, child: _buildErrorTransactions()),
           data: (transactions) {
             if (transactions.isEmpty) {
@@ -1064,6 +810,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           },
         ),
       ],
+    )
     );
   }
 
