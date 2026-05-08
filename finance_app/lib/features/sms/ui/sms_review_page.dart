@@ -592,34 +592,22 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
     final isSuccess = syncState.status == SyncStatus.success;
     final isError = syncState.status == SyncStatus.error;
 
-    String badge;
     String subtitle;
-    Color badgeColor;
 
     if (isSyncing) {
-      badge = 'RUNNING';
       subtitle = 'Scanning your inbox and uploading likely transaction messages.';
-      badgeColor = const Color(0xFFF59E0B);
     } else if (isError) {
-      badge = 'NEEDS ATTENTION';
       subtitle =
           syncState.errorMessage ?? 'The last sync did not finish successfully.';
-      badgeColor = Theme.of(context).colorScheme.error;
     } else if (isSuccess) {
-      badge = 'LAST RUN OK';
       subtitle =
           '${syncState.syncedCount ?? 0} message(s) were handed off for draft creation.';
-      badgeColor = Theme.of(context).colorScheme.primary;
     } else if (syncState.lastSyncedAt != null) {
-      badge = 'READY';
       subtitle =
           'Last sync ${_formatTimeAgo(syncState.lastSyncedAt!)}. Run a fresh scan any time.';
-      badgeColor = Theme.of(context).colorScheme.primary;
     } else {
-      badge = 'NOT RUN YET';
       subtitle =
           'Your first sync will scan the inbox, upload candidate messages, and fetch drafts here.';
-      badgeColor = (Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey);
     }
 
     return Container(

@@ -30,7 +30,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage>
   String _selectedTypeFilter = 'All';
 
   // UI state
-  ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController();
 
   // Animation controllers
   late AnimationController _fabAnimationController;

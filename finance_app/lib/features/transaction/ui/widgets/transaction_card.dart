@@ -119,6 +119,7 @@ class TransactionCard extends ConsumerWidget {
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           _formatDate(transaction.occurredAt),
@@ -127,6 +128,7 @@ class TransactionCard extends ConsumerWidget {
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),

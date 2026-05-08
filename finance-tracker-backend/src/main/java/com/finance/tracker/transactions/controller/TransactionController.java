@@ -83,9 +83,11 @@ public class TransactionController {
     @PutMapping("/{id}")
     public ResponseEntity<TransactionResponseDto> update(
             @PathVariable("id") UUID id,
-            @Valid @RequestBody UpdateTransactionRequestDto dto
+            @Valid @RequestBody UpdateTransactionRequestDto dto,
+            Authentication auth
     ) {
-        return ResponseEntity.ok(transactionService.update(UUID.fromString("960bbe86-b62c-4171-a8e5-94c4bfd3bdb4"), id, dto));
+        String userId = (String) auth.getPrincipal();
+        return ResponseEntity.ok(transactionService.update(UUID.fromString(userId), id, dto));
     }
 
     // -----------------------------------------------------
