@@ -1,13 +1,12 @@
 name: Test Mobile Build
 
 on:
-  # 🎯 This line adds the manual "Run workflow" button in GitHub Actions UI
-  workflow_dispatch:
   push:
     branches:
       - main
     paths:
       - 'finance_app/**'
+  workflow_dispatch:
 
 jobs:
   compile-test-apk:
@@ -30,17 +29,17 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # Step 4: Run 'pub get' inside the mobile app subfolder
       - name: Install Project Dependencies
         working-directory: ./finance_app
         run: flutter pub get
 
-      # Step 5: Build the APK inside the mobile app subfolder
       - name: Build Debug APK
         working-directory: ./finance_app
+        env:
+          # 🎯 Allocation boost explicitly prevents the "Java heap space" crash
+          GRADLE_OPTS: "-Xmx3072m -XX:MaxMetaspaceSize=512m -Dorg.gradle.jvmargs=-Xmx3072m"
         run: flutter build apk --debug
 
-      # Step 6: Target the exact nested output path where the APK is built
       - name: Upload APK to GitHub Actions Dashboard
         uses: actions/upload-artifact@v4
         with:
