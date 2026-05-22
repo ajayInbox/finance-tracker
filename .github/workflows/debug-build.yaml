@@ -1,0 +1,47 @@
+name: Test Mobile Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'finance_app/**'
+
+jobs:
+  compile-test-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      # Step 4: Run 'pub get' inside the mobile app subfolder
+      - name: Install Project Dependencies
+        working-directory: ./finance_app
+        run: flutter pub get
+
+      # Step 5: Build the APK inside the mobile app subfolder
+      - name: Build Debug APK
+        working-directory: ./finance_app
+        run: flutter build apk --debug
+
+      # Step 6: Target the exact nested output path where the APK is built
+      - name: Upload APK to GitHub Actions Dashboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-app-debug
+          path: finance_app/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
