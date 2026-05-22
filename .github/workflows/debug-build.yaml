@@ -1,6 +1,8 @@
 name: Test Mobile Build
 
 on:
+  # 🎯 This line adds the manual "Run workflow" button in GitHub Actions UI
+  workflow_dispatch:
   push:
     branches:
       - main
