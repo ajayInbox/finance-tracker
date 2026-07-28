@@ -22,5 +22,7 @@ public interface AccountService {
 
     NetworthSummary getNetWorth(UUID userId);
 
+    Account initializeDefaults(UUID userId);
+
     void deleteAccount(UUID userId, UUID accountId);
 }

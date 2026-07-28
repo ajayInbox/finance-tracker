@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:finance_app/features/account/application/accounts_controller.dart';
 import 'package:finance_app/features/auth/application/auth_controller.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:finance_app/main.dart';
@@ -122,7 +123,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
     final password = _passwordController.text;
     double strength = 0;
 
-    if (password.length >= 6) strength += 0.2;
+    if (password.length >= 8) strength += 0.2;
     if (password.length >= 10) strength += 0.15;
     if (password.contains(RegExp(r'[A-Z]'))) strength += 0.2;
     if (password.contains(RegExp(r'[a-z]'))) strength += 0.1;
@@ -181,6 +182,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
+      ref.invalidate(accountsControllerProvider);
       // AppRoot reactively navigates to MyHomePage when isAuthenticated becomes true.
     } catch (e) {
       if (!mounted) return;
@@ -791,8 +793,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
           if (value == null || value.isEmpty) {
             return 'Please enter a password';
           }
-          if (value.length < 6) {
-            return 'Password must be at least 6 characters';
+          if (value.length < 8 || value.length > 18) {
+            return 'Password must be between 8 and 18 characters';
           }
           return null;
         },
@@ -829,7 +831,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage>
               ),
             ),
             Text(
-              'Min 6 characters',
+              '8-18 characters',
               style: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,

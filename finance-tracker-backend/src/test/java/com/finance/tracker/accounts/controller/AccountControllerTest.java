@@ -73,7 +73,8 @@ class AccountControllerTest {
                 LocalDateTime.now(),
                 null,
                 "Notes",
-                AccountCategory.ASSET
+                AccountCategory.ASSET,
+                false
         );
 
         createRequest = new AccountCreateUpdateRequest(

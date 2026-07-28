@@ -31,6 +31,13 @@ public class AccountController {
         return new ResponseEntity<>(accountMapper.toResponse(account), HttpStatus.CREATED);
     }
 
+    @PostMapping("/accounts/initialize-defaults")
+    public ResponseEntity<AccountResponse> initializeDefaults(Authentication auth) {
+        String userId = (String) auth.getPrincipal();
+        Account account = accountService.initializeDefaults(UUID.fromString(userId));
+        return ResponseEntity.ok(accountMapper.toResponse(account));
+    }
+
     @GetMapping("/accounts")
     public ResponseEntity<List<AccountResponse>> getAccounts(Authentication auth){
         String userId = (String) auth.getPrincipal();

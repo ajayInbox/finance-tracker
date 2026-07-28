@@ -29,4 +29,6 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
 
     @Query(value = "SELECT * FROM categories WHERE (user_id = :userId OR user_id IS NULL) AND deleted_at IS NULL AND is_active = true", nativeQuery = true)
     List<Category> findAllByUserIdAndDeletedAtIsNullAndIsActiveTrue(@Param("userId") UUID userId);
+
+    Optional<Category> findByUserIdAndName(UUID userId, String name);
 }

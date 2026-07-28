@@ -25,5 +25,6 @@ public record AccountResponse(
         LocalDateTime createdAt,
         LocalDateTime closedAt,
         String notes,
-        AccountCategory category
+        AccountCategory category,
+        boolean isDefault
 ) {}

@@ -8,6 +8,9 @@ import com.finance.tracker.accounts.repository.AccountRepository;
 import com.finance.tracker.accounts.service.AccountService;
 import com.finance.tracker.transactions.domain.Currency;
 import com.finance.tracker.transactions.domain.TransactionType;
+import com.finance.tracker.category.domain.entities.Category;
+import com.finance.tracker.category.domain.CategoryType;
+import com.finance.tracker.category.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ import java.util.UUID;
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
+    private final CategoryRepository categoryRepository;
     private final AccountMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -132,6 +136,56 @@ public class AccountServiceImpl implements AccountService {
                 .liabilities(new NetworthSummary.ValueNumber(liabilityTotal, (int) accounts.stream().filter(Account::isLiability).count()))
                 .netWorth(assetTotal.subtract(liabilityTotal))
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public Account initializeDefaults(UUID userId) {
+        Account defaultAccount = accountRepository.findByUserIdAndIsDefaultTrue(userId)
+                .orElseGet(() -> {
+                    Account newAcc = Account.builder()
+                            .accountName("General Cash")
+                            .accountType(AccountType.CASH)
+                            .category(AccountCategory.ASSET)
+                            .lastFour("CASH")
+                            .currency(Currency.INR)
+                            .startingBalance(BigDecimal.ZERO)
+                            .currentBalance(BigDecimal.ZERO)
+                            .openingDate(LocalDate.now())
+                            .userId(userId)
+                            .status(AccountStatus.ACTIVE)
+                            .active(true)
+                            .isDefault(true)
+                            .build();
+                    return accountRepository.save(newAcc);
+                });
+
+        if (categoryRepository.findByUserIdAndName(userId, "Uncategorized").isEmpty()) {
+            Category parentGroup = Category.builder()
+                    .name("General")
+                    .description("Default category group")
+                    .type(CategoryType.EXPENSE)
+                    .userId(userId)
+                    .isActive(true)
+                    .iconKey("58729+MaterialIcons")
+                    .colorCode("4289470940")
+                    .build();
+            categoryRepository.save(parentGroup);
+
+            Category defaultCategory = Category.builder()
+                    .name("Uncategorized")
+                    .description("Default expense category")
+                    .type(CategoryType.EXPENSE)
+                    .userId(userId)
+                    .isActive(true)
+                    .parent(parentGroup)
+                    .iconKey("58729+MaterialIcons")
+                    .colorCode("4289470940")
+                    .build();
+            categoryRepository.save(defaultCategory);
+        }
+
+        return defaultAccount;
     }
 
     @Override

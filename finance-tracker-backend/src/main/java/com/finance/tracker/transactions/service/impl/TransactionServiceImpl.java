@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.finance.tracker.accounts.repository.AccountRepository;
+import com.finance.tracker.category.repository.CategoryRepository;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -43,13 +46,26 @@ public class TransactionServiceImpl implements TransactionService {
     private final AccountService accountService;
     private final UnparsedSmsLogsRepository unparsedSmsLogsRepository;
     private final CategoryService categoryService;
+    private final AccountRepository accountRepository;
+    private final CategoryRepository categoryRepository;
 
     @Transactional
     @Override
     public TransactionResponseDto create(CreateTransactionRequestDto request, UUID userId) {
 
-        Category category = categoryService.validateAndGet(userId, request.categoryId(), CategoryType.fromValueIgnoreCase(request.type()));
-        Account account = accountService.getAccountByIdAndUser(request.accountId(), userId);
+        Category category;
+        if (request.categoryId() != null) {
+            category = categoryService.validateAndGet(userId, request.categoryId(), CategoryType.fromValueIgnoreCase(request.type()));
+        } else {
+            category = resolveDefaultCategory(userId);
+        }
+
+        Account account;
+        if (request.accountId() != null) {
+            account = accountService.getAccountByIdAndUser(request.accountId(), userId);
+        } else {
+            account = resolveDefaultAccount(userId);
+        }
 
         log.debug("Request Body for Create: {}", request);
 
@@ -277,8 +293,8 @@ public class TransactionServiceImpl implements TransactionService {
                 .transactionName("Auto-detected Transaction")
                 .status(TransactionStatus.DRAFT)
                 .lastAction("CREATED")
-                .account(dummyAccount())
-                .category(dummyCategory())
+                .account(resolveDefaultAccount(userId))
+                .category(resolveDefaultCategory(userId))
                 .userId(userId)
                 .type(TransactionType.UNKNOWN)
                 // Ensure occurredAt is parsed using a consistent formatter or fallback to now
@@ -377,6 +393,20 @@ public class TransactionServiceImpl implements TransactionService {
             case INCOME -> TransactionType.EXPENSE;
             default -> originalType;
         };
+    }
+
+    private Account resolveDefaultAccount(UUID userId) {
+        return accountRepository.findByUserIdAndIsDefaultTrue(userId)
+                .orElseGet(() -> accountRepository.findByUserIdAndActiveTrue(userId).stream().findFirst()
+                        .orElseGet(this::dummyAccount));
+    }
+
+    private Category resolveDefaultCategory(UUID userId) {
+        List<Category> userCategories = categoryRepository.findAllByUserIdAndDeletedAtIsNullAndIsActiveTrue(userId);
+        return userCategories.stream()
+                .filter(c -> c.getName().equalsIgnoreCase("Uncategorized"))
+                .findFirst()
+                .orElseGet(() -> userCategories.stream().findFirst().orElseGet(this::dummyCategory));
     }
 
     private Account dummyAccount(){

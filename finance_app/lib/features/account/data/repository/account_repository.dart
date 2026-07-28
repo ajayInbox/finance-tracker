@@ -34,6 +34,15 @@ class AccountRepository {
     }
   }
 
+  Future<Account> initializeDefaults() async {
+    try {
+      final res = await dio.post(ApiConstants.initializeDefaults);
+      return Account.fromJson(res.data);
+    } catch (e) {
+      throw AppException(ApiErrorHandler.getErrorMessage(e));
+    }
+  }
+
   Future<NetworthSummary> getNetWorth() async {
     try {
       final res = await dio.get(

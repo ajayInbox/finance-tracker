@@ -20,6 +20,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     List<Account> findByUserIdAndActiveTrue(UUID userId);
 
+    Optional<Account> findByUserIdAndIsDefaultTrue(UUID userId);
+
     Optional<Account> findByLastFourAndUserIdAndAccountType(String lastFour, UUID userId, AccountType accountType);
 
     @Modifying(clearAutomatically = true)

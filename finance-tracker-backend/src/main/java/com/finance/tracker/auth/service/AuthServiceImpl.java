@@ -16,6 +16,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.finance.tracker.accounts.domain.AccountCategory;
+import com.finance.tracker.accounts.domain.AccountStatus;
+import com.finance.tracker.accounts.domain.AccountType;
+import com.finance.tracker.accounts.domain.entities.Account;
+import com.finance.tracker.accounts.repository.AccountRepository;
+import com.finance.tracker.category.domain.CategoryType;
+import com.finance.tracker.category.domain.entities.Category;
+import com.finance.tracker.category.repository.CategoryRepository;
+import com.finance.tracker.transactions.domain.Currency;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,6 +41,8 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshService;
     private final AuthenticationManager authManager;
+    private final AccountRepository accountRepo;
+    private final CategoryRepository categoryRepo;
 
     @Override
     public AuthResponse login(LoginRequest req) {

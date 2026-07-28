@@ -1,4 +1,6 @@
 import 'package:finance_app/features/account/application/accounts_controller.dart';
+import 'package:finance_app/features/account/data/model/account.dart';
+import 'package:finance_app/features/account/data/model/account_type.dart';
 import 'package:finance_app/features/category/application/category_controller.dart';
 import 'package:finance_app/features/sms/application/sms_controller.dart';
 import 'package:finance_app/features/sms/data/model/transaction_draft.dart';
@@ -123,29 +125,42 @@ class _SmsReviewPageState extends ConsumerState<SmsReviewPage>
         .where((draft) => ids.contains(draft.id))
         .toList();
 
-    final invalidDrafts = draftsToConfirm.where((draft) {
-      return (draft.accountId == null || draft.accountId!.isEmpty) ||
-          (draft.categoryId == null || draft.categoryId!.isEmpty);
-    }).toList();
+    final accounts = ref.read(accountsControllerProvider).asData?.value ?? [];
+    final categories = ref.read(categoryControllerProvider).asData?.value ?? [];
 
-    if (invalidDrafts.isNotEmpty) {
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Missing details'),
-          content: Text(
-            'Please choose an account and category for ${invalidDrafts.length} draft(s) before confirming.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('OK'),
-            ),
-          ],
-        ),
-      );
-      return;
+    final defaultAccount = accounts.firstWhere(
+      (a) => a.isDefault || a.lastFour == 'CASH',
+      orElse: () => accounts.isNotEmpty ? accounts.first : Account(
+        id: '',
+        accountName: 'General Cash',
+        accountType: AccountType.unknown,
+        currency: 'INR',
+        active: true,
+        readOnly: false,
+        createdAt: DateTime.now(),
+        category: 'ASSET',
+      ),
+    );
+
+    for (final draft in draftsToConfirm) {
+      if ((draft.accountId == null || draft.accountId!.isEmpty) ||
+          (draft.categoryId == null || draft.categoryId!.isEmpty)) {
+        final updatedTransaction = Transaction(
+          transactionName: draft.transactionName,
+          amount: draft.amount,
+          type: draft.type,
+          accountId: (draft.accountId != null && draft.accountId!.isNotEmpty)
+              ? draft.accountId!
+              : defaultAccount.id,
+          categoryId: (draft.categoryId != null && draft.categoryId!.isNotEmpty)
+              ? draft.categoryId!
+              : (categories.isNotEmpty ? categories.first.id : ''),
+          occurredAt: draft.occurredAt,
+          currency: draft.currency,
+          notes: draft.notes,
+        );
+        ref.read(smsControllerProvider.notifier).updateDraft(draft.id, updatedTransaction);
+      }
     }
 
     await ref.read(smsControllerProvider.notifier).confirmDrafts(ids);

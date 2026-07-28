@@ -38,6 +38,12 @@ class AccountsController extends AsyncNotifier<List<Account>> {
     _invalidateDerivedProviders();
   }
 
+  Future<void> initializeDefaults() async {
+    await ref.read(accountRepositoryProvider).initializeDefaults();
+    await refresh();
+    _invalidateDerivedProviders();
+  }
+
   // ---------------------------------------------------------------------------
   // DELETE
   // ---------------------------------------------------------------------------

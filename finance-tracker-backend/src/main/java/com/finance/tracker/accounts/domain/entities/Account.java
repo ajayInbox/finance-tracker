@@ -48,6 +48,10 @@ public class Account {
     @Builder.Default
     private boolean readOnly = false;
 
+    @Builder.Default
+    @Column(name = "is_default", nullable = false, columnDefinition = "boolean default false")
+    private boolean isDefault = false;
+
     @CreationTimestamp
     @Column(updatable = false)
     private Instant createdAt;

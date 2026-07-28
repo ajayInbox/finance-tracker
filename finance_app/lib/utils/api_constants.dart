@@ -1,7 +1,18 @@
+import 'package:flutter/foundation.dart';
+import 'dart:io' show Platform;
+
 class ApiConstants {
-  //static String baseUrl = "http://10.0.2.2:8080/";
-  //static String baseUrl = "http://localhost:8080/";
-  static String baseUrl = "https://finance-tracker-backend-v1.onrender.com/";
+  static String get baseUrl {
+    if (kIsWeb) {
+      return "http://localhost:8080/";
+    }
+    try {
+      if (Platform.isAndroid) {
+        return "http://10.0.2.2:8080/";
+      }
+    } catch (_) {}
+    return "http://localhost:8080/";
+  }
   static String register = "/auth/register";
   static String login = "/auth/login";
   static String refresh = "/auth/refresh";
@@ -14,6 +25,7 @@ class ApiConstants {
   static String deleteTransaction = "/api/v1/transactions";
   static String getAccounts = "/api/v1/accounts";
   static String createAccount = "/api/v1/account";
+  static String initializeDefaults = "/api/v1/accounts/initialize-defaults";
   static String getCategories = "/api/v1/categories";
   static String createCategory = "/api/v1/categories";
   static String getAllChildrenCategories = "/api/v1/categories/subcategories";

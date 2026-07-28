@@ -14,6 +14,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:finance_app/features/account/application/accounts_controller.dart';
+import 'package:finance_app/features/account/data/model/account.dart';
+import 'package:finance_app/features/account/data/model/account_category.dart';
+import 'package:finance_app/features/account/ui/add_account_page.dart';
+import 'package:finance_app/features/auth/ui/widgets/onboarding_mode_dialog.dart';
 import 'package:finance_app/features/transaction/ui/widgets/transaction_card.dart';
 import 'package:finance_app/widgets/app_page_header.dart';
 
@@ -31,12 +36,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   // Animation controllers
   late AnimationController _fadeController;
   late AnimationController _slideController;
+  bool _hasShownOnboarding = false;
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize animations
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -63,8 +68,26 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     ]).then((_) {});
   }
 
+  void _checkOnboarding(List<Account> accounts) {
+    if (accounts.isEmpty && !_hasShownOnboarding) {
+      _hasShownOnboarding = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          OnboardingModeDialog.show(context).then((_) {
+            _hasShownOnboarding = false;
+          });
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final accountsAsync = ref.watch(accountsControllerProvider);
+    accountsAsync.whenData((accounts) {
+      _checkOnboarding(accounts);
+    });
+
     return Scaffold(
       floatingActionButton: _buildFloatingActionButton(),
       body: Stack(
@@ -143,6 +166,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                       ),
                       SizedBox(height: 24),
                       _buildTopSummaryCards(),
+                      _buildLinkAccountBanner(),
                       SizedBox(height: 24),
                       _buildSpendingAnalysisCard(),
                       SizedBox(height: 24),
@@ -308,6 +332,86 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildLinkAccountBanner() {
+    final accountsAsync = ref.watch(accountsControllerProvider);
+    return accountsAsync.maybeWhen(
+      data: (accounts) {
+        final hasCustomAccount = accounts.any((a) => !a.isDefault && a.lastFour != 'CASH');
+        if (hasCustomAccount) return const SizedBox.shrink();
+
+        return Container(
+          margin: const EdgeInsets.only(top: 20),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.account_balance_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Track Bank & Credit Cards',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).textTheme.titleLarge?.color ?? Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Link your accounts for Net Worth tracking and SMS sync.',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        color: Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddAccountPage(
+                        category: AccountCategory.asset,
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                ),
+                child: Text(
+                  'Link Bank',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
     );
   }
 

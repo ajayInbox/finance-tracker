@@ -19,10 +19,8 @@ public record CreateTransactionRequestDto(
         @NotBlank(message = "Transaction type is required")
         String type, // "INCOME" or "EXPENSE"
 
-        @NotNull(message = "Category ID is required")
         UUID categoryId,
 
-        @NotNull(message = "Account ID is required")
         UUID accountId,
 
         @NotNull(message = "Occurrence date is required")

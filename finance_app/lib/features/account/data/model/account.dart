@@ -21,6 +21,7 @@ class Account {
   final DateTime? closedAt;
   final String? notes;
   final String category;
+  final bool isDefault;
 
   Account({
     required this.id,
@@ -41,6 +42,7 @@ class Account {
     this.closedAt,
     this.notes,
     required this.category,
+    this.isDefault = false,
   });
 
   factory Account.fromJson(Map<String, dynamic> j) {
@@ -72,6 +74,7 @@ class Account {
       notes: j['notes'],
 
       category: (j['category']),
+      isDefault: j['isDefault'] ?? (j['lastFour'] == 'CASH'),
     );
   }
 

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:finance_app/features/account/application/accounts_controller.dart';
 import 'package:finance_app/features/auth/application/auth_controller.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:finance_app/main.dart';
@@ -102,6 +103,7 @@ class _SignInPageState extends ConsumerState<SignInPage>
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
+      ref.invalidate(accountsControllerProvider);
       // AppRoot reactively navigates to MyHomePage when isAuthenticated becomes true.
     } catch (e) {
       if (!mounted) return;
@@ -707,8 +709,8 @@ class _SignInPageState extends ConsumerState<SignInPage>
           if (value == null || value.isEmpty) {
             return 'Please enter your password';
           }
-          if (value.length < 6) {
-            return 'Password must be at least 6 characters';
+          if (value.length < 8 || value.length > 18) {
+            return 'Password must be between 8 and 18 characters';
           }
           return null;
         },

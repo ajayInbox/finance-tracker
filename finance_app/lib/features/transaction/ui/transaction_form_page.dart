@@ -117,7 +117,7 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
   }
 
   Widget _buildForm(List<Account> accounts, List<Category> categories) {
-    // Resolve initial selections if editing
+    // Resolve initial selections if editing or creating
     if (widget.isEditMode &&
         _selectedAccount == null &&
         _selectedCategory == null) {
@@ -135,6 +135,21 @@ class _TransactionFormPageState extends ConsumerState<TransactionFormPage> {
 
       _selectedAccount = account.id;
       _selectedCategory = category.id;
+    } else {
+      if (_selectedAccount == null && accounts.isNotEmpty) {
+        final defaultAcc = accounts.firstWhere(
+          (a) => a.isDefault || a.lastFour == 'CASH',
+          orElse: () => accounts.first,
+        );
+        _selectedAccount = defaultAcc.id;
+      }
+      if (_selectedCategory == null && categories.isNotEmpty) {
+        final defaultCat = categories.firstWhere(
+          (c) => c.name.toLowerCase() == 'uncategorized',
+          orElse: () => categories.first,
+        );
+        _selectedCategory = defaultCat.id;
+      }
     }
 
     // App Colors

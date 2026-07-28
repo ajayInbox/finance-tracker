@@ -34,6 +34,8 @@ class ApiErrorHandler {
           return "Connection error";
         case DioExceptionType.unknown:
           return "Unknown error";
+        default:
+          return "An unexpected network error occurred";
       }
     }
     return error.toString();
