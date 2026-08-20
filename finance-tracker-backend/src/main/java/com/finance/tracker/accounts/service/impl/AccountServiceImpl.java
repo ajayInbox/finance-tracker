@@ -203,7 +203,7 @@ public class AccountServiceImpl implements AccountService {
     private void ensureLastFourNotDuplicate(String lastFour, UUID userId, AccountType type) {
         accountRepository.findByLastFourAndUserIdAndAccountType(lastFour, userId, type)
                 .ifPresent(a -> {
-                    throw new DuplicateLastFourException("Another " + type + " account with last four " + lastFour + " exists.");
+                    throw new DuplicateLastFourException("Another %s account with last four %s exists.".formatted(type, lastFour));
                 });
     }
 

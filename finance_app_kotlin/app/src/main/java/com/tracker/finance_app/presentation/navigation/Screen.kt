@@ -1,7 +1,6 @@
 package com.tracker.finance_app.presentation.navigation
 
 sealed class Screen(val route: String) {
-    data object Landing : Screen("landing")
     data object SignIn : Screen("sign_in")
     data object SignUp : Screen("sign_up")
     data object Dashboard : Screen("dashboard")

@@ -169,15 +169,9 @@ fun MainAppNavigation(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Landing.route,
+            startDestination = Screen.SignIn.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Landing.route) {
-                com.tracker.finance_app.presentation.ui.onboarding.LandingScreen(
-                    onNavigateToSignIn = { navController.navigate(Screen.SignIn.route) },
-                    onNavigateToSignUp = { navController.navigate(Screen.SignUp.route) }
-                )
-            }
             composable(Screen.SignIn.route) {
                 val authViewModel: AuthViewModel = hiltViewModel()
                 SignInScreen(

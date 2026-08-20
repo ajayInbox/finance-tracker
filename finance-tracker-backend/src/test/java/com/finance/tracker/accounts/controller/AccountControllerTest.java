@@ -51,6 +51,8 @@ class AccountControllerTest {
 
     @BeforeEach
     void setUp() {
+        auth = org.mockito.Mockito.mock(Authentication.class);
+        when(auth.getPrincipal()).thenReturn(predefinedUserId.toString());
         account = new Account();
         account.setId(accountId);
         account.setAccountName("My Bank");

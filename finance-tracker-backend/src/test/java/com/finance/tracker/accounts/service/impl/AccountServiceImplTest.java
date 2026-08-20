@@ -110,7 +110,7 @@ class AccountServiceImplTest {
 
         accountService.updateBalanceForTransaction(req, userId);
 
-        verify(accountRepository).updateAssetBalance(accountId, userId, new BigDecimal("-100.00"));
+        verify(accountRepository, times(1)).updateAssetBalance(accountId, userId, new BigDecimal("-100.00"));
         verifyEventPublished();
     }
 
