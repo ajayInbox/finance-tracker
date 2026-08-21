@@ -13,12 +13,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 data class DashboardUiState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
-    val selectedPeriod: String = "1M",
+    val selectedMonth: String = SimpleDateFormat("MMM", Locale.getDefault()).format(Date()),
     val userName: String? = null,
     val accounts: List<Account> = emptyList(),
     val netWorthSummary: NetWorthSummary? = null,
@@ -26,6 +29,10 @@ data class DashboardUiState(
     val summary: TransactionSummary? = null,
     val breakdowns: List<CategoryBreakdown> = emptyList(),
     val averageDailyExpense: AverageDailyExpense? = null,
+    val monthlyBudget: Double = 30000.0,
+    val incomeTrend: String = "",
+    val expenseTrend: String = "",
+    val savingsTrend: String = "",
     val error: String? = null
 )
 
@@ -43,9 +50,13 @@ class DashboardViewModel @Inject constructor(
         loadDashboardData()
     }
 
-    fun onPeriodChanged(period: String) {
-        _uiState.update { it.copy(selectedPeriod = period) }
-        loadDashboardData()
+    fun onMonthSelected(month: String) {
+        _uiState.update { it.copy(selectedMonth = month) }
+        loadDashboardData(isRefresh = true)
+    }
+
+    fun dismissError() {
+        _uiState.update { it.copy(error = null) }
     }
 
     fun loadDashboardData(isRefresh: Boolean = false) {
@@ -78,6 +89,23 @@ class DashboardViewModel @Inject constructor(
                     .ifBlank { profile.email.substringBefore("@") }
             }
 
+            val summaryData = summaryRes.getOrNull()
+            val computedBudget = if (summaryData != null && summaryData.totalIncome > 0) {
+                (summaryData.totalIncome * 0.7).coerceAtLeast(10000.0)
+            } else {
+                30000.0
+            }
+
+            val firstError = listOfNotNull(
+                profileRes.exceptionOrNull(),
+                accountsRes.exceptionOrNull(),
+                netWorthRes.exceptionOrNull(),
+                txnsRes.exceptionOrNull(),
+                summaryRes.exceptionOrNull(),
+                breakdownRes.exceptionOrNull(),
+                avgDailyRes.exceptionOrNull()
+            ).firstOrNull()?.message
+
             _uiState.update { current ->
                 current.copy(
                     isLoading = false,
@@ -85,11 +113,12 @@ class DashboardViewModel @Inject constructor(
                     userName = displayName,
                     accounts = accountsRes.getOrDefault(emptyList()),
                     netWorthSummary = netWorthRes.getOrNull(),
-                    recentTransactions = txnsRes.getOrDefault(emptyList()).take(5),
-                    summary = summaryRes.getOrNull(),
+                    recentTransactions = txnsRes.getOrDefault(emptyList()).take(6),
+                    summary = summaryData,
                     breakdowns = breakdownRes.getOrDefault(emptyList()),
                     averageDailyExpense = avgDailyRes.getOrNull(),
-                    error = accountsRes.exceptionOrNull()?.message
+                    monthlyBudget = computedBudget,
+                    error = firstError
                 )
             }
         }

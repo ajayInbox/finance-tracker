@@ -201,7 +201,10 @@ fun MainAppNavigation(
                 DashboardScreen(
                     viewModel = dashboardViewModel,
                     onNavigateToAddTransaction = { navController.navigate(Screen.AddTransaction.route) },
-                    onNavigateToAddAccount = { navController.navigate(Screen.AddAccount.route) }
+                    onNavigateToAddAccount = { navController.navigate(Screen.AddAccount.route) },
+                    onNavigateToTransactions = { navController.navigate(Screen.Transactions.route) },
+                    onNavigateToAccounts = { navController.navigate(Screen.Accounts.route) },
+                    onNavigateToCategories = { navController.navigate(Screen.CategoryManagement.route) }
                 )
             }
             composable(Screen.Accounts.route) {
