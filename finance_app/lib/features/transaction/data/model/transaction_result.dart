@@ -1,5 +1,0 @@
-
-enum TransactionResult {
-  success,
-  failure,
-}

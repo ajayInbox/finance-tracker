@@ -1,4 +1,0 @@
-enum AccountCategory {
-  asset,
-  liability,
-}
