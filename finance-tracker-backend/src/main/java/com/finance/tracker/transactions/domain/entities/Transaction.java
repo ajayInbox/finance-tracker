@@ -81,9 +81,7 @@ public class Transaction {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
+    private UUID accountId;
     private String attachments;
     private String externalRef;
 

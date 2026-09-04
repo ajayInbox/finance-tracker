@@ -1,6 +1,8 @@
 package com.tracker.finance_app.domain.model
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 
 @Serializable
 enum class AccountType(val label: String) {
@@ -21,26 +23,35 @@ enum class AccountCategory {
     LIABILITY
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class Account(
     val id: String,
+    @JsonNames("name", "accountName")
     val name: String,
+    @JsonNames("accountNumber", "lastFour")
     val accountNumber: String? = null,
     val institution: String? = null,
+    @JsonNames("type", "accountType")
     val type: AccountType,
     val category: AccountCategory,
-    val balance: Double,
+    @JsonNames("balance", "currentBalance")
+    val balance: Double = 0.0,
     val currency: String = "INR",
     val creditLimit: Double? = null,
     val availableCredit: Double? = null,
+    @JsonNames("isActive", "active")
     val isActive: Boolean = true
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class AccountCreateUpdateRequest(
+    @JsonNames("name", "accountName")
     val name: String,
-    val accountNumber: String? = null,
+    val lastFour: String? = null,
     val institution: String? = null,
+    @JsonNames("type", "accountType")
     val type: AccountType,
     val category: AccountCategory,
     val balance: Double,
@@ -48,10 +59,12 @@ data class AccountCreateUpdateRequest(
     val creditLimit: Double? = null
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class NetWorthSummary(
-    val totalAssets: Double,
-    val totalLiabilities: Double,
-    val netWorth: Double,
+    val totalAssets: Double = 0.0,
+    val totalLiabilities: Double = 0.0,
+    val netWorth: Double = 0.0,
     val currency: String = "INR"
 )
+

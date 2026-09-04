@@ -1,5 +1,6 @@
 package com.tracker.finance_app.domain.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -11,13 +12,15 @@ enum class TransactionType {
 
 @Serializable
 data class Category(
-    val id: String,
-    val name: String,
+    val id: String = "",
+    val name: String = "",
     val groupName: String = "General",
     val type: TransactionType = TransactionType.EXPENSE,
-    val iconName: String? = null,
-    val colorHex: String? = null,
-    val isSystem: Boolean = false
+    @SerialName("iconKey") val iconName: String? = null,
+    @SerialName("colorCode") val colorHex: String? = null,
+    val isSystem: Boolean = false,
+    val parentId: String? = null,
+    val children: List<Category> = emptyList()
 )
 
 @Serializable

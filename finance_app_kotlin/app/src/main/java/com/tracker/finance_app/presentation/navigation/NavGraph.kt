@@ -192,6 +192,7 @@ fun MainAppNavigation(
             composable(Screen.CategoryManagement.route) {
                 CategoryManagementScreen(
                     viewModel = categoryViewModel,
+                    onNavigateBack = { navController.popBackStack() },
                     onNavigateToAddGroup = { navController.navigate(Screen.AddCategoryGroup.route) }
                 )
             }

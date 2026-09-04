@@ -4,18 +4,36 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Transaction(
-    val id: String,
-    val accountId: String,
-    val amount: Double,
+    val id: String = "",
+    val accountId: String? = null,
+    val amount: Double = 0.0,
     val categoryId: String? = null,
     val categoryName: String? = null,
-    val type: TransactionType,
-    val description: String,
+    val type: TransactionType = TransactionType.EXPENSE,
+    val description: String = "",
+    val transactionName: String? = null,
     val merchantName: String? = null,
-    val timestamp: String,
+    val timestamp: String = "",
+    val occurredAt: String? = null,
+    val notes: String? = null,
     val rawSmsText: String? = null,
     val isAutoParsed: Boolean = false
-)
+) {
+    val effectiveDescription: String
+        get() = description.ifBlank { transactionName ?: notes ?: "Transaction" }
+
+    val effectiveTimestamp: String
+        get() = timestamp.ifBlank { occurredAt ?: "" }
+
+    fun normalized(): Transaction {
+        val normDesc = effectiveDescription
+        val normTime = effectiveTimestamp
+        return copy(
+            description = normDesc,
+            timestamp = normTime
+        )
+    }
+}
 
 @Serializable
 data class TransactionSummary(

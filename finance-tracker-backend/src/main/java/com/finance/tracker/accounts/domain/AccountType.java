@@ -1,6 +1,7 @@
 package com.finance.tracker.accounts.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 @Getter
@@ -8,12 +9,16 @@ public enum AccountType {
 
     // Assets
     BANK(true),
+    SAVINGS(true),
+    CHECKING(true),
     CASH(true),
     WALLET(true),
+    INVESTMENT(true),
+    UNKNOWN(true),
 
     // Liabilities
-    @JsonProperty("CREDIT CARD")
-    CREDIT_CARD(false);
+    CREDIT_CARD(false),
+    LOAN(false);
 
     private final boolean isAsset;
 
@@ -28,4 +33,23 @@ public enum AccountType {
     public boolean isLiabilityType() {
         return !isAsset;
     }
-}
+
+    @JsonValue
+    public String toJson() {
+        return name();
+    }
+
+    @JsonCreator
+    public static AccountType fromString(String value) {
+        if (value == null || value.isBlank()) {
+            return UNKNOWN;
+        }
+        String normalized = value.trim().toUpperCase().replace(" ", "_").replace("-", "_");
+        for (AccountType type : values()) {
+            if (type.name().equalsIgnoreCase(normalized)) {
+                return type;
+            }
+        }
+        return UNKNOWN;
+    }
+}

@@ -681,6 +681,22 @@ private fun CategoryPickerSheet(
     onDismiss: () -> Unit,
     onSelect: (com.tracker.finance_app.domain.model.Category) -> Unit
 ) {
+    val subcategories = remember(categories) {
+        val nestedSubs = categories.flatMap { parent ->
+            parent.children.map { child ->
+                child.copy(
+                    type = parent.type,
+                    groupName = parent.name,
+                    iconName = child.iconName ?: parent.iconName,
+                    colorHex = child.colorHex ?: parent.colorHex
+                )
+            }
+        }
+        val directSubs = categories.filter { it.parentId != null }
+        val allSubs = (nestedSubs + directSubs).distinctBy { it.id }
+        allSubs.ifEmpty { categories }
+    }
+
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.padding(bottom = 24.dp)) {
             Text(
@@ -689,7 +705,7 @@ private fun CategoryPickerSheet(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
-            if (categories.isEmpty()) {
+            if (subcategories.isEmpty()) {
                 Text(
                     "No categories for this transaction type",
                     style = MaterialTheme.typography.bodyMedium,
@@ -697,10 +713,10 @@ private fun CategoryPickerSheet(
                     modifier = Modifier.padding(16.dp)
                 )
             }
-            categories.forEach { category ->
+            subcategories.forEach { category ->
                 ListItem(
                     headlineContent = { Text(category.name) },
-                    supportingContent = { Text(category.groupName) },
+                    supportingContent = { if (category.groupName.isNotBlank()) Text(category.groupName) },
                     leadingContent = { Icon(Icons.Default.Label, contentDescription = null) },
                     modifier = Modifier.clickable { onSelect(category) }
                 )

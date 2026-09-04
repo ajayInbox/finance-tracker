@@ -36,6 +36,8 @@ public class Account {
     @Column(length = 4, nullable = false)
     private String lastFour;
 
+    private String institution;
+
     @Enumerated(EnumType.STRING)
     private Currency currency;
 

@@ -42,6 +42,36 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public void updateBalance(UUID accountId, UUID userId, UUID transactionId, TransactionType type, BigDecimal amount){
+        // 1. Pre-fetch to identify Category and initial state
+        Account account = getAccountByIdAndUser(accountId, userId);
+
+        BigDecimal delta;
+        int rowsUpdated;
+
+        if (account.isAsset()) {
+            delta = (type == TransactionType.EXPENSE)
+                    ? amount.negate() : amount;
+            rowsUpdated = accountRepository.updateAssetBalance(account.getId(), userId, delta);
+        } else {
+            delta = (type == TransactionType.EXPENSE)
+                    ? amount : amount.negate();
+            rowsUpdated = accountRepository.updateLiabilityBalance(account.getId(), userId, delta);
+        }
+
+        if (rowsUpdated == 0) {
+            throw new AccountUpdateFailedException("Update failed: Insufficient funds or credit limit reached.");
+        }
+
+        // 2. Audit Snapshot
+        BigDecimal oldBalance = getEffectiveBalance(account);
+        eventPublisher.publishEvent(new ATSnapshotCreateEvent(
+                this, account.getId(), transactionId,
+                oldBalance, oldBalance.add(delta), amount
+        ));
+    }
+
+    @Override
     @Transactional
     public void updateBalanceForTransaction(BalanceUpdateRequest request, UUID userId) {
         // 1. Pre-fetch to identify Category and initial state
@@ -75,12 +105,25 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public Account create(UUID userId, AccountCreateUpdateRequest req) {
-        ensureLastFourNotDuplicate(req.lastFour(), userId, req.accountType());
+        String normalizedLastFour = normalizeLastFour(req.lastFour(), req.accountType());
+        ensureLastFourNotDuplicate(normalizedLastFour, userId, req.accountType());
+
+        Currency currency = Currency.INR;
+        if (req.currency() != null && !req.currency().isBlank()) {
+            try {
+                currency = Currency.valueOf(req.currency().toUpperCase().trim());
+            } catch (Exception ignored) {}
+        }
+
+        String accountName = req.accountName() != null && !req.accountName().isBlank()
+                ? req.accountName()
+                : req.name();
 
         Account account = Account.builder()
-                .accountName(req.accountName())
-                .currency(Currency.valueOf(req.currency()))
-                .lastFour(req.lastFour())
+                .accountName(accountName)
+                .currency(currency)
+                .lastFour(normalizedLastFour)
+                .institution(req.institution())
                 .accountType(req.accountType())
                 .notes(req.notes())
                 .category(req.category())
@@ -91,12 +134,16 @@ public class AccountServiceImpl implements AccountService {
                 .createdAt(Instant.now())
                 .openingDate(LocalDate.now())
                 .build();
-        if(req.category() == AccountCategory.ASSET) {
-            account.setStartingBalance(req.startingBalance());
-            account.setCurrentBalance(req.startingBalance());
-        }else {
+
+        BigDecimal balance = req.balance();
+        if (req.category() == AccountCategory.ASSET) {
+            BigDecimal assetBal = req.startingBalance() != null ? req.startingBalance() : balance;
+            account.setStartingBalance(assetBal);
+            account.setCurrentBalance(assetBal);
+        } else {
+            BigDecimal liabBal = req.currentOutstanding() != null ? req.currentOutstanding() : balance;
             account.setCreditLimit(req.creditLimit());
-            account.setCurrentOutstanding(req.currentOutstanding());
+            account.setCurrentOutstanding(liabBal);
             account.setDueDayOfMonth(req.dueDayOfMonth());
             account.setStatementDayOfMonth(req.statementDayOfMonth());
         }
@@ -110,12 +157,20 @@ public class AccountServiceImpl implements AccountService {
     public Account update(UUID userId, UUID id, AccountCreateUpdateRequest req) {
         Account entity = getAccountByIdAndUser(id, userId);
 
+        String normalizedLastFour = req.lastFour() != null && !req.lastFour().isBlank()
+                ? normalizeLastFour(req.lastFour(), req.accountType())
+                : entity.getLastFour();
+
         // Logic check: if lastFour or type changed, re-validate duplicates
-        if (!entity.getLastFour().equals(req.lastFour()) || entity.getAccountType() != req.accountType()) {
-            ensureLastFourNotDuplicate(req.lastFour(), userId, req.accountType());
+        if (!entity.getLastFour().equals(normalizedLastFour) || entity.getAccountType() != req.accountType()) {
+            ensureLastFourNotDuplicate(normalizedLastFour, userId, req.accountType());
         }
 
         mapper.updateEntity(entity, req);
+        entity.setLastFour(normalizedLastFour);
+        if (req.institution() != null) {
+            entity.setInstitution(req.institution());
+        }
         return accountRepository.save(entity);
     }
 
@@ -221,7 +276,28 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
+    private String normalizeLastFour(String lastFour, AccountType type) {
+        if (lastFour == null || lastFour.isBlank()) {
+            return (type == AccountType.CASH) ? "CASH" : "0000";
+        }
+        String digits = lastFour.replaceAll("\\D", "");
+        if (digits.length() >= 4) {
+            return digits.substring(digits.length() - 4);
+        }
+        if (!digits.isEmpty()) {
+            return String.format("%4s", digits).replace(' ', '0');
+        }
+        String trimmed = lastFour.trim();
+        if (trimmed.length() >= 4) {
+            return trimmed.substring(trimmed.length() - 4);
+        }
+        return String.format("%4s", trimmed).replace(' ', '0');
+    }
+
     private void ensureLastFourNotDuplicate(String lastFour, UUID userId, AccountType type) {
+        if ("0000".equals(lastFour) || "CASH".equals(lastFour)) {
+            return;
+        }
         accountRepository.findByLastFourAndUserIdAndAccountType(lastFour, userId, type)
                 .ifPresent(a -> {
                     throw new DuplicateLastFourException("Another %s account with last four %s exists.".formatted(type, lastFour));

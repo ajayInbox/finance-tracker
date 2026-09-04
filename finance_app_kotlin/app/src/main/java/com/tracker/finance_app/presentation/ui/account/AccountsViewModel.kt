@@ -20,14 +20,22 @@ data class AccountsUiState(
     val accounts: List<Account> = emptyList(),
     val netWorthSummary: NetWorthSummary? = null,
     val error: String? = null,
+    val toastMessage: String? = null,
 
-    // Form State
+    // Form & Bottom Sheet State
+    val isBottomSheetOpen: Boolean = false,
+    val editingAccountId: String? = null, // null = create mode, non-null = edit mode
     val newAccountName: String = "",
-    val newAccountType: AccountType = AccountType.BANK,
+    val newAccountType: AccountType = AccountType.CHECKING,
     val newAccountCategory: AccountCategory = AccountCategory.ASSET,
     val newAccountBalance: String = "",
     val newAccountInstitution: String = "",
-    val isSaving: Boolean = false
+    val newAccountNumber: String = "",
+    val newAccountCreditLimit: String = "",
+    val isSaving: Boolean = false,
+
+    // Delete Confirmation State
+    val accountToDelete: Account? = null
 )
 
 @HiltViewModel
@@ -63,6 +71,50 @@ class AccountsViewModel @Inject constructor(
         }
     }
 
+    fun openAddAccountSheet() {
+        _uiState.update {
+            it.copy(
+                isBottomSheetOpen = true,
+                editingAccountId = null,
+                newAccountName = "",
+                newAccountInstitution = "",
+                newAccountNumber = "",
+                newAccountBalance = "",
+                newAccountCreditLimit = "",
+                newAccountCategory = AccountCategory.ASSET,
+                newAccountType = AccountType.CHECKING,
+                error = null
+            )
+        }
+    }
+
+    fun openEditAccountSheet(account: Account) {
+        _uiState.update {
+            it.copy(
+                isBottomSheetOpen = true,
+                editingAccountId = account.id,
+                newAccountName = account.name,
+                newAccountInstitution = account.institution.orEmpty(),
+                newAccountNumber = account.accountNumber.orEmpty(),
+                newAccountBalance = if (account.balance == 0.0) "" else account.balance.toString(),
+                newAccountCreditLimit = account.creditLimit?.toString().orEmpty(),
+                newAccountCategory = account.category,
+                newAccountType = account.type,
+                error = null
+            )
+        }
+    }
+
+    fun closeBottomSheet() {
+        _uiState.update {
+            it.copy(
+                isBottomSheetOpen = false,
+                editingAccountId = null,
+                error = null
+            )
+        }
+    }
+
     fun onNameChanged(name: String) {
         _uiState.update { it.copy(newAccountName = name) }
     }
@@ -72,7 +124,23 @@ class AccountsViewModel @Inject constructor(
     }
 
     fun onCategoryChanged(category: AccountCategory) {
-        _uiState.update { it.copy(newAccountCategory = category) }
+        val defaultType = when (category) {
+            AccountCategory.ASSET -> {
+                if (_uiState.value.newAccountType == AccountType.CREDIT_CARD || _uiState.value.newAccountType == AccountType.LOAN) {
+                    AccountType.CHECKING
+                } else {
+                    _uiState.value.newAccountType
+                }
+            }
+            AccountCategory.LIABILITY -> {
+                if (_uiState.value.newAccountType != AccountType.CREDIT_CARD && _uiState.value.newAccountType != AccountType.LOAN) {
+                    AccountType.CREDIT_CARD
+                } else {
+                    _uiState.value.newAccountType
+                }
+            }
+        }
+        _uiState.update { it.copy(newAccountCategory = category, newAccountType = defaultType) }
     }
 
     fun onBalanceChanged(balance: String) {
@@ -83,46 +151,103 @@ class AccountsViewModel @Inject constructor(
         _uiState.update { it.copy(newAccountInstitution = institution) }
     }
 
-    fun createAccount(onSuccess: () -> Unit) {
-        val name = _uiState.value.newAccountName.trim()
-        val balanceText = _uiState.value.newAccountBalance.trim()
+    fun onAccountNumberChanged(number: String) {
+        _uiState.update { it.copy(newAccountNumber = number) }
+    }
+
+    fun onCreditLimitChanged(limit: String) {
+        _uiState.update { it.copy(newAccountCreditLimit = limit) }
+    }
+
+    fun saveAccount(onSuccess: () -> Unit = {}) {
+        val state = _uiState.value
+        val name = state.newAccountName.trim()
+        val balanceText = state.newAccountBalance.trim()
         val balance = when {
             balanceText.isEmpty() -> 0.0
             else -> Formatters.parseAmountOrNull(balanceText)
         }
 
         if (name.isBlank()) {
-            _uiState.update { it.copy(error = "Account name required") }
+            _uiState.update { it.copy(error = "Account name is required") }
             return
         }
         if (balance == null || balance < 0.0) {
-            _uiState.update { it.copy(error = "Enter a valid opening balance") }
+            _uiState.update { it.copy(error = "Enter a valid balance") }
             return
         }
 
+        val creditLimit = state.newAccountCreditLimit.trim().toDoubleOrNull()
+        val req = AccountCreateUpdateRequest(
+            name = name,
+            lastFour = state.newAccountNumber.trim().ifBlank { null },
+            institution = state.newAccountInstitution.trim().ifBlank { null },
+            type = state.newAccountType,
+            category = state.newAccountCategory,
+            balance = balance,
+            creditLimit = creditLimit
+        )
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true) }
-            val req = AccountCreateUpdateRequest(
-                name = name,
-                type = _uiState.value.newAccountType,
-                category = _uiState.value.newAccountCategory,
-                balance = balance,
-                institution = _uiState.value.newAccountInstitution.ifBlank { null }
-            )
-            accountRepository.createAccount(req)
-                .onSuccess {
-                    _uiState.update { it.copy(isSaving = false, newAccountName = "", newAccountBalance = "") }
-                    loadData()
-                    onSuccess()
-                }
-                .onFailure { exc ->
-                    _uiState.update { it.copy(isSaving = false, error = exc.message) }
-                }
+            _uiState.update { it.copy(isSaving = true, error = null) }
+            val editingId = state.editingAccountId
+
+            if (editingId != null) {
+                accountRepository.updateAccount(editingId, req)
+                    .onSuccess {
+                        _uiState.update {
+                            it.copy(
+                                isSaving = false,
+                                isBottomSheetOpen = false,
+                                editingAccountId = null,
+                                toastMessage = "Account updated successfully"
+                            )
+                        }
+                        loadData()
+                        onSuccess()
+                    }
+                    .onFailure { exc ->
+                        _uiState.update { it.copy(isSaving = false, error = exc.message ?: "Failed to update account") }
+                    }
+            } else {
+                accountRepository.createAccount(req)
+                    .onSuccess {
+                        _uiState.update {
+                            it.copy(
+                                isSaving = false,
+                                isBottomSheetOpen = false,
+                                editingAccountId = null,
+                                newAccountName = "",
+                                newAccountBalance = "",
+                                toastMessage = "Account created successfully"
+                            )
+                        }
+                        loadData()
+                        onSuccess()
+                    }
+                    .onFailure { exc ->
+                        _uiState.update { it.copy(isSaving = false, error = exc.message ?: "Failed to create account") }
+                    }
+            }
         }
     }
 
-    fun onErrorShown() {
-        _uiState.update { it.copy(error = null) }
+    fun createAccount(onSuccess: () -> Unit) {
+        saveAccount(onSuccess)
+    }
+
+    fun requestDeleteAccount(account: Account) {
+        _uiState.update { it.copy(accountToDelete = account) }
+    }
+
+    fun cancelDeleteAccount() {
+        _uiState.update { it.copy(accountToDelete = null) }
+    }
+
+    fun confirmDeleteAccount() {
+        val target = _uiState.value.accountToDelete ?: return
+        _uiState.update { it.copy(accountToDelete = null) }
+        deleteAccount(target.id)
     }
 
     fun deleteAccount(id: String) {
@@ -133,6 +258,7 @@ class AccountsViewModel @Inject constructor(
         viewModelScope.launch {
             accountRepository.deleteAccount(id)
                 .onSuccess {
+                    _uiState.update { it.copy(toastMessage = "Account deleted") }
                     loadData()
                 }
                 .onFailure { exc ->
@@ -146,5 +272,13 @@ class AccountsViewModel @Inject constructor(
                     _uiState.update { it.copy(error = exc.message ?: "Couldn't delete account") }
                 }
         }
+    }
+
+    fun onErrorShown() {
+        _uiState.update { it.copy(error = null) }
+    }
+
+    fun onToastShown() {
+        _uiState.update { it.copy(toastMessage = null) }
     }
 }

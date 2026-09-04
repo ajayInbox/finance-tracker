@@ -178,23 +178,55 @@ class TransactionsViewModel @Inject constructor(
     }
 
     fun addTransaction(
-        accountId: String,
+        accountId: String?,
+        amount: Double,
+        type: TransactionType,
+        categoryId: String?,
+        categoryName: String? = null,
+        transactionName: String? = null,
+        notes: String? = null,
+        date: java.time.LocalDate = java.time.LocalDate.now(),
+        time: java.time.LocalTime = java.time.LocalTime.now(),
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val occurredAt = java.time.LocalDateTime.of(date, time)
+            transactionRepository.addTransaction(
+                accountId = accountId,
+                amount = amount,
+                type = type,
+                categoryId = categoryId,
+                categoryName = categoryName,
+                transactionName = transactionName,
+                notes = notes,
+                occurredAt = occurredAt
+            ).onSuccess {
+                loadTransactions()
+                onSuccess()
+            }.onFailure { exc ->
+                _uiState.update { it.copy(error = exc.message) }
+            }
+        }
+    }
+
+    fun addTransaction(
+        accountId: String?,
         amount: Double,
         type: TransactionType,
         description: String,
         categoryId: String?,
         onSuccess: () -> Unit
     ) {
-        viewModelScope.launch {
-            transactionRepository.addTransaction(accountId, amount, type, description, categoryId)
-                .onSuccess {
-                    loadTransactions()
-                    onSuccess()
-                }
-                .onFailure { exc ->
-                    _uiState.update { it.copy(error = exc.message) }
-                }
-        }
+        addTransaction(
+            accountId = accountId,
+            amount = amount,
+            type = type,
+            categoryId = categoryId,
+            categoryName = null,
+            transactionName = description.ifBlank { "New Transaction" },
+            notes = description,
+            onSuccess = onSuccess
+        )
     }
 
     fun updateTransaction(transactionId: String, transaction: Transaction, onSuccess: () -> Unit = {}) {
@@ -239,8 +271,10 @@ class TransactionsViewModel @Inject constructor(
                 accountId = transaction.accountId,
                 amount = transaction.amount,
                 type = transaction.type,
-                description = transaction.description,
-                categoryId = transaction.categoryId
+                categoryId = transaction.categoryId,
+                categoryName = transaction.categoryName,
+                transactionName = transaction.transactionName ?: "New Transaction",
+                notes = transaction.effectiveDescription
             ).onSuccess {
                 loadTransactions()
             }.onFailure { exc ->

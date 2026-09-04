@@ -5,10 +5,15 @@ import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
 import com.finance.tracker.accounts.domain.NetworthSummary;
 import com.finance.tracker.accounts.domain.dto.AccountResponse;
 import com.finance.tracker.accounts.domain.entities.Account;
+import com.finance.tracker.transactions.domain.TransactionType;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 public interface AccountService {
+
+    void updateBalance(UUID accountId, UUID userId, UUID transactionId, TransactionType type, BigDecimal amount);
 
     Account getAccountByIdAndUser(UUID accountId, UUID userId);
 

@@ -14,6 +14,8 @@ import com.finance.tracker.accounts.exceptions.DuplicateLastFourException;
 import com.finance.tracker.accounts.mapper.AccountMapper;
 import com.finance.tracker.accounts.repository.AccountRepository;
 import com.finance.tracker.transactions.domain.TransactionType;
+import com.finance.tracker.auth.repository.UserRepository;
+import com.finance.tracker.category.repository.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +41,12 @@ class AccountServiceImplTest {
 
     @Mock
     private AccountRepository accountRepository;
+
+    @Mock
+    private CategoryRepository categoryRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private AccountMapper accountMapper;

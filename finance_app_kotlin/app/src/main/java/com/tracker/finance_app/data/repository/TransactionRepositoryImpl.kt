@@ -20,30 +20,37 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun fetchTransactions(): Result<List<Transaction>> {
         return runCatching {
-            val items = apiService.getTransactions()
+            val items = apiService.getTransactions().map { it.normalized() }
             _transactionsState.value = items
             items
         }
     }
 
     override suspend fun addTransaction(
-        accountId: String,
+        accountId: String?,
         amount: Double,
         type: TransactionType,
-        description: String,
-        categoryId: String?
+        categoryId: String?,
+        categoryName: String?,
+        transactionName: String?,
+        notes: String?,
+        occurredAt: java.time.LocalDateTime
     ): Result<Transaction> {
         return runCatching {
-            val tx = Transaction(
-                id = UUID.randomUUID().toString(),
-                accountId = accountId,
+            val txName = transactionName?.trim()?.ifBlank { null }
+                ?: notes?.take(50)?.ifBlank { null }
+                ?: (categoryName?.ifBlank { null } ?: "New Transaction")
+            val request = com.tracker.finance_app.data.remote.CreateTransactionRequest(
+                transactionName = txName,
                 amount = amount,
-                type = type,
-                description = description,
+                type = type.name,
                 categoryId = categoryId,
-                timestamp = System.currentTimeMillis().toString()
+                accountId = accountId,
+                occurredAt = occurredAt.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                notes = notes?.ifBlank { null },
+                currency = "INR"
             )
-            val item = apiService.createTransaction(tx)
+            val item = apiService.createTransaction(request).normalized()
             _transactionsState.value = listOf(item) + _transactionsState.value
             item
         }

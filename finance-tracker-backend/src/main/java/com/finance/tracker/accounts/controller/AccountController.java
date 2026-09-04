@@ -24,7 +24,7 @@ public class AccountController {
     private final AccountService accountService;
     private final AccountMapper accountMapper;
 
-    @PostMapping("/account")
+    @PostMapping({"/account", "/accounts"})
     public ResponseEntity<AccountResponse> add(@RequestBody AccountCreateUpdateRequest request, Authentication auth) {
         String userId = (String) auth.getPrincipal();
         Account account = accountService.create(UUID.fromString(userId), request);
@@ -44,6 +44,13 @@ public class AccountController {
         List<Account> accounts = accountService.getAccounts(UUID.fromString(userId));
         List<AccountResponse> res = accounts.stream().map(accountMapper::toResponse).toList();
         return ResponseEntity.ok(res);
+    }
+
+    @GetMapping("/accounts/{id}")
+    public ResponseEntity<AccountResponse> getAccount(@PathVariable("id") UUID accountId, Authentication auth) {
+        String userId = (String) auth.getPrincipal();
+        Account account = accountService.getAccountByIdAndUser(accountId, UUID.fromString(userId));
+        return ResponseEntity.ok(accountMapper.toResponse(account));
     }
 
     @GetMapping("/networth")

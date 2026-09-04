@@ -189,44 +189,6 @@ fun TransactionsScreen(
                         contentPadding = PaddingValues(bottom = 80.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        uiState.summary?.let { sum ->
-                            item {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Column {
-                                            Text("Income", style = MaterialTheme.typography.labelMedium)
-                                            Text(
-                                                "₹${String.format("%.2f", sum.totalIncome)}",
-                                                color = Color(0xFF00C853),
-                                                style = MaterialTheme.typography.titleMedium
-                                            )
-                                        }
-                                        Column {
-                                            Text("Expense", style = MaterialTheme.typography.labelMedium)
-                                            Text(
-                                                "₹${String.format("%.2f", sum.totalExpense)}",
-                                                color = MaterialTheme.colorScheme.error,
-                                                style = MaterialTheme.typography.titleMedium
-                                            )
-                                        }
-                                        Column {
-                                            Text("Net", style = MaterialTheme.typography.labelMedium)
-                                            Text(
-                                                "₹${String.format("%.2f", sum.netSavings)}",
-                                                style = MaterialTheme.typography.titleMedium
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                         uiState.groupedTransactions.forEach { (dateLabel, transactions) ->
                             stickyHeader {
                                 Text(

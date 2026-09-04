@@ -47,7 +47,7 @@ public class TransactionBatchRepository {
 
                     ps.setBigDecimal(1, req.getAmount());
                     ps.setObject(2, req.getType().name());
-                    ps.setObject(3, req.getAccount().getId());
+                    ps.setObject(3, req.getAccountId());
                     ps.setObject(4, req.getCategory().getId());
                     ps.setString(5, req.getTransactionName());
                     ps.setObject(6, req.getCurrency().name());

@@ -80,9 +80,7 @@ public class TransactionBatchService {
             for (BatchUpdateTransactionRequestDto req : chunk) {
                 Transaction trnx = newEntity(req);
                 Category category = categoryService.validateAndGet(userId, req.categoryId(), CategoryType.fromValueIgnoreCase(req.type()));
-                Account account = accountService.getAccountByIdAndUser(req.accountId(), userId);
                 trnx.setCategory(category);
-                trnx.setAccount(account);
                 transactions.add(trnx);
             }
 
@@ -100,14 +98,11 @@ public class TransactionBatchService {
             // Step 4: Update balance
             for (Transaction txn : updatedTransactions) {
 
-                accountService.updateBalanceForTransaction(
-                        new BalanceUpdateRequest(
-                                txn.getAccount().getId(),
-                                txn.getAmount(),
-                                txn.getType(),
-                                txn.getId()
-                        ), userId
-                );
+                accountService.updateBalance(txn.getAccountId(),
+                        userId,
+                        txn.getId(),
+                        txn.getType(),
+                        txn.getAmount());
             }
 
             return null;
@@ -228,7 +223,7 @@ public class TransactionBatchService {
                 .uniqueIdentifier(uid)
                 .originalMessage(raw)
                 .externalRef(String.format("Scan Id: %s", scanId))
-                .account(Account.builder().id(Constants.DUMMY_ACCOUNT_ID).lastFour("0000").accountType(AccountType.BANK).version(0L).build())
+                .accountId(null)
                 .category(Category.builder().id(Constants.DUMMY_CATEGORY_ID).build())
                 .build();
     }
@@ -239,6 +234,7 @@ public class TransactionBatchService {
                 .transactionName(req.transactionName())
                 .notes(req.notes())
                 .amount(req.amount())
+                .accountId(req.accountId())
                 .merchant(req.merchant())
                 .type(TransactionType.fromValueIgnoreCase(req.type()))
                 .occurredAt(OffsetDateTime.of(req.occurredAt(), ZoneOffset.UTC))

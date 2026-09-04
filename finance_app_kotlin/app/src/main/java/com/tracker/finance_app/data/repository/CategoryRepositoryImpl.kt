@@ -1,12 +1,13 @@
 package com.tracker.finance_app.data.repository
 
+import com.tracker.finance_app.data.remote.CreateCategoryRequest
 import com.tracker.finance_app.data.remote.FinanceApiService
+import com.tracker.finance_app.data.remote.UpdateCategoryRequest
 import com.tracker.finance_app.domain.model.*
 import com.tracker.finance_app.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.UUID
 import javax.inject.Inject
 
 class CategoryRepositoryImpl @Inject constructor(
@@ -28,17 +29,41 @@ class CategoryRepositoryImpl @Inject constructor(
     override suspend fun createCategory(
         name: String,
         groupName: String,
-        type: TransactionType
+        type: TransactionType,
+        parentId: String?,
+        iconKey: String?,
+        colorCode: String?
     ): Result<Category> {
         return runCatching {
-            val cat = Category(
-                id = UUID.randomUUID().toString(),
+            val request = CreateCategoryRequest(
                 name = name,
-                groupName = groupName,
-                type = type
+                type = type.name,
+                parentId = parentId,
+                iconKey = iconKey ?: "default-folder",
+                colorCode = colorCode ?: "#087B3D"
             )
-            val item = apiService.createCategory(cat)
-            _categoriesState.value = _categoriesState.value + item
+            val item = apiService.createCategory(request)
+            fetchCategories()
+            item
+        }
+    }
+
+    override suspend fun updateCategory(
+        id: String,
+        name: String,
+        parentId: String?,
+        iconKey: String?,
+        colorCode: String?
+    ): Result<Category> {
+        return runCatching {
+            val request = UpdateCategoryRequest(
+                name = name,
+                parentId = parentId,
+                iconKey = iconKey ?: "default-folder",
+                colorCode = colorCode ?: "#087B3D"
+            )
+            val item = apiService.updateCategory(id, request)
+            fetchCategories()
             item
         }
     }
@@ -46,7 +71,7 @@ class CategoryRepositoryImpl @Inject constructor(
     override suspend fun deleteCategory(id: String): Result<Unit> {
         return runCatching {
             apiService.deleteCategory(id)
-            _categoriesState.value = _categoriesState.value.filterNot { it.id == id }
+            fetchCategories()
         }
     }
 }

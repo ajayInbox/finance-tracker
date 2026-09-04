@@ -6,6 +6,7 @@ import com.finance.tracker.accounts.domain.dto.AccountResponse;
 import com.finance.tracker.accounts.domain.entities.Account;
 import org.mapstruct.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -48,22 +49,22 @@ public interface AccountMapper {
     ) {
 
         if (req.category() == AccountCategory.ASSET) {
-
             entity.setCurrentOutstanding(null);
             entity.setCreditLimit(null);
             entity.setStatementDayOfMonth(null);
             entity.setDueDayOfMonth(null);
 
-            entity.setCurrentBalance(req.startingBalance());
-            entity.setStartingBalance(req.startingBalance());
+            BigDecimal bal = req.startingBalance() != null ? req.startingBalance() : req.balance();
+            entity.setCurrentBalance(bal);
+            entity.setStartingBalance(bal);
         }
 
         if (req.category() == AccountCategory.LIABILITY) {
-
             entity.setStartingBalance(null);
             entity.setCurrentBalance(null);
 
-            entity.setCurrentOutstanding(req.currentOutstanding());
+            BigDecimal bal = req.currentOutstanding() != null ? req.currentOutstanding() : req.balance();
+            entity.setCurrentOutstanding(bal);
             entity.setCreditLimit(req.creditLimit());
             entity.setStatementDayOfMonth(req.statementDayOfMonth());
             entity.setDueDayOfMonth(req.dueDayOfMonth());

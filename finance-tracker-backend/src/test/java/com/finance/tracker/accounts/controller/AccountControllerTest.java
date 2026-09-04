@@ -141,4 +141,16 @@ class AccountControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(accountResponse, response.getBody());
     }
+
+    @Test
+    void testGetAccountById() {
+        when(accountService.getAccountByIdAndUser(accountId, predefinedUserId)).thenReturn(account);
+        when(accountMapper.toResponse(account)).thenReturn(accountResponse);
+
+        ResponseEntity<AccountResponse> response = accountController.getAccount(accountId, auth);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(accountResponse, response.getBody());
+    }
 }
+

@@ -55,6 +55,40 @@ data class BatchUpdateTransactionRequest(
     val currency: String = "INR"
 )
 
+@Serializable
+data class CreateTransactionRequest(
+    val transactionName: String,
+    val amount: Double,
+    val type: String,
+    val categoryId: String?,
+    val accountId: String? = null,
+    val occurredAt: String,
+    val merchant: String? = null,
+    val notes: String? = null,
+    val tags: List<String> = emptyList(),
+    val currency: String = "INR"
+)
+
+@Serializable
+data class CreateCategoryRequest(
+    val name: String,
+    val type: String,
+    val parentId: String? = null,
+    val iconKey: String? = "default-folder",
+    val colorCode: String? = "#087B3D",
+    val description: String? = null
+)
+
+@Serializable
+data class UpdateCategoryRequest(
+    val name: String,
+    val description: String? = null,
+    val isActive: Boolean? = true,
+    val parentId: String? = null,
+    val iconKey: String? = "default-folder",
+    val colorCode: String? = "#808080"
+)
+
 interface FinanceApiService {
     // Auth
     @POST("/auth/login")
@@ -102,7 +136,13 @@ interface FinanceApiService {
     suspend fun getCategories(): List<Category>
 
     @POST("/api/v1/categories")
-    suspend fun createCategory(@Body category: Category): Category
+    suspend fun createCategory(@Body request: CreateCategoryRequest): Category
+
+    @PUT("/api/v1/categories/{id}")
+    suspend fun updateCategory(
+        @Path("id") id: String,
+        @Body request: UpdateCategoryRequest
+    ): Category
 
     @DELETE("/api/v1/categories/{id}")
     suspend fun deleteCategory(@Path("id") id: String)
@@ -115,7 +155,7 @@ interface FinanceApiService {
     suspend fun getTransactions(@Query("version") version: Int = 1): List<Transaction>
 
     @POST("/api/v1/transactions")
-    suspend fun createTransaction(@Body transaction: Transaction): Transaction
+    suspend fun createTransaction(@Body request: CreateTransactionRequest): Transaction
 
     @PUT("/api/v1/transactions/{id}")
     suspend fun updateTransaction(@Path("id") id: String, @Body transaction: Transaction): Transaction

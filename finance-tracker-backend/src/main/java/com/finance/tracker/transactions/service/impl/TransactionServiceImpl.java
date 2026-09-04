@@ -53,19 +53,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public TransactionResponseDto create(CreateTransactionRequestDto request, UUID userId) {
 
-        Category category;
-        if (request.categoryId() != null) {
-            category = categoryService.validateAndGet(userId, request.categoryId(), CategoryType.fromValueIgnoreCase(request.type()));
-        } else {
-            category = resolveDefaultCategory(userId);
-        }
-
-        Account account;
-        if (request.accountId() != null) {
-            account = accountService.getAccountByIdAndUser(request.accountId(), userId);
-        } else {
-            account = resolveDefaultAccount(userId);
-        }
+        Category category = categoryService.validateAndGet(userId, request.categoryId(), CategoryType.fromValueIgnoreCase(request.type()));
 
         log.debug("Request Body for Create: {}", request);
 
@@ -75,7 +63,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .type(TransactionType.fromValueIgnoreCase(request.type()))
                 .currency(Currency.fromValueIgnoreCase(request.currency()))
                 .category(category)
-                .account(account)
+                .accountId(request.accountId())
                 .userId(userId)
                 .occurredAt(OffsetDateTime.of(request.occurredAt(), ZoneOffset.UTC))
                 .merchant(request.merchant())
@@ -85,7 +73,13 @@ public class TransactionServiceImpl implements TransactionService {
                 .source(TransactionSource.Manual)
                 .build();
         Transaction saved = transactionRepository.saveAndFlush(transaction);
-        updateBalanceFor(saved, userId);
+        if(request.accountId()!=null){
+            accountService.updateBalance(request.accountId(),
+                    userId,
+                    saved.getId(),
+                    saved.getType(),
+                    saved.getAmount());
+        }
 
         return mapToResponseDto(saved);
     }
@@ -150,7 +144,11 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 3. Update Account Balance
         // It's vital this happens inside the transaction
-        updateBalanceFor(savedReversal, userId);
+        accountService.updateBalance(savedReversal.getAccountId(),
+                userId,
+                savedReversal.getId(),
+                savedReversal.getType(),
+                savedReversal.getAmount());
 
         // 4. Update Original Transaction
         // We mark it DELETED so it no longer shows up in user's active history
@@ -168,7 +166,7 @@ public class TransactionServiceImpl implements TransactionService {
         // 1. Check for Structural Changes
         boolean amountChanged = original.getAmount().compareTo(request.amount()) != 0;
         boolean typeChanged = !original.getType().name().equalsIgnoreCase(request.type());
-        boolean accountChanged = !original.getAccount().getId().equals(request.accountId());
+        boolean accountChanged = !original.getAccountId().equals(request.accountId());
         boolean categoryChanged = !original.getCategory().getId().equals(request.categoryId());
 
         if (amountChanged || typeChanged || accountChanged || categoryChanged) {
@@ -176,7 +174,11 @@ public class TransactionServiceImpl implements TransactionService {
             // Step A: Neutralize the old impact
             Transaction reversal = buildReversalTransaction(original);
             transactionRepository.save(reversal);
-            updateBalanceFor(reversal, userId);
+            accountService.updateBalance(reversal.getAccountId(),
+                    userId,
+                    reversal.getId(),
+                    reversal.getType(),
+                    reversal.getAmount());
 
             // Step B: Resolve the Category and Account for the NEW transaction
             // We always fetch these to ensure we have the most recent validated objects
@@ -192,7 +194,7 @@ public class TransactionServiceImpl implements TransactionService {
                     .type(TransactionType.valueOf(request.type().toUpperCase()))
                     .currency(Currency.valueOf(request.currency()))
                     .category(category)
-                    .account(account)
+                    .accountId(request.accountId())
                     .userId(userId)
                     .occurredAt(OffsetDateTime.of(request.occurredAt(), ZoneOffset.UTC))
                     .merchant(request.merchant())
@@ -204,7 +206,11 @@ public class TransactionServiceImpl implements TransactionService {
                     .build();
 
             Transaction savedNewTxn = transactionRepository.save(newTxn);
-            updateBalanceFor(savedNewTxn, userId);
+            accountService.updateBalance(savedNewTxn.getAccountId(),
+                    userId,
+                    savedNewTxn.getId(),
+                    savedNewTxn.getType(),
+                    savedNewTxn.getAmount());
 
             // Step D: Archive the old transaction
             original.setStatus(TransactionStatus.SUPERSEDED);
@@ -265,17 +271,6 @@ public class TransactionServiceImpl implements TransactionService {
                 .toList();
     }
 
-    private void updateBalanceFor(Transaction txn, UUID userId) {
-        accountService.updateBalanceForTransaction(
-                new BalanceUpdateRequest(
-                        txn.getAccount().getId(),
-                        txn.getAmount(),
-                        txn.getType(),
-                        txn.getId()
-                ), userId
-        );
-    }
-
     private void saveParsedTransaction(UUID userId, String uniqueIdentifier, ParsedTransaction parsedTransaction, String originalMessage) {
         // 1. Sanitize the amount string to handle commas
         String sanitizedAmount = parsedTransaction.getAmount().replace(",", "");
@@ -293,7 +288,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .transactionName("Auto-detected Transaction")
                 .status(TransactionStatus.DRAFT)
                 .lastAction("CREATED")
-                .account(resolveDefaultAccount(userId))
+                .accountId(null)
                 .category(resolveDefaultCategory(userId))
                 .userId(userId)
                 .type(TransactionType.UNKNOWN)
@@ -344,7 +339,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .amount(txn.getAmount())
                 .type(txn.getType().name())
                 .categoryName(txn.getCategory().getName())
-                .accountName(txn.getAccount().getAccountName())
+               // .accountName(txn.getAccount().getAccountName())
                 .occurredAt(txn.getOccurredAt().toLocalDateTime())
                 .tags(txn.getTags())
                 .status(txn.getStatus().name())
@@ -358,7 +353,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .amount(txn.getAmount())
                 .type(txn.getType().name())
                 .categoryName(txn.getCategoryName())
-                .accountName(txn.getAccountName())
+             //   .accountName(txn.getAccountName())
                 .occurredAt(txn.getOccurredAt().atOffset(ZoneOffset.UTC).toLocalDateTime())
                 .tags(txn.getTags())
                 .status(txn.getStatus().name())
@@ -374,7 +369,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .amount(original.getAmount())
                 .type(getReversalType(original.getType()))
                 .currency(original.getCurrency())
-                .account(original.getAccount())
+             //   .account(original.getAccount())
                 .category(original.getCategory())
                 .userId(original.getUserId())
 
