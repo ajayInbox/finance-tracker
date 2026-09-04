@@ -63,28 +63,10 @@ class TransactionRepositoryImpl @Inject constructor(
             _transactionsState.value = _transactionsState.value.filterNot { it.id == id }
         }
     }
-
-    override suspend fun getSummary(): Result<TransactionSummary> {
-        return runCatching {
-            apiService.getTransactionSummary()
-        }
-    }
-
-    override suspend fun getCategoryBreakdown(): Result<List<CategoryBreakdown>> {
-        return runCatching {
-            apiService.getCategoryBreakdown()
-        }
-    }
     
-    override suspend fun fetchExpenseReport(start: String, end: String, type: String): Result<ExpenseReport> {
+    override suspend fun fetchExpenseReport(start: String, end: String, type: String): Result<MonthlyExpenseResponse> {
         return runCatching {
             apiService.getExpenseReport(ExpenseReportRequest(start, end, type))
-        }
-    }
-    
-    override suspend fun fetchAverageDailyExpense(): Result<AverageDailyExpense> {
-        return runCatching {
-            apiService.getAverageDailyExpense()
         }
     }
     

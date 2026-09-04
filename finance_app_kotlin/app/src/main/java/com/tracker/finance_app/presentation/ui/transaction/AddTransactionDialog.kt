@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.tracker.finance_app.core.util.Formatters
 import com.tracker.finance_app.domain.model.TransactionType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -19,6 +20,8 @@ fun AddTransactionDialog(
 ) {
     var description by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
+    val parsedAmount = Formatters.parseAmountOrNull(amountText)
+    val isAmountValid = parsedAmount != null && parsedAmount > 0.0
     var selectedType by remember { mutableStateOf(TransactionType.EXPENSE) }
     var selectedAccountId by remember { mutableStateOf(accounts.firstOrNull()?.id ?: "") }
     var selectedCategoryId by remember { mutableStateOf(categories.firstOrNull()?.id) }
@@ -46,6 +49,12 @@ fun AddTransactionDialog(
                     onValueChange = { amountText = it },
                     label = { Text("Amount") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = amountText.isNotBlank() && !isAmountValid,
+                    supportingText = {
+                        if (amountText.isNotBlank() && !isAmountValid) {
+                            Text("Enter a valid amount greater than 0")
+                        }
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -68,8 +77,8 @@ fun AddTransactionDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val amount = amountText.toDoubleOrNull() ?: 0.0
-                    if (description.isNotBlank() && amount > 0) {
+                    val amount = parsedAmount
+                    if (description.isNotBlank() && amount != null && amount > 0) {
                         viewModel.addTransaction(
                             accountId = selectedAccountId,
                             amount = amount,
@@ -80,7 +89,7 @@ fun AddTransactionDialog(
                         )
                     }
                 },
-                enabled = description.isNotBlank() && amountText.isNotBlank()
+                enabled = description.isNotBlank() && isAmountValid
             ) {
                 Text("Save")
             }

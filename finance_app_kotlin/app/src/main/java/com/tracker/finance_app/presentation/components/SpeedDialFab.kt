@@ -15,10 +15,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -27,7 +28,6 @@ import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,7 +57,14 @@ fun SpeedDialFab(
         label = "fab_rotation"
     )
 
-    Box(modifier = modifier, contentAlignment = Alignment.BottomEnd) {
+    // Bottom navigation bar height (Material3 default is 80.dp)
+    val bottomNavHeight = 80.dp
+
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        // Scrim overlay – covers entire screen when expanded
         if (expanded) {
             Box(
                 modifier = Modifier
@@ -70,10 +77,12 @@ fun SpeedDialFab(
             )
         }
 
+        // FAB column – mini items + main button, positioned above the bottom nav bar
         Column(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .padding(end = 16.dp, bottom = bottomNavHeight + 16.dp)
         ) {
             AnimatedVisibility(
                 visible = expanded,
@@ -123,10 +132,13 @@ fun SpeedDialFab(
                 }
             }
 
+            // Main FAB – circular shape
             FloatingActionButton(
                 onClick = { expanded = !expanded },
+                shape = CircleShape,
                 containerColor = Color(0xFF00C853),
-                contentColor = Color.White
+                contentColor = Color.White,
+                modifier = Modifier.size(64.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -147,19 +159,25 @@ private fun MiniFabItem(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.End
+        horizontalArrangement = Arrangement.End,
+        modifier = Modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = onClick
+        )
     ) {
         Text(
             text = label,
             color = Color.White,
             fontWeight = FontWeight.Bold,
             modifier = Modifier
-                .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .background(Color.Black.copy(alpha = 0.7f), CircleShape)
+                .padding(horizontal = 12.dp, vertical = 6.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
         SmallFloatingActionButton(
             onClick = onClick,
+            shape = CircleShape,
             containerColor = color,
             contentColor = Color.White
         ) {

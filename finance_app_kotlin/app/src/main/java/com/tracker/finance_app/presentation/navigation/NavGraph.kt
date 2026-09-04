@@ -1,27 +1,23 @@
 package com.tracker.finance_app.presentation.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.MarkEmailUnread
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import kotlinx.coroutines.launch
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.tracker.finance_app.presentation.ui.account.AccountDetailsBottomSheet
 import com.tracker.finance_app.presentation.ui.account.AccountsScreen
 import com.tracker.finance_app.presentation.ui.account.AccountsViewModel
-import com.tracker.finance_app.presentation.ui.account.AddAccountDialog
+import com.tracker.finance_app.presentation.ui.account.AddAccountScreen
 import com.tracker.finance_app.presentation.ui.auth.AuthViewModel
 import com.tracker.finance_app.presentation.ui.auth.SignInScreen
 import com.tracker.finance_app.presentation.ui.auth.SignUpScreen
@@ -33,11 +29,10 @@ import com.tracker.finance_app.presentation.ui.settings.SettingsScreen
 import com.tracker.finance_app.presentation.ui.settings.SettingsViewModel
 import com.tracker.finance_app.presentation.ui.sms.SmsReviewScreen
 import com.tracker.finance_app.presentation.ui.sms.SmsViewModel
-import com.tracker.finance_app.presentation.ui.transaction.AddTransactionDialog
 import com.tracker.finance_app.presentation.ui.transaction.AddTransactionScreen
-import com.tracker.finance_app.presentation.ui.account.AddAccountScreen
 import com.tracker.finance_app.presentation.ui.transaction.TransactionsScreen
 import com.tracker.finance_app.presentation.ui.transaction.TransactionsViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,10 +52,8 @@ fun MainAppNavigation(
 
     val showBottomBar = currentRoute in listOf(
         Screen.Dashboard.route,
-        Screen.Accounts.route,
         Screen.Transactions.route,
-        Screen.CategoryManagement.route,
-        Screen.SmsReview.route,
+        Screen.Accounts.route,
         Screen.Settings.route
     )
 
@@ -72,106 +65,69 @@ fun MainAppNavigation(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            if (showFab) {
-                com.tracker.finance_app.presentation.components.SpeedDialFab(
-                    onAddExpense = { navController.navigate(Screen.AddTransaction.route) },
-                    onAddIncome = { navController.navigate(Screen.AddTransaction.route) },
-                    onTransfer = { 
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Coming soon")
-                        }
-                    },
-                    onSyncSms = { navController.navigate(Screen.SmsReview.route) }
-                )
-            }
-        },
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar {
-                    NavigationBarItem(
-                        selected = currentRoute == Screen.Dashboard.route,
-                        onClick = {
-                            navController.navigate(Screen.Dashboard.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
-                        label = { Text("Home") }
-                    )
-                    NavigationBarItem(
-                        selected = currentRoute == Screen.Accounts.route,
-                        onClick = {
-                            navController.navigate(Screen.Accounts.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(Icons.Default.AccountBalance, contentDescription = "Accounts") },
-                        label = { Text("Accounts") }
-                    )
-                    NavigationBarItem(
-                        selected = currentRoute == Screen.Transactions.route,
-                        onClick = {
-                            navController.navigate(Screen.Transactions.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Transactions") },
-                        label = { Text("Transactions") }
-                    )
-                    NavigationBarItem(
-                        selected = currentRoute == Screen.CategoryManagement.route,
-                        onClick = {
-                            navController.navigate(Screen.CategoryManagement.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(Icons.Default.Category, contentDescription = "Categories") },
-                        label = { Text("Categories") }
-                    )
-                    NavigationBarItem(
-                        selected = currentRoute == Screen.SmsReview.route,
-                        onClick = {
-                            navController.navigate(Screen.SmsReview.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(Icons.Default.MarkEmailUnread, contentDescription = "SMS") },
-                        label = { Text("SMS") }
-                    )
-                    NavigationBarItem(
-                        selected = currentRoute == Screen.Settings.route,
-                        onClick = {
-                            navController.navigate(Screen.Settings.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                        label = { Text("Settings") }
-                    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            bottomBar = {
+                if (showBottomBar) {
+                    NavigationBar {
+                        NavigationBarItem(
+                            selected = currentRoute == Screen.Dashboard.route,
+                            onClick = {
+                                navController.navigate(Screen.Dashboard.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
+                            label = { Text("Home") }
+                        )
+                        NavigationBarItem(
+                            selected = currentRoute == Screen.Transactions.route,
+                            onClick = {
+                                navController.navigate(Screen.Transactions.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Transactions") },
+                            label = { Text("Transactions") }
+                        )
+                        NavigationBarItem(
+                            selected = currentRoute == Screen.Accounts.route,
+                            onClick = {
+                                navController.navigate(Screen.Accounts.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(Icons.Default.AccountBalance, contentDescription = "Accounts") },
+                            label = { Text("Accounts") }
+                        )
+                        NavigationBarItem(
+                            selected = currentRoute == Screen.Settings.route,
+                            onClick = {
+                                navController.navigate(Screen.Settings.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                            label = { Text("Settings") }
+                        )
+                    }
                 }
             }
-        }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Screen.SignIn.route,
-            modifier = Modifier.padding(innerPadding)
-        ) {
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = Screen.SignIn.route,
+                modifier = Modifier.padding(innerPadding)
+            ) {
             composable(Screen.SignIn.route) {
                 val authViewModel: AuthViewModel = hiltViewModel()
                 SignInScreen(
@@ -261,7 +217,7 @@ fun MainAppNavigation(
                         }
                     },
                     onNavigateToCategories = {
-                        navController.navigate(Screen.CategoryManagement.route)
+                    navController.navigate(Screen.CategoryManagement.route)
                     },
                     onNavigateToAccounts = {
                         navController.navigate(Screen.Accounts.route)
@@ -271,6 +227,21 @@ fun MainAppNavigation(
                     }
                 )
             }
+        }
+        }
+
+        // SpeedDialFab overlay – rendered on top of the Scaffold
+        if (showFab) {
+            com.tracker.finance_app.presentation.components.SpeedDialFab(
+                onAddExpense = { navController.navigate(Screen.AddTransaction.route) },
+                onAddIncome = { navController.navigate(Screen.AddTransaction.route) },
+                onTransfer = {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Coming soon")
+                    }
+                },
+                onSyncSms = { navController.navigate(Screen.SmsReview.route) }
+            )
         }
     }
 }

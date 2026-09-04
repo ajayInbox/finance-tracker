@@ -10,9 +10,6 @@ interface TransactionRepository {
     suspend fun addTransaction(accountId: String, amount: Double, type: TransactionType, description: String, categoryId: String?): Result<Transaction>
     suspend fun updateTransaction(transactionId: String, transaction: Transaction): Result<Transaction>
     suspend fun deleteTransaction(id: String): Result<Unit>
-    suspend fun getSummary(): Result<TransactionSummary>
-    suspend fun getCategoryBreakdown(): Result<List<CategoryBreakdown>>
-    suspend fun fetchExpenseReport(start: String, end: String, type: String): Result<ExpenseReport>
-    suspend fun fetchAverageDailyExpense(): Result<AverageDailyExpense>
+    suspend fun fetchExpenseReport(start: String, end: String, type: String = "EXPENSE"): Result<MonthlyExpenseResponse>
     suspend fun exportSmsMessages(messages: List<SmsMessagePayload>): Result<Unit>
 }

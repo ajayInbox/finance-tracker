@@ -25,7 +25,34 @@ data class PasswordResetRequest(val email: String)
 data class SmsMessagePayload(
     val body: String,
     val sender: String,
-    val timestamp: Long
+    val timestamp: Long,
+    val uniqueIdentifier: String? = null
+)
+
+@Serializable
+data class SyncBatchUploadRequest(
+    val smsList: List<SmsMessagePayload>,
+    val fromTimestamp: Long
+)
+
+@Serializable
+data class SyncBatchUploadResponse(
+    val newCount: Int = 0
+)
+
+@Serializable
+data class BatchUpdateTransactionRequest(
+    val id: String,
+    val transactionName: String,
+    val amount: Double,
+    val type: String,
+    val categoryId: String,
+    val accountId: String,
+    val occurredAt: String,
+    val merchant: String? = null,
+    val notes: String? = null,
+    val tags: List<String> = emptyList(),
+    val currency: String = "INR"
 )
 
 interface FinanceApiService {
@@ -96,17 +123,8 @@ interface FinanceApiService {
     @DELETE("/api/v1/transactions/{id}")
     suspend fun deleteTransaction(@Path("id") id: String)
 
-    @GET("/api/v1/transactions/summary")
-    suspend fun getTransactionSummary(): TransactionSummary
-
-    @GET("/api/v1/transactions/breakdown")
-    suspend fun getCategoryBreakdown(): List<CategoryBreakdown>
-
-    @POST("/api/v1/transactions/avg-daily")
-    suspend fun getAverageDailyExpense(): AverageDailyExpense
-
     @POST("/api/v1/transactions/analysis")
-    suspend fun getExpenseReport(@Body params: ExpenseReportRequest): ExpenseReport
+    suspend fun getExpenseReport(@Body params: ExpenseReportRequest): MonthlyExpenseResponse
 
     @POST("/api/v1/transactions/export-messages")
     suspend fun exportSmsMessages(@Body messages: List<SmsMessagePayload>)
@@ -115,13 +133,16 @@ interface FinanceApiService {
     @GET("/api/v1/transactions")
     suspend fun getDrafts(@Query("version") version: Int = 3): List<TransactionDraft>
 
+    @PUT("/api/v1/transactions/batch")
+    suspend fun batchUpdateTransactions(@Body requests: List<BatchUpdateTransactionRequest>)
+
     @POST("/api/v1/transactions/drafts/batch-delete")
     suspend fun deleteDraftsBatch(@Body ids: List<String>)
 
-    // Sync
+    // Sync — 2-step protocol: watermark handshake, then batch upload
     @GET("/api/sync/latest-timestamp")
     suspend fun getSyncLatestTimestamp(): SyncTimestamp
 
     @POST("/api/sync/batch-upload")
-    suspend fun syncBatchUpload(@Body messages: List<SmsMessagePayload>)
+    suspend fun syncBatchUpload(@Body request: SyncBatchUploadRequest): SyncBatchUploadResponse
 }

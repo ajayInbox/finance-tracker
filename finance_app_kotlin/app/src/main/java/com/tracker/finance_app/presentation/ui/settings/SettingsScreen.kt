@@ -23,6 +23,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import java.util.stream.Collectors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +38,6 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val themeMode by themeViewModel.themeMode.collectAsState()
-    var autoSyncEnabled by remember { mutableStateOf(true) }
 
     // Delete account confirmation dialog
     if (uiState.showDeleteConfirmation) {
@@ -118,11 +118,16 @@ fun SettingsScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 val initials = uiState.userProfile?.let { profile ->
-                                    listOfNotNull(
-                                        profile.firstName?.firstOrNull(),
-                                        profile.lastName?.firstOrNull()
-                                    ).joinToString("").uppercase().ifEmpty {
-                                        profile.email.first().uppercase()
+                                    val parts = profile.name?.trim()?.split("\\s+".toRegex())?.filter { it.isNotEmpty() }
+
+                                    val nameInitials = when {
+                                        parts.isNullOrEmpty() -> ""
+                                        parts.size == 1 -> parts[0].take(1)
+                                        else -> "${parts.first().first()}${parts.last().first()}"
+                                    }
+
+                                    nameInitials.uppercase().ifEmpty {
+                                        profile.email.firstOrNull()?.uppercase()
                                     }
                                 } ?: "?"
                                 Text(
@@ -134,11 +139,7 @@ fun SettingsScreen(
                             }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                val displayName = uiState.userProfile?.let { profile ->
-                                    listOfNotNull(profile.firstName, profile.lastName)
-                                        .joinToString(" ")
-                                        .ifBlank { profile.email.substringBefore("@") }
-                                } ?: "User"
+                                val displayName = uiState.userProfile?.name?: "User"
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(text = displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                     if (uiState.isProMember) {
@@ -213,10 +214,13 @@ fun SettingsScreen(
                     Column {
                         ListItem(
                             headlineContent = { Text("Automatic SMS Sync") },
-                            supportingContent = { Text("Background sync when SMS arrives") },
+                            supportingContent = { Text("Background sync every 6 hours") },
                             leadingContent = { Icon(Icons.Default.Sync, contentDescription = null) },
                             trailingContent = {
-                                Switch(checked = autoSyncEnabled, onCheckedChange = { autoSyncEnabled = it })
+                                Switch(
+                                    checked = uiState.autoSyncEnabled,
+                                    onCheckedChange = { viewModel.toggleAutoSync(it) }
+                                )
                             }
                         )
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))

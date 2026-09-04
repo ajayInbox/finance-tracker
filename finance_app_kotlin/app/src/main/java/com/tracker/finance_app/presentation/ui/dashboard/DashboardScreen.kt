@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.tracker.finance_app.domain.model.DashboardMode
 import com.tracker.finance_app.presentation.components.ShimmerDashboard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,11 +56,11 @@ fun DashboardScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                val totalIncome = uiState.summary?.totalIncome ?: 0.0
-                val totalExpense = uiState.summary?.totalExpense ?: 0.0
-                val netSavings = uiState.summary?.netSavings ?: (totalIncome - totalExpense)
+                val totalIncome = uiState.totalIncome
+                val totalExpense = uiState.totalExpense
+                val netSavings = uiState.netSavings
 
-                if (uiState.accounts.isEmpty()) {
+                if (uiState.dashboardMode == DashboardMode.EXPENSE_ONLY) {
                     // DASHBOARD 1: New user / No accounts added yet (Expense tracking focus)
                     Dashboard1Content(
                         userName = uiState.userName,

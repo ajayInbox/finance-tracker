@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
@@ -23,12 +26,14 @@ data class DashboardUiState(
     val isRefreshing: Boolean = false,
     val selectedMonth: String = SimpleDateFormat("MMM", Locale.getDefault()).format(Date()),
     val userName: String? = null,
+    val dashboardMode: DashboardMode = DashboardMode.EXPENSE_ONLY,
     val accounts: List<Account> = emptyList(),
     val netWorthSummary: NetWorthSummary? = null,
     val recentTransactions: List<Transaction> = emptyList(),
-    val summary: TransactionSummary? = null,
+    val totalExpense: Double = 0.0,
+    val totalIncome: Double = 0.0,
+    val netSavings: Double = 0.0,
     val breakdowns: List<CategoryBreakdown> = emptyList(),
-    val averageDailyExpense: AverageDailyExpense? = null,
     val monthlyBudget: Double = 30000.0,
     val incomeTrend: String = "",
     val expenseTrend: String = "",
@@ -67,43 +72,53 @@ class DashboardViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = true, error = null) }
             }
 
-            val profileDeferred = async { authRepository.getUserProfile() }
-            val accountsDeferred = async { accountRepository.fetchAccounts() }
-            val netWorthDeferred = async { accountRepository.getNetWorthSummary() }
+            // Step 1: Fetch profile first to determine dashboard mode
+            val profileRes = authRepository.getUserProfile()
+            val profile = profileRes.getOrNull()
+            val mode = profile?.dashboardMode ?: DashboardMode.EXPENSE_ONLY
+
+            val (startDate, endDate) = getMonthDateRange(_uiState.value.selectedMonth)
+
+            // Step 2: Parallel fetch for transactions & expense report analysis (/api/v1/transactions/analysis)
             val txnsDeferred = async { transactionRepository.fetchTransactions() }
-            val summaryDeferred = async { transactionRepository.getSummary() }
-            val breakdownDeferred = async { transactionRepository.getCategoryBreakdown() }
-            val avgDailyDeferred = async { transactionRepository.fetchAverageDailyExpense() }
+            val expenseReportDeferred = async { transactionRepository.fetchExpenseReport(startDate, endDate, "EXPENSE") }
 
-            val profileRes = profileDeferred.await()
-            val accountsRes = accountsDeferred.await()
-            val netWorthRes = netWorthDeferred.await()
+            // Step 3: Conditional calls (only for EXPENSE_AND_ACCOUNT mode)
+            val accountsDeferred = if (mode == DashboardMode.EXPENSE_AND_ACCOUNT) {
+                async { accountRepository.fetchAccounts() }
+            } else null
+
+            val netWorthDeferred = if (mode == DashboardMode.EXPENSE_AND_ACCOUNT) {
+                async { accountRepository.getNetWorthSummary() }
+            } else null
+
             val txnsRes = txnsDeferred.await()
-            val summaryRes = summaryDeferred.await()
-            val breakdownRes = breakdownDeferred.await()
-            val avgDailyRes = avgDailyDeferred.await()
+            val expenseReportRes = expenseReportDeferred.await()
+            val accountsRes = accountsDeferred?.await()
+            val netWorthRes = netWorthDeferred?.await()
+            
+            val displayName = profile?.name
 
-            val displayName = profileRes.getOrNull()?.let { profile ->
-                listOfNotNull(profile.firstName, profile.lastName)
-                    .joinToString(" ")
-                    .ifBlank { profile.email.substringBefore("@") }
-            }
+            val txnsList = txnsRes.getOrDefault(emptyList())
+            val expenseReport = expenseReportRes.getOrNull()
 
-            val summaryData = summaryRes.getOrNull()
-            val computedBudget = if (summaryData != null && summaryData.totalIncome > 0) {
-                (summaryData.totalIncome * 0.7).coerceAtLeast(10000.0)
+            val calculatedExpense = expenseReport?.total ?: txnsList.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+            val calculatedIncome = txnsList.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
+            val calculatedNetSavings = calculatedIncome - calculatedExpense
+            val breakdownsList = expenseReport?.byCategory ?: emptyList()
+
+            val computedBudget = if (calculatedIncome > 0) {
+                (calculatedIncome * 0.7).coerceAtLeast(10000.0)
             } else {
                 30000.0
             }
 
             val firstError = listOfNotNull(
                 profileRes.exceptionOrNull(),
-                accountsRes.exceptionOrNull(),
-                netWorthRes.exceptionOrNull(),
+                accountsRes?.exceptionOrNull(),
+                netWorthRes?.exceptionOrNull(),
                 txnsRes.exceptionOrNull(),
-                summaryRes.exceptionOrNull(),
-                breakdownRes.exceptionOrNull(),
-                avgDailyRes.exceptionOrNull()
+                expenseReportRes.exceptionOrNull()
             ).firstOrNull()?.message
 
             _uiState.update { current ->
@@ -111,16 +126,32 @@ class DashboardViewModel @Inject constructor(
                     isLoading = false,
                     isRefreshing = false,
                     userName = displayName,
-                    accounts = accountsRes.getOrDefault(emptyList()),
-                    netWorthSummary = netWorthRes.getOrNull(),
-                    recentTransactions = txnsRes.getOrDefault(emptyList()).take(6),
-                    summary = summaryData,
-                    breakdowns = breakdownRes.getOrDefault(emptyList()),
-                    averageDailyExpense = avgDailyRes.getOrNull(),
+                    dashboardMode = mode,
+                    accounts = accountsRes?.getOrDefault(emptyList()) ?: emptyList(),
+                    netWorthSummary = netWorthRes?.getOrNull(),
+                    recentTransactions = txnsList.take(6),
+                    totalExpense = calculatedExpense,
+                    totalIncome = calculatedIncome,
+                    netSavings = calculatedNetSavings,
+                    breakdowns = breakdownsList,
                     monthlyBudget = computedBudget,
                     error = firstError
                 )
             }
         }
+    }
+
+    private fun getMonthDateRange(monthName: String): Pair<String, String> {
+        val now = LocalDate.now()
+        val monthNames = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        val monthIndex = monthNames.indexOfFirst { it.equals(monthName, ignoreCase = true) }
+            .takeIf { it >= 0 } ?: (now.monthValue - 1)
+
+        val targetMonth = monthIndex + 1
+        val year = now.year
+        val yearMonth = YearMonth.of(year, targetMonth)
+        val start = yearMonth.atDay(1).atStartOfDay().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        val end = yearMonth.atEndOfMonth().atTime(23, 59, 59).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        return Pair(start, end)
     }
 }

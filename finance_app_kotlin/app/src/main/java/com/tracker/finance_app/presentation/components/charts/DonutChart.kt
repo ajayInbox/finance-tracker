@@ -37,6 +37,7 @@ fun DonutChart(
     if (breakdowns.isEmpty()) return
 
     val totalAmount = breakdowns.sumOf { it.totalAmount }
+    val hasSlices = totalAmount > 0.0 && totalAmount.isFinite()
     var animationPlayed by remember { mutableStateOf(false) }
     var selectedIndex by remember { mutableStateOf(-1) }
 
@@ -61,8 +62,9 @@ fun DonutChart(
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(breakdowns) {
+                    .pointerInput(breakdowns, hasSlices) {
                         detectTapGestures { offset ->
+                            if (!hasSlices) return@detectTapGestures
                             val center = Offset(size.width / 2f, size.height / 2f)
                             val dx = offset.x - center.x
                             val dy = offset.y - center.y
@@ -85,25 +87,37 @@ fun DonutChart(
                         }
                     }
             ) {
-                var startAngle = -90f
-                for (i in breakdowns.indices) {
-                    val breakdown = breakdowns[i]
-                    val proportion = (breakdown.totalAmount / totalAmount).toFloat()
-                    val sweepAngle = proportion * sweepAngleTransition
+                if (hasSlices) {
+                    var startAngle = -90f
+                    for (i in breakdowns.indices) {
+                        val breakdown = breakdowns[i]
+                        val proportion = (breakdown.totalAmount / totalAmount).toFloat()
+                        val sweepAngle = proportion * sweepAngleTransition
 
-                    val isSelected = selectedIndex == i
-                    val strokeWidth = if (isSelected) 40.dp.toPx() else 30.dp.toPx()
+                        val isSelected = selectedIndex == i
+                        val strokeWidth = if (isSelected) 40.dp.toPx() else 30.dp.toPx()
 
+                        drawArc(
+                            color = ChartColors[i % ChartColors.size],
+                            startAngle = startAngle,
+                            sweepAngle = sweepAngle,
+                            useCenter = false,
+                            style = Stroke(width = strokeWidth, cap = StrokeCap.Butt),
+                            size = Size(size.width - strokeWidth, size.height - strokeWidth),
+                            topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f)
+                        )
+                        startAngle += sweepAngle
+                    }
+                } else {
                     drawArc(
-                        color = ChartColors[i % ChartColors.size],
-                        startAngle = startAngle,
-                        sweepAngle = sweepAngle,
+                        color = Color.LightGray.copy(alpha = 0.3f),
+                        startAngle = 0f,
+                        sweepAngle = 360f,
                         useCenter = false,
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Butt),
-                        size = Size(size.width - strokeWidth, size.height - strokeWidth),
-                        topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f)
+                        style = Stroke(width = 30.dp.toPx(), cap = StrokeCap.Butt),
+                        size = Size(size.width - 30.dp.toPx(), size.height - 30.dp.toPx()),
+                        topLeft = Offset(15.dp.toPx(), 15.dp.toPx())
                     )
-                    startAngle += sweepAngle
                 }
             }
 

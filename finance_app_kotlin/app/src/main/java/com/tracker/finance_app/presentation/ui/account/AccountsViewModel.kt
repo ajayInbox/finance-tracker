@@ -2,6 +2,7 @@ package com.tracker.finance_app.presentation.ui.account
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tracker.finance_app.core.util.Formatters
 import com.tracker.finance_app.domain.model.*
 import com.tracker.finance_app.domain.repository.AccountRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -84,10 +85,18 @@ class AccountsViewModel @Inject constructor(
 
     fun createAccount(onSuccess: () -> Unit) {
         val name = _uiState.value.newAccountName.trim()
-        val balance = _uiState.value.newAccountBalance.toDoubleOrNull() ?: 0.0
+        val balanceText = _uiState.value.newAccountBalance.trim()
+        val balance = when {
+            balanceText.isEmpty() -> 0.0
+            else -> Formatters.parseAmountOrNull(balanceText)
+        }
 
         if (name.isBlank()) {
             _uiState.update { it.copy(error = "Account name required") }
+            return
+        }
+        if (balance == null || balance < 0.0) {
+            _uiState.update { it.copy(error = "Enter a valid opening balance") }
             return
         }
 
@@ -112,10 +121,30 @@ class AccountsViewModel @Inject constructor(
         }
     }
 
+    fun onErrorShown() {
+        _uiState.update { it.copy(error = null) }
+    }
+
     fun deleteAccount(id: String) {
+        val target = _uiState.value.accounts.firstOrNull { it.id == id } ?: return
+        _uiState.update { state ->
+            state.copy(accounts = state.accounts.filterNot { it.id == id })
+        }
         viewModelScope.launch {
             accountRepository.deleteAccount(id)
-            loadData()
+                .onSuccess {
+                    loadData()
+                }
+                .onFailure { exc ->
+                    _uiState.update { state ->
+                        if (state.accounts.any { it.id == id }) {
+                            state
+                        } else {
+                            state.copy(accounts = listOf(target) + state.accounts)
+                        }
+                    }
+                    _uiState.update { it.copy(error = exc.message ?: "Couldn't delete account") }
+                }
         }
     }
 }

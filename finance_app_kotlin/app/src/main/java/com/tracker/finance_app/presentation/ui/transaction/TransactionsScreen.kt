@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -55,6 +56,28 @@ fun TransactionsScreen(
         label = "fabScale"
     )
     var showFilterSheet by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.onErrorShown()
+        }
+    }
+
+    LaunchedEffect(uiState.lastDeletedTransaction) {
+        uiState.lastDeletedTransaction?.let { deleted ->
+            val result = snackbarHostState.showSnackbar(
+                message = "Transaction deleted",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.undoDelete(deleted)
+            }
+            viewModel.onDeleteMessageShown()
+        }
+    }
 
     if (showFilterSheet) {
         FilterBottomSheet(
@@ -72,6 +95,7 @@ fun TransactionsScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Transactions") },
@@ -81,16 +105,6 @@ fun TransactionsScreen(
                     }
                 }
             )
-        },
-        floatingActionButton = {
-            if (fabScale > 0.01f) {
-                FloatingActionButton(
-                    onClick = onNavigateToAddTransaction,
-                    modifier = Modifier.scale(fabScale)
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Add Transaction")
-                }
-            }
         }
     ) { innerPadding ->
         PullToRefreshBox(
@@ -235,7 +249,8 @@ fun TransactionsScreen(
                                         } else {
                                             false
                                         }
-                                    }
+                                    },
+                                    positionalThreshold = { it * 0.75f }
                                 )
                                 SwipeToDismissBox(
                                     state = dismissState,

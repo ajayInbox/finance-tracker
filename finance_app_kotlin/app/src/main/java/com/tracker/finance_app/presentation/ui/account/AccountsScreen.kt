@@ -17,8 +17,12 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,8 +40,42 @@ fun AccountsScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var pendingDeleteAccount by remember { mutableStateOf<com.tracker.finance_app.domain.model.Account?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.onErrorShown()
+        }
+    }
+
+    pendingDeleteAccount?.let { account ->
+        AlertDialog(
+            onDismissRequest = { pendingDeleteAccount = null },
+            title = { Text("Delete account?") },
+            text = { Text("\"${account.name}\" will be permanently deleted. This cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteAccount(account.id)
+                        pendingDeleteAccount = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDeleteAccount = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Accounts") },
@@ -47,11 +85,6 @@ fun AccountsScreen(
                     }
                 }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToAddAccount) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Account")
-            }
         }
     ) { innerPadding ->
         PullToRefreshBox(
@@ -112,12 +145,11 @@ fun AccountsScreen(
                         val dismissState = rememberSwipeToDismissBoxState(
                             confirmValueChange = { dismissValue ->
                                 if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
-                                    viewModel.deleteAccount(account.id)
-                                    true
-                                } else {
-                                    false
+                                    pendingDeleteAccount = account
                                 }
-                            }
+                                false
+                            },
+                            positionalThreshold = { it * 0.75f }
                         )
                         
                         SwipeToDismissBox(

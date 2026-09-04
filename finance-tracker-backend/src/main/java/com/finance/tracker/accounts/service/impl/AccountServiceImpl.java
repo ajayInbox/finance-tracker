@@ -6,6 +6,9 @@ import com.finance.tracker.accounts.exceptions.*;
 import com.finance.tracker.accounts.mapper.AccountMapper;
 import com.finance.tracker.accounts.repository.AccountRepository;
 import com.finance.tracker.accounts.service.AccountService;
+import com.finance.tracker.auth.domain.DashboardMode;
+import com.finance.tracker.auth.domain.entity.User;
+import com.finance.tracker.auth.repository.UserRepository;
 import com.finance.tracker.transactions.domain.Currency;
 import com.finance.tracker.transactions.domain.TransactionType;
 import com.finance.tracker.category.domain.entities.Category;
@@ -28,6 +31,7 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
     private final AccountMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -96,7 +100,9 @@ public class AccountServiceImpl implements AccountService {
             account.setDueDayOfMonth(req.dueDayOfMonth());
             account.setStatementDayOfMonth(req.statementDayOfMonth());
         }
-        return accountRepository.save(account);
+        Account saved = accountRepository.save(account);
+        updateDashboardModeIfNeeded(userId);
+        return saved;
     }
 
     @Override
@@ -185,6 +191,7 @@ public class AccountServiceImpl implements AccountService {
             categoryRepository.save(defaultCategory);
         }
 
+        updateDashboardModeIfNeeded(userId);
         return defaultAccount;
     }
 
@@ -196,9 +203,23 @@ public class AccountServiceImpl implements AccountService {
         account.setClosedAt(Instant.now());
         account.setStatus(AccountStatus.INACTIVE);
         accountRepository.save(account);
+        updateDashboardModeIfNeeded(userId);
     }
 
     // --- Helpers ---
+
+    private void updateDashboardModeIfNeeded(UUID userId) {
+        List<Account> activeAccounts = accountRepository.findByUserIdAndActiveTrue(userId);
+        DashboardMode targetMode = activeAccounts.isEmpty()
+                ? DashboardMode.EXPENSE_ONLY
+                : DashboardMode.EXPENSE_AND_ACCOUNT;
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null && user.getDashboardMode() != targetMode) {
+            user.setDashboardMode(targetMode);
+            userRepository.save(user);
+        }
+    }
 
     private void ensureLastFourNotDuplicate(String lastFour, UUID userId, AccountType type) {
         accountRepository.findByLastFourAndUserIdAndAccountType(lastFour, userId, type)

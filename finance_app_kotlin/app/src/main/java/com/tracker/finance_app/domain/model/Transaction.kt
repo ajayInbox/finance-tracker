@@ -19,51 +19,75 @@ data class Transaction(
 
 @Serializable
 data class TransactionSummary(
-    val totalIncome: Double,
-    val totalExpense: Double,
-    val netSavings: Double,
-    val transactionCount: Int
+    val totalIncome: Double = 0.0,
+    val totalExpense: Double = 0.0,
+    val netSavings: Double = 0.0,
+    val transactionCount: Int = 0
 )
 
 @Serializable
 data class CategoryBreakdown(
+    val categoryId: String? = null,
     val categoryName: String,
-    val totalAmount: Double,
-    val percentage: Double
-)
+    val total: Double = 0.0,
+    val percentage: Double = 0.0,
+    val transactionCount: Int = 0,
+    val categoryColor: String? = null
+) {
+    val totalAmount: Double get() = total
+}
 
 @Serializable
-data class ExpenseReport(
-    val period: String,
-    val totalExpense: Double,
-    val breakdowns: List<CategoryBreakdown>
+data class MonthlyExpenseResponse(
+    val startDate: String? = null,
+    val endDate: String? = null,
+    val currency: String = "INR",
+    val total: Double = 0.0,
+    val byCategory: List<CategoryBreakdown> = emptyList()
 )
 
 @Serializable
 data class TransactionDraft(
-    val amount: Double,
-    val merchant: String?,
-    val type: TransactionType,
-    val rawSms: String,
-    val timestampMillis: Long,
-    val suggestedCategory: String? = null
-)
+    val id: String = "",
+    val transactionName: String? = null,
+    val amount: Double = 0.0,
+    val type: TransactionType = TransactionType.EXPENSE,
+    val accountId: String? = null,
+    val accountName: String? = null,
+    val categoryId: String? = null,
+    val categoryName: String? = null,
+    val occurredAt: String? = null,
+    val postedAt: String? = null,
+    val currency: String = "INR",
+    val notes: String? = null,
+    val status: String? = null,
+    val tags: List<String> = emptyList(),
+    val originalMessage: String? = null
+) {
+    val rawSms: String get() = originalMessage.orEmpty()
+    val merchant: String? get() = transactionName
 
-@Serializable
-data class AverageDailyExpense(
-    val average: Double,
-    val period: String = "",
-    val currency: String = "INR"
-)
+    fun isReadyForConfirm(): Boolean =
+        accountId != null && categoryId != null && id.isNotBlank()
+
+    fun withAccount(accountId: String?, accountName: String?): TransactionDraft =
+        copy(accountId = accountId, accountName = accountName)
+
+    fun withCategory(categoryId: String?, categoryName: String?): TransactionDraft =
+        copy(categoryId = categoryId, categoryName = categoryName)
+}
 
 @Serializable  
 data class ExpenseReportRequest(
     val start: String,
     val end: String,
-    val type: String
+    val type: String = "EXPENSE"
 )
 
 @Serializable
 data class SyncTimestamp(
-    val timestamp: Long
-)
+    val timestamp: Long? = null,
+    val latestScannedTimestamp: Long? = null
+) {
+    val watermark: Long get() = latestScannedTimestamp ?: timestamp ?: 0L
+}

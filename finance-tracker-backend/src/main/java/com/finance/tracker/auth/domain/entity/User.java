@@ -1,5 +1,7 @@
 package com.finance.tracker.auth.domain.entity;
 
+import com.finance.tracker.auth.domain.DashboardMode;
+import com.finance.tracker.auth.domain.UserType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,12 +34,22 @@ public class User implements UserDetails {
 
     private String role = "ROLE_USER"; // ROLE_USER, ROLE_ADMIN
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserType userType = UserType.REGULAR;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DashboardMode dashboardMode = DashboardMode.EXPENSE_ONLY;
+
     public User(User user) {
         this.id = user.getId();
         this.name = user.getName();
         this.email = user.getEmail();
         this.password = user.getPassword();
         this.role = user.getRole();
+        this.userType = user.getUserType();
+        this.dashboardMode = user.getDashboardMode();
     }
 
     @Override

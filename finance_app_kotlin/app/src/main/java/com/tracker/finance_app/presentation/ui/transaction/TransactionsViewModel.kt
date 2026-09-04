@@ -32,7 +32,8 @@ data class TransactionsUiState(
     val breakdowns: List<CategoryBreakdown> = emptyList(),
     val filter: TransactionFilter = TransactionFilter(),
     val isFilterActive: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val lastDeletedTransaction: Transaction? = null
 )
 
 @HiltViewModel
@@ -53,27 +54,12 @@ class TransactionsViewModel @Inject constructor(
             transactionRepository.fetchTransactions()
                 .onSuccess { list ->
                     _uiState.update { state ->
-                        val filtered = applyFilterToList(list, state.filter, state.searchQuery)
-                        state.copy(
-                            isLoading = false,
-                            isRefreshing = false,
-                            transactions = list,
-                            filteredTransactions = filtered,
-                            groupedTransactions = groupTransactions(filtered)
-                        )
+                        updateLists(state, list).copy(isLoading = false, isRefreshing = false)
                     }
                 }
                 .onFailure { exc ->
                     _uiState.update { it.copy(isLoading = false, isRefreshing = false, error = exc.message) }
                 }
-
-            transactionRepository.getSummary().onSuccess { sum ->
-                _uiState.update { it.copy(summary = sum) }
-            }
-
-            transactionRepository.getCategoryBreakdown().onSuccess { list ->
-                _uiState.update { it.copy(breakdowns = list) }
-            }
         }
     }
 
@@ -225,9 +211,70 @@ class TransactionsViewModel @Inject constructor(
     }
 
     fun deleteTransaction(id: String) {
+        val target = _uiState.value.transactions.firstOrNull { it.id == id } ?: return
+        _uiState.update { state ->
+            updateLists(state, state.transactions.filterNot { it.id == id })
+        }
         viewModelScope.launch {
             transactionRepository.deleteTransaction(id)
-            loadTransactions()
+                .onSuccess {
+                    _uiState.update { it.copy(lastDeletedTransaction = target) }
+                }
+                .onFailure { exc ->
+                    _uiState.update { state ->
+                        val restored = if (state.transactions.any { it.id == id }) {
+                            state.transactions
+                        } else {
+                            (listOf(target) + state.transactions).sortedByDescending { it.timestamp }
+                        }
+                        updateLists(state, restored).copy(error = exc.message ?: "Couldn't delete transaction")
+                    }
+                }
         }
+    }
+
+    fun undoDelete(transaction: Transaction) {
+        viewModelScope.launch {
+            transactionRepository.addTransaction(
+                accountId = transaction.accountId,
+                amount = transaction.amount,
+                type = transaction.type,
+                description = transaction.description,
+                categoryId = transaction.categoryId
+            ).onSuccess {
+                loadTransactions()
+            }.onFailure { exc ->
+                _uiState.update { it.copy(error = exc.message ?: "Couldn't restore transaction") }
+            }
+        }
+    }
+
+    fun onErrorShown() {
+        _uiState.update { it.copy(error = null) }
+    }
+
+    fun onDeleteMessageShown() {
+        _uiState.update { it.copy(lastDeletedTransaction = null) }
+    }
+
+    private fun computeSummary(transactions: List<Transaction>): TransactionSummary {
+        val totalIncome = transactions.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
+        val totalExpense = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+        return TransactionSummary(
+            totalIncome = totalIncome,
+            totalExpense = totalExpense,
+            netSavings = totalIncome - totalExpense,
+            transactionCount = transactions.size
+        )
+    }
+
+    private fun updateLists(state: TransactionsUiState, transactions: List<Transaction>): TransactionsUiState {
+        val filtered = applyFilterToList(transactions, state.filter, state.searchQuery)
+        return state.copy(
+            transactions = transactions,
+            filteredTransactions = filtered,
+            groupedTransactions = groupTransactions(filtered),
+            summary = computeSummary(transactions)
+        )
     }
 }

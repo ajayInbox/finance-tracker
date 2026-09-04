@@ -11,11 +11,17 @@ data class AuthTokens(
 )
 
 @Serializable
+enum class UserType { REGULAR, PRO, PREMIUM }
+
+@Serializable
+enum class DashboardMode { EXPENSE_ONLY, EXPENSE_AND_ACCOUNT }
+
+@Serializable
 data class UserProfile(
     val id: String,
     val email: String,
-    val firstName: String? = null,
-    val lastName: String? = null,
-    val preferredCurrency: String = "USD",
-    val isOnboarded: Boolean = true
+    val name: String? = null,
+    val preferredCurrency: String = "INR",
+    val userType: UserType = UserType.REGULAR,
+    val dashboardMode: DashboardMode = DashboardMode.EXPENSE_ONLY
 )

@@ -2,6 +2,8 @@ package com.tracker.finance_app.presentation.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tracker.finance_app.data.sync.SyncManager
+import com.tracker.finance_app.data.sync.SyncPreferences
 import com.tracker.finance_app.domain.model.UserProfile
 import com.tracker.finance_app.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,12 +22,15 @@ data class SettingsUiState(
     val showDeleteConfirmation: Boolean = false,
     val biometricEnabled: Boolean = false,
     val selectedCurrency: String = "INR",
-    val isProMember: Boolean = true // Mocked
+    val isProMember: Boolean = true, // Mocked
+    val autoSyncEnabled: Boolean = false
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val syncManager: SyncManager,
+    private val syncPreferences: SyncPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -33,6 +38,26 @@ class SettingsViewModel @Inject constructor(
 
     init {
         loadProfile()
+        loadAutoSyncSetting()
+    }
+
+    private fun loadAutoSyncSetting() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(autoSyncEnabled = syncPreferences.isAutoSyncEnabled()) }
+        }
+    }
+
+    fun toggleAutoSync(enabled: Boolean) {
+        viewModelScope.launch {
+            if (enabled) syncManager.enableAutoSync() else syncManager.disableAutoSync()
+            syncPreferences.setAutoSyncEnabled(enabled)
+            _uiState.update {
+                it.copy(
+                    autoSyncEnabled = enabled,
+                    message = if (enabled) "Inbox will be scanned every 6 hours" else "Background sync turned off"
+                )
+            }
+        }
     }
 
     fun loadProfile() {

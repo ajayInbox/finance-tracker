@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,13 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tracker.finance_app.core.util.Formatters
 import com.tracker.finance_app.domain.model.Account
 import com.tracker.finance_app.domain.model.Category
 import com.tracker.finance_app.domain.model.TransactionType
-import java.text.SimpleDateFormat
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +40,8 @@ fun AddTransactionScreen(
 ) {
     var type by remember { mutableStateOf(TransactionType.EXPENSE) }
     var amount by remember { mutableStateOf("") }
+    val parsedAmount = Formatters.parseAmountOrNull(amount)
+    val isAmountValid = parsedAmount != null && parsedAmount > 0.0
     var description by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
@@ -95,10 +98,11 @@ fun AddTransactionScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        if (selectedAccount != null && amount.isNotBlank()) {
+                        val account = selectedAccount
+                        if (account != null && isAmountValid) {
                             viewModel.addTransaction(
-                                accountId = selectedAccount!!.id,
-                                amount = amount.toDoubleOrNull() ?: 0.0,
+                                accountId = account.id,
+                                amount = parsedAmount ?: return@IconButton,
                                 type = type,
                                 description = description,
                                 categoryId = selectedCategory?.id,
@@ -157,8 +161,17 @@ fun AddTransactionScreen(
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent
                     ),
+                    isError = amount.isNotBlank() && !isAmountValid,
+                    supportingText = {
+                        if (amount.isNotBlank() && !isAmountValid) {
+                            Text("Enter a valid amount greater than 0")
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
             }
@@ -204,10 +217,11 @@ fun AddTransactionScreen(
 
             Button(
                 onClick = {
-                    if (selectedAccount != null && amount.isNotBlank()) {
+                    val account = selectedAccount
+                    if (account != null && isAmountValid) {
                         viewModel.addTransaction(
-                            accountId = selectedAccount!!.id,
-                            amount = amount.toDoubleOrNull() ?: 0.0,
+                            accountId = account.id,
+                            amount = parsedAmount ?: return@Button,
                             type = type,
                             description = description,
                             categoryId = selectedCategory?.id,
@@ -215,6 +229,7 @@ fun AddTransactionScreen(
                         )
                     }
                 },
+                enabled = selectedAccount != null && isAmountValid,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = activeColor)
             ) {
