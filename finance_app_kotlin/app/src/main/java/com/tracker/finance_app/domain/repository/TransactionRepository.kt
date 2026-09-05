@@ -5,8 +5,12 @@ import com.tracker.finance_app.data.remote.SmsMessagePayload
 import kotlinx.coroutines.flow.Flow
 
 interface TransactionRepository {
+    val lastMutationTime: Long get() = 0L
+    val transactionUpdates: kotlinx.coroutines.flow.SharedFlow<Unit> get() = kotlinx.coroutines.flow.MutableSharedFlow()
     fun getTransactionsFlow(): Flow<List<Transaction>>
-    suspend fun fetchTransactions(): Result<List<Transaction>>
+    suspend fun fetchTransactions(forceRefresh: Boolean = false): Result<List<Transaction>>
+    fun invalidateCache()
+    fun clearCache()
     suspend fun updateTransaction(transactionId: String, transaction: Transaction): Result<Transaction>
     suspend fun addTransaction(
         accountId: String?,

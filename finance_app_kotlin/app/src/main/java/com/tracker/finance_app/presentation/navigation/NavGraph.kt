@@ -32,23 +32,48 @@ import com.tracker.finance_app.presentation.ui.sms.SmsViewModel
 import com.tracker.finance_app.presentation.ui.transaction.AddTransactionScreen
 import com.tracker.finance_app.presentation.ui.transaction.TransactionsScreen
 import com.tracker.finance_app.presentation.ui.transaction.TransactionsViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppNavigation(
-    navController: NavHostController
+    navController: NavHostController,
+    startDestination: String = Screen.SignIn.route,
+    authRepository: com.tracker.finance_app.domain.repository.AuthRepository? = null
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     // Shared ViewModels scoped to the NavHost (not individual routes)
+    val dashboardViewModel: DashboardViewModel = hiltViewModel()
     val accountsViewModel: AccountsViewModel = hiltViewModel()
     val transactionsViewModel: TransactionsViewModel = hiltViewModel()
     val categoryViewModel: CategoryViewModel = hiltViewModel()
 
     val accountsUiState by accountsViewModel.uiState.collectAsState()
     val categoryUiState by categoryViewModel.uiState.collectAsState()
+
+    // Listen for auth token changes (e.g. sign-out or session expiry)
+    if (authRepository != null) {
+        LaunchedEffect(authRepository) {
+            authRepository.getAuthTokenFlow().collect { token ->
+                if (token.isNullOrBlank()) {
+                    val current = navController.currentDestination?.route
+                    if (current != null && current != Screen.SignIn.route && current != Screen.SignUp.route) {
+                        navController.navigate(Screen.SignIn.route) {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                } else {
+                    // Token is valid / user logged in: reload all shared ViewModels
+                    dashboardViewModel.loadDashboardData(isRefresh = true)
+                    accountsViewModel.loadData(isRefresh = true)
+                    transactionsViewModel.loadTransactions(forceRefresh = true)
+                    categoryViewModel.loadCategories(forceRefresh = true)
+                }
+            }
+        }
+    }
 
     val showBottomBar = currentRoute in listOf(
         Screen.Dashboard.route,
@@ -59,11 +84,9 @@ fun MainAppNavigation(
 
     val showFab = currentRoute in listOf(
         Screen.Dashboard.route,
-        Screen.Accounts.route,
         Screen.Transactions.route
     )
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -75,7 +98,7 @@ fun MainAppNavigation(
                             selected = currentRoute == Screen.Dashboard.route,
                             onClick = {
                                 navController.navigate(Screen.Dashboard.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    popUpTo(Screen.Dashboard.route) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -87,7 +110,7 @@ fun MainAppNavigation(
                             selected = currentRoute == Screen.Transactions.route,
                             onClick = {
                                 navController.navigate(Screen.Transactions.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    popUpTo(Screen.Dashboard.route) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -99,7 +122,7 @@ fun MainAppNavigation(
                             selected = currentRoute == Screen.Accounts.route,
                             onClick = {
                                 navController.navigate(Screen.Accounts.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    popUpTo(Screen.Dashboard.route) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -111,7 +134,7 @@ fun MainAppNavigation(
                             selected = currentRoute == Screen.Settings.route,
                             onClick = {
                                 navController.navigate(Screen.Settings.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    popUpTo(Screen.Dashboard.route) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -125,7 +148,7 @@ fun MainAppNavigation(
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = Screen.SignIn.route,
+                startDestination = startDestination,
                 modifier = Modifier.padding(innerPadding)
             ) {
             composable(Screen.SignIn.route) {
@@ -153,7 +176,6 @@ fun MainAppNavigation(
                 )
             }
             composable(Screen.Dashboard.route) {
-                val dashboardViewModel: DashboardViewModel = hiltViewModel()
                 DashboardScreen(
                     viewModel = dashboardViewModel,
                     onNavigateToAddTransaction = { navController.navigate(Screen.AddTransaction.route) },
@@ -206,7 +228,10 @@ fun MainAppNavigation(
             }
             composable(Screen.SmsReview.route) {
                 val smsViewModel: SmsViewModel = hiltViewModel()
-                SmsReviewScreen(viewModel = smsViewModel)
+                SmsReviewScreen(
+                    viewModel = smsViewModel,
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
             composable(Screen.Settings.route) {
                 val settingsViewModel: SettingsViewModel = hiltViewModel()
@@ -214,14 +239,12 @@ fun MainAppNavigation(
                     viewModel = settingsViewModel,
                     onSignOut = {
                         navController.navigate(Screen.SignIn.route) {
-                            popUpTo(Screen.Dashboard.route) { inclusive = true }
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
                         }
                     },
                     onNavigateToCategories = {
                     navController.navigate(Screen.CategoryManagement.route)
-                    },
-                    onNavigateToAccounts = {
-                        navController.navigate(Screen.Accounts.route)
                     },
                     onNavigateToSmsReview = {
                         navController.navigate(Screen.SmsReview.route)
@@ -236,11 +259,6 @@ fun MainAppNavigation(
             com.tracker.finance_app.presentation.components.SpeedDialFab(
                 onAddExpense = { navController.navigate(Screen.AddTransaction.route) },
                 onAddIncome = { navController.navigate(Screen.AddTransaction.route) },
-                onTransfer = {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Coming soon")
-                    }
-                },
                 onSyncSms = { navController.navigate(Screen.SmsReview.route) }
             )
         }

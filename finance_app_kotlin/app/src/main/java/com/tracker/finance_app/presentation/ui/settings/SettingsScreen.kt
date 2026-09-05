@@ -23,6 +23,8 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.ui.graphics.Color
+import com.tracker.finance_app.presentation.components.ScreenHeader
 import java.util.stream.Collectors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,8 +33,8 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onSignOut: () -> Unit,
     onNavigateToCategories: () -> Unit,
-    onNavigateToAccounts: () -> Unit,
     onNavigateToSmsReview: () -> Unit,
+    onNotificationClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     themeViewModel: ThemeViewModel = hiltViewModel()
 ) {
@@ -62,7 +64,7 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Settings") }) },
+        containerColor = Color(0xFFFBFCFD),
         snackbarHost = {
             uiState.message?.let {
                 Snackbar { Text(it) }
@@ -74,14 +76,27 @@ fun SettingsScreen(
             }
         }
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(vertical = 16.dp)
+                .padding(horizontal = 18.dp)
         ) {
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Consistent Screen Header
+            ScreenHeader(
+                title = "Settings",
+                onNotificationClick = onNotificationClick
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 80.dp)
+            ) {
             // User profile card
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
@@ -179,16 +194,6 @@ fun SettingsScreen(
                         headlineContent = { Text("Manage Categories") },
                         supportingContent = { Text("Add, edit or remove categories") },
                         leadingContent = { Icon(Icons.Default.Category, contentDescription = null) },
-                        trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) }
-                    )
-                }
-            }
-            item {
-                Card(modifier = Modifier.fillMaxWidth(), onClick = onNavigateToAccounts) {
-                    ListItem(
-                        headlineContent = { Text("Manage Accounts") },
-                        supportingContent = { Text("Add, edit or remove accounts") },
-                        leadingContent = { Icon(Icons.Default.AccountBalance, contentDescription = null) },
                         trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) }
                     )
                 }
@@ -341,8 +346,9 @@ fun SettingsScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        viewModel.signOut()
-                        onSignOut()
+                        viewModel.signOut {
+                            onSignOut()
+                        }
                     }
                 ) {
                     ListItem(
@@ -375,4 +381,5 @@ fun SettingsScreen(
             }
         }
     }
+}
 }

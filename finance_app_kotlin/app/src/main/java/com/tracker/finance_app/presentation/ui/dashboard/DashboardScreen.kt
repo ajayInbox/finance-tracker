@@ -1,8 +1,9 @@
 package com.tracker.finance_app.presentation.ui.dashboard
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import com.tracker.finance_app.presentation.components.FinPullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -25,7 +26,13 @@ fun DashboardScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Refresh dashboard data if any transactions or accounts were modified while away
+    LaunchedEffect(Unit) {
+        viewModel.loadDashboardDataIfNeeded()
+    }
 
     // Show error in Snackbar with retry action
     LaunchedEffect(uiState.error) {
@@ -49,9 +56,10 @@ fun DashboardScreen(
         if (uiState.isLoading && !uiState.isRefreshing) {
             ShimmerDashboard(modifier = Modifier.padding(innerPadding))
         } else {
-            PullToRefreshBox(
+            FinPullToRefreshBox(
                 isRefreshing = uiState.isRefreshing,
                 onRefresh = { viewModel.loadDashboardData(isRefresh = true) },
+                lazyListState = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
@@ -70,7 +78,8 @@ fun DashboardScreen(
                         recentTransactions = uiState.recentTransactions,
                         onNavigateToAddAccount = onNavigateToAddAccount,
                         onNavigateToTransactions = onNavigateToTransactions,
-                        modifier = modifier
+                        modifier = modifier,
+                        listState = listState
                     )
                 } else {
                     // DASHBOARD 2: Connected accounts / Full financial overview
@@ -91,7 +100,8 @@ fun DashboardScreen(
                         onNavigateToAccounts = onNavigateToAccounts,
                         onNavigateToCategories = onNavigateToCategories,
                         onNavigateToTransactions = onNavigateToTransactions,
-                        modifier = modifier
+                        modifier = modifier,
+                        listState = listState
                     )
                 }
             }

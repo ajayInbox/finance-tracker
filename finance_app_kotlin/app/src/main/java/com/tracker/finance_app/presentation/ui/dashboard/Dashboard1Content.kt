@@ -12,6 +12,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tracker.finance_app.core.util.Formatters
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import com.tracker.finance_app.domain.model.CategoryBreakdown
 import com.tracker.finance_app.domain.model.Transaction
 
@@ -24,9 +26,11 @@ fun Dashboard1Content(
     recentTransactions: List<Transaction>,
     onNavigateToAddAccount: () -> Unit,
     onNavigateToTransactions: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    listState: LazyListState = rememberLazyListState()
 ) {
     LazyColumn(
+        state = listState,
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 20.dp),
@@ -133,35 +137,37 @@ fun Dashboard1Content(
             }
         }
 
-        // Recent Transactions Section
+        // Card 3: Recent Transactions
         item {
-            Spacer(modifier = Modifier.height(4.dp))
-            SectionHeading(
-                title = "Recent Transactions",
-                actionText = "See All",
-                onActionClick = onNavigateToTransactions
-            )
-        }
-
-        if (recentTransactions.isEmpty()) {
-            item {
-                Text(
-                    text = "No recent transactions. Tap + to add an expense.",
-                    fontSize = 13.sp,
-                    color = FinTextMuted,
-                    modifier = Modifier.padding(vertical = 12.dp)
+            FinCard(contentPadding = PaddingValues(18.dp)) {
+                SectionHeading(
+                    title = "Recent Transactions",
+                    actionText = if (recentTransactions.isNotEmpty()) "View All" else null,
+                    onActionClick = onNavigateToTransactions
                 )
-            }
-        } else {
-            itemsIndexed(recentTransactions, key = { _, tx -> tx.id }) { index, transaction ->
-                Column {
-                    TransactionItemRow(
-                        transaction = transaction,
-                        accountName = null, // No accounts linked yet in D1
-                        onClick = onNavigateToTransactions
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                if (recentTransactions.isEmpty()) {
+                    Text(
+                        text = "No recent transactions. Tap + to add an expense.",
+                        fontSize = 12.sp,
+                        color = FinTextMuted,
+                        modifier = Modifier.padding(vertical = 12.dp)
                     )
-                    if (index < recentTransactions.size - 1) {
-                        HorizontalDivider(color = FinDivider, thickness = 1.dp)
+                } else {
+                    val displayTransactions = recentTransactions.take(5)
+                    displayTransactions.forEachIndexed { index, transaction ->
+                        Column {
+                            TransactionItemRow(
+                                transaction = transaction,
+                                accountName = null, // No accounts linked yet in D1
+                                onClick = onNavigateToTransactions
+                            )
+                            if (index < displayTransactions.size - 1) {
+                                HorizontalDivider(color = FinDivider, thickness = 1.dp)
+                            }
+                        }
                     }
                 }
             }

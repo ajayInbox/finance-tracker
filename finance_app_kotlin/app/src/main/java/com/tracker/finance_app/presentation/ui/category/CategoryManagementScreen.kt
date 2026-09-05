@@ -71,6 +71,11 @@ fun CategoryManagementScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // Load categories whenever entering the screen
+    LaunchedEffect(Unit) {
+        viewModel.loadCategories()
+    }
+
     // Separate into parent categories (groups) and calculate total subcategories
     val parentGroups = remember(uiState.categories) {
         if (uiState.categories.any { it.parentId == null }) {

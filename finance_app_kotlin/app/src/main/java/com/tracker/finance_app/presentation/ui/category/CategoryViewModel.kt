@@ -58,10 +58,13 @@ class CategoryViewModel @Inject constructor(
         loadCategories()
     }
 
-    fun loadCategories() {
+    fun loadCategories(forceRefresh: Boolean = false) {
+        val hasExistingData = _uiState.value.categories.isNotEmpty()
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            categoryRepository.fetchCategories()
+            if (!hasExistingData) {
+                _uiState.update { it.copy(isLoading = true, error = null) }
+            }
+            categoryRepository.fetchCategories(forceRefresh = forceRefresh)
                 .onSuccess { list ->
                     _uiState.update { it.copy(isLoading = false, categories = list) }
                 }

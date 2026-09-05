@@ -13,6 +13,7 @@ import com.tracker.finance_app.domain.model.TransactionDraft
 import com.tracker.finance_app.domain.repository.AccountRepository
 import com.tracker.finance_app.domain.repository.CategoryRepository
 import com.tracker.finance_app.domain.repository.SmsRepository
+import com.tracker.finance_app.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,6 +40,7 @@ class SmsViewModel @Inject constructor(
     private val smsRepository: SmsRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
+    private val transactionRepository: TransactionRepository,
     private val syncManager: SyncManager,
     private val syncPreferences: SyncPreferences,
     private val syncStatusBus: SyncStatusBus
@@ -106,6 +108,8 @@ class SmsViewModel @Inject constructor(
             _uiState.update { it.copy(isConfirming = true, error = null, message = null) }
             smsRepository.confirmDrafts(ready.map { SmsRepositoryImpl.buildConfirmRequest(it) })
                 .onSuccess {
+                    transactionRepository.invalidateCache()
+                    accountRepository.invalidateCache()
                     _uiState.update { state ->
                         state.copy(
                             isConfirming = false,

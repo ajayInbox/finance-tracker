@@ -46,12 +46,26 @@ class TransactionsViewModel @Inject constructor(
 
     init {
         loadTransactions()
+        viewModelScope.launch {
+            transactionRepository.getTransactionsFlow().collect { transactions ->
+                if (transactions.isNotEmpty()) {
+                    _uiState.update { state ->
+                        updateLists(state, transactions)
+                    }
+                }
+            }
+        }
     }
 
-    fun loadTransactions() {
+    fun loadTransactions(forceRefresh: Boolean = false) {
+        val hasExistingData = _uiState.value.transactions.isNotEmpty()
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null, isRefreshing = true) }
-            transactionRepository.fetchTransactions()
+            if (forceRefresh) {
+                _uiState.update { it.copy(isRefreshing = true, error = null) }
+            } else if (!hasExistingData) {
+                _uiState.update { it.copy(isLoading = true, error = null) }
+            }
+            transactionRepository.fetchTransactions(forceRefresh = forceRefresh)
                 .onSuccess { list ->
                     _uiState.update { state ->
                         updateLists(state, list).copy(isLoading = false, isRefreshing = false)
@@ -110,12 +124,8 @@ class TransactionsViewModel @Inject constructor(
         if (filter.timePeriod != TimePeriod.ALL) {
             val now = java.time.LocalDate.now()
             result = result.filter {
-                val txDate = try {
-                    java.time.LocalDateTime.parse(it.timestamp).toLocalDate()
-                } catch (e: Exception) {
-                    null
-                }
-                if (txDate != null) {
+                val txDate = parseLocalDate(it)
+                if (txDate != java.time.LocalDate.MIN) {
                     when (filter.timePeriod) {
                         TimePeriod.TODAY -> txDate == now
                         TimePeriod.YESTERDAY -> txDate == now.minusDays(1)
@@ -138,43 +148,43 @@ class TransactionsViewModel @Inject constructor(
         return result
     }
 
+    private fun parseLocalDate(tx: Transaction): java.time.LocalDate {
+        val raw = tx.timestamp.ifBlank { tx.occurredAt.orEmpty() }.trim()
+        if (raw.isBlank()) return java.time.LocalDate.MIN
+        try {
+            return java.time.LocalDateTime.parse(raw).toLocalDate()
+        } catch (_: Exception) {}
+        try {
+            return java.time.OffsetDateTime.parse(raw).toLocalDate()
+        } catch (_: Exception) {}
+        try {
+            return java.time.Instant.parse(raw).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+        } catch (_: Exception) {}
+        try {
+            return java.time.LocalDate.parse(raw.take(10))
+        } catch (_: Exception) {}
+        return java.time.LocalDate.MIN
+    }
+
     private fun groupTransactions(transactions: List<Transaction>): Map<String, List<Transaction>> {
         val now = java.time.LocalDate.now()
         val formatter = java.time.format.DateTimeFormatter.ofPattern("EEE, MMM d")
-        
-        val grouped = transactions.groupBy { tx ->
-            val txDate = try {
-                java.time.LocalDateTime.parse(tx.timestamp).toLocalDate()
-            } catch (e: Exception) {
-                return@groupBy "Unknown"
-            }
-            
-            when (txDate) {
+
+        val groupedByDate = transactions.groupBy { parseLocalDate(it) }
+        val sortedDates = groupedByDate.keys.sortedDescending()
+
+        val result = linkedMapOf<String, List<Transaction>>()
+        for (date in sortedDates) {
+            val label = when (date) {
+                java.time.LocalDate.MIN -> "Earlier"
                 now -> "Today"
                 now.minusDays(1) -> "Yesterday"
-                else -> txDate.format(formatter)
+                else -> date.format(formatter)
             }
+            val existing = result[label].orEmpty()
+            result[label] = existing + (groupedByDate[date] ?: emptyList())
         }
-        
-        // Sort groups by actual date descending
-        return grouped.toSortedMap(compareByDescending { dateLabel ->
-            when (dateLabel) {
-                "Today" -> now
-                "Yesterday" -> now.minusDays(1)
-                "Unknown" -> java.time.LocalDate.MIN
-                else -> {
-                    try {
-                        val parsed = java.time.LocalDate.parse(
-                            dateLabel + ", " + now.year, 
-                            java.time.format.DateTimeFormatter.ofPattern("EEE, MMM d, yyyy")
-                        )
-                        if (parsed.isAfter(now)) parsed.minusYears(1) else parsed
-                    } catch (e: Exception) {
-                        java.time.LocalDate.MIN
-                    }
-                }
-            }
-        })
+        return result
     }
 
     fun addTransaction(

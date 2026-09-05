@@ -1,7 +1,10 @@
 package com.tracker.finance_app.domain.model
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class Transaction(
     val id: String = "",
@@ -10,9 +13,11 @@ data class Transaction(
     val categoryId: String? = null,
     val categoryName: String? = null,
     val type: TransactionType = TransactionType.EXPENSE,
+    @JsonNames("description", "transactionName")
     val description: String = "",
     val transactionName: String? = null,
     val merchantName: String? = null,
+    @JsonNames("timestamp", "occurredAt")
     val timestamp: String = "",
     val occurredAt: String? = null,
     val notes: String? = null,

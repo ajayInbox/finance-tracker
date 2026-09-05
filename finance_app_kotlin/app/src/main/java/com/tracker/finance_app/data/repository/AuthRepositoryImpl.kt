@@ -11,8 +11,25 @@ import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
     private val apiService: FinanceApiService,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val accountRepositoryProvider: javax.inject.Provider<com.tracker.finance_app.domain.repository.AccountRepository>,
+    private val transactionRepositoryProvider: javax.inject.Provider<com.tracker.finance_app.domain.repository.TransactionRepository>,
+    private val categoryRepositoryProvider: javax.inject.Provider<com.tracker.finance_app.domain.repository.CategoryRepository>
 ) : AuthRepository {
+
+    constructor(
+        apiService: FinanceApiService,
+        tokenManager: TokenManager
+    ) : this(
+        apiService,
+        tokenManager,
+        javax.inject.Provider { null as com.tracker.finance_app.domain.repository.AccountRepository? as com.tracker.finance_app.domain.repository.AccountRepository },
+        javax.inject.Provider { null as com.tracker.finance_app.domain.repository.TransactionRepository? as com.tracker.finance_app.domain.repository.TransactionRepository },
+        javax.inject.Provider { null as com.tracker.finance_app.domain.repository.CategoryRepository? as com.tracker.finance_app.domain.repository.CategoryRepository }
+    )
+
+    override val hasValidToken: Boolean
+        get() = !tokenManager.cachedAccessToken.isNullOrBlank()
 
     override suspend fun signIn(email: String, password: String): Result<AuthTokens> {
         return runCatching {
@@ -35,13 +52,16 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun signOut() {
-        try {
-            val refreshToken = tokenManager.cachedRefreshToken
-            if (refreshToken != null) {
-                apiService.logout(refreshToken)
-            }
-        } catch (_: Exception) { }
+        val refreshToken = tokenManager.cachedRefreshToken
         tokenManager.clearTokens()
+        try { accountRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }
+        try { transactionRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }
+        try { categoryRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }
+        if (refreshToken != null) {
+            try {
+                apiService.logout(refreshToken)
+            } catch (_: Exception) { }
+        }
     }
 
     override suspend fun sendPasswordReset(email: String): Result<Unit> {
@@ -52,6 +72,9 @@ class AuthRepositoryImpl @Inject constructor(
         return runCatching {
             apiService.deleteUserAccount()
             tokenManager.clearTokens()
+            try { accountRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }
+            try { transactionRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }
+            try { categoryRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }
         }
     }
 

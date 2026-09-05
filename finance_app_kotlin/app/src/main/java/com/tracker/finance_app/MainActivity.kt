@@ -17,14 +17,27 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.isSystemInDarkTheme
+import com.tracker.finance_app.domain.repository.AuthRepository
+import com.tracker.finance_app.presentation.navigation.Screen
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val themeViewModel: ThemeViewModel by viewModels()
 
+    @Inject
+    lateinit var authRepository: AuthRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val startDestination = if (authRepository.hasValidToken) {
+            Screen.Dashboard.route
+        } else {
+            Screen.SignIn.route
+        }
+
         setContent {
             val themeMode by themeViewModel.themeMode.collectAsState()
             val darkTheme = when (themeMode) {
@@ -35,7 +48,11 @@ class MainActivity : ComponentActivity() {
             FinanceAppTheme(darkTheme = darkTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val navController = rememberNavController()
-                    MainAppNavigation(navController = navController)
+                    MainAppNavigation(
+                        navController = navController,
+                        startDestination = startDestination,
+                        authRepository = authRepository
+                    )
                 }
             }
         }

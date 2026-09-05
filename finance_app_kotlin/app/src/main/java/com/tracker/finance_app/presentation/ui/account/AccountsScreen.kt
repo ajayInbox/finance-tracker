@@ -8,6 +8,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,7 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import com.tracker.finance_app.presentation.components.FinPullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +33,7 @@ import com.tracker.finance_app.core.util.Formatters
 import com.tracker.finance_app.domain.model.Account
 import com.tracker.finance_app.domain.model.AccountCategory
 import com.tracker.finance_app.domain.model.AccountType
+import com.tracker.finance_app.presentation.components.ScreenHeader
 import com.tracker.finance_app.presentation.components.ShimmerList
 
 // FinFlow Design System Colors
@@ -64,7 +66,13 @@ fun AccountsScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Load data whenever entering the screen
+    LaunchedEffect(Unit) {
+        viewModel.loadData()
+    }
 
     // Listen for error messages
     LaunchedEffect(uiState.error) {
@@ -142,43 +150,12 @@ fun AccountsScreen(
         )
     }
 
-    // Bottom Sheet for Adding / Editing Accounts
-    if (uiState.isBottomSheetOpen) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = { viewModel.closeBottomSheet() },
-            sheetState = sheetState,
-            containerColor = Color.White,
-            shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
-            dragHandle = {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 12.dp, bottom = 8.dp)
-                        .size(width = 42.dp, height = 4.dp)
-                        .background(Color(0xFFD8DDE4), CircleShape)
-                )
-            }
-        ) {
-            AccountBottomSheetContent(
-                uiState = uiState,
-                onCategoryChanged = { viewModel.onCategoryChanged(it) },
-                onTypeChanged = { viewModel.onTypeChanged(it) },
-                onNameChanged = { viewModel.onNameChanged(it) },
-                onInstitutionChanged = { viewModel.onInstitutionChanged(it) },
-                onAccountNumberChanged = { viewModel.onAccountNumberChanged(it) },
-                onBalanceChanged = { viewModel.onBalanceChanged(it) },
-                onCreditLimitChanged = { viewModel.onCreditLimitChanged(it) },
-                onSave = { viewModel.saveAccount() },
-                onClose = { viewModel.closeBottomSheet() }
-            )
-        }
-    }
-
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = FinAppBg,
         bottomBar = {
             // Floating Bottom Bar with + Add Account button
+            // Single route: always navigates to AddAccount page
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -196,7 +173,7 @@ fun AccountsScreen(
             ) {
                 Button(
                     onClick = {
-                        viewModel.openAddAccountSheet()
+                        viewModel.prepareAddAccount()
                         onNavigateToAddAccount()
                     },
                     modifier = Modifier
@@ -225,9 +202,10 @@ fun AccountsScreen(
             }
         }
     ) { innerPadding ->
-        PullToRefreshBox(
+        FinPullToRefreshBox(
             isRefreshing = uiState.isRefreshing,
             onRefresh = { viewModel.loadData(isRefresh = true) },
+            lazyListState = listState,
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
@@ -240,47 +218,10 @@ fun AccountsScreen(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // Header: Title on Left, Notification Bell on Right
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Accounts",
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp,
-                        color = FinTextDark
-                    )
-
-                    // Notification Button with Unread Indicator
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .border(1.dp, FinBorder, RoundedCornerShape(14.dp))
-                            .background(Color.White, RoundedCornerShape(14.dp))
-                            .clickable { onNotificationClick() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.NotificationsNone,
-                            contentDescription = "Notifications",
-                            tint = FinTextDark,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        // Red Unread Dot
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .align(Alignment.TopEnd)
-                                .offset(x = (-8).dp, y = 8.dp)
-                                .background(Color(0xFFEF4444), CircleShape)
-                                .border(1.5.dp, Color.White, CircleShape)
-                        )
-                    }
-                }
+                ScreenHeader(
+                    title = "Accounts",
+                    onNotificationClick = onNotificationClick
+                )
 
                 Spacer(modifier = Modifier.height(18.dp))
 
@@ -304,6 +245,7 @@ fun AccountsScreen(
                     }
 
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(20.dp),
                         contentPadding = PaddingValues(bottom = 80.dp)
@@ -335,7 +277,10 @@ fun AccountsScreen(
                             items(assetAccounts, key = { it.id }) { account ->
                                 AccountCardItem(
                                     account = account,
-                                    onEdit = { viewModel.openEditAccountSheet(account) },
+                                    onEdit = {
+                                        viewModel.prepareEditAccount(account)
+                                        onNavigateToAddAccount()
+                                    },
                                     onDelete = { viewModel.requestDeleteAccount(account) }
                                 )
                             }
@@ -360,7 +305,10 @@ fun AccountsScreen(
                                 AccountCardItem(
                                     account = account,
                                     isLiability = true,
-                                    onEdit = { viewModel.openEditAccountSheet(account) },
+                                    onEdit = {
+                                        viewModel.prepareEditAccount(account)
+                                        onNavigateToAddAccount()
+                                    },
                                     onDelete = { viewModel.requestDeleteAccount(account) }
                                 )
                             }

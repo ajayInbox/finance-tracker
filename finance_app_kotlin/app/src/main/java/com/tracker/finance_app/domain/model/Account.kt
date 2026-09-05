@@ -33,8 +33,8 @@ data class Account(
     val accountNumber: String? = null,
     val institution: String? = null,
     @JsonNames("type", "accountType")
-    val type: AccountType,
-    val category: AccountCategory,
+    val type: AccountType = AccountType.CHECKING,
+    val category: AccountCategory = AccountCategory.ASSET,
     @JsonNames("balance", "currentBalance")
     val balance: Double = 0.0,
     val currency: String = "INR",

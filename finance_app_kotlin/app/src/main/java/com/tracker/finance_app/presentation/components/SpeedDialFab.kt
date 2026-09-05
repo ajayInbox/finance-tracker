@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Message
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SmallFloatingActionButton
@@ -46,7 +45,6 @@ import androidx.compose.ui.unit.dp
 fun SpeedDialFab(
     onAddExpense: () -> Unit,
     onAddIncome: () -> Unit,
-    onTransfer: () -> Unit,
     onSyncSms: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -100,15 +98,6 @@ fun SpeedDialFab(
                         onClick = {
                             expanded = false
                             onSyncSms()
-                        }
-                    )
-                    MiniFabItem(
-                        icon = Icons.Default.SwapHoriz,
-                        label = "Transfer",
-                        color = Color(0xFF1E88E5),
-                        onClick = {
-                            expanded = false
-                            onTransfer()
                         }
                     )
                     MiniFabItem(

@@ -7,7 +7,8 @@ import kotlinx.serialization.Serializable
 enum class TransactionType {
     EXPENSE,
     INCOME,
-    TRANSFER
+    TRANSFER,
+    UNKNOWN
 }
 
 @Serializable

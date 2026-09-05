@@ -51,8 +51,33 @@ class DashboardViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
+    private var lastLoadedTransactionMutationTime: Long = -1L
+    private var lastLoadedAccountMutationTime: Long = -1L
+
     init {
         loadDashboardData()
+
+        // Reactively reload dashboard data whenever transactions change (add, update, delete)
+        viewModelScope.launch {
+            transactionRepository.transactionUpdates.collect {
+                loadDashboardData(isRefresh = true, silent = true)
+            }
+        }
+
+        // Reactively reload dashboard data whenever accounts change (create, update, delete)
+        viewModelScope.launch {
+            accountRepository.accountUpdates.collect {
+                loadDashboardData(isRefresh = true, silent = true)
+            }
+        }
+    }
+
+    fun loadDashboardDataIfNeeded() {
+        val txDirty = lastLoadedTransactionMutationTime != transactionRepository.lastMutationTime
+        val accDirty = lastLoadedAccountMutationTime != accountRepository.lastMutationTime
+        if (txDirty || accDirty) {
+            loadDashboardData(isRefresh = true, silent = true)
+        }
     }
 
     fun onMonthSelected(month: String) {
@@ -64,11 +89,11 @@ class DashboardViewModel @Inject constructor(
         _uiState.update { it.copy(error = null) }
     }
 
-    fun loadDashboardData(isRefresh: Boolean = false) {
+    fun loadDashboardData(isRefresh: Boolean = false, silent: Boolean = false) {
         viewModelScope.launch {
-            if (isRefresh) {
+            if (isRefresh && !silent) {
                 _uiState.update { it.copy(isRefreshing = true, error = null) }
-            } else {
+            } else if (!isRefresh && _uiState.value.recentTransactions.isEmpty()) {
                 _uiState.update { it.copy(isLoading = true, error = null) }
             }
 
@@ -80,16 +105,16 @@ class DashboardViewModel @Inject constructor(
             val (startDate, endDate) = getMonthDateRange(_uiState.value.selectedMonth)
 
             // Step 2: Parallel fetch for transactions & expense report analysis (/api/v1/transactions/analysis)
-            val txnsDeferred = async { transactionRepository.fetchTransactions() }
+            val txnsDeferred = async { transactionRepository.fetchTransactions(forceRefresh = isRefresh) }
             val expenseReportDeferred = async { transactionRepository.fetchExpenseReport(startDate, endDate, "EXPENSE") }
 
             // Step 3: Conditional calls (only for EXPENSE_AND_ACCOUNT mode)
             val accountsDeferred = if (mode == DashboardMode.EXPENSE_AND_ACCOUNT) {
-                async { accountRepository.fetchAccounts() }
+                async { accountRepository.fetchAccounts(forceRefresh = isRefresh) }
             } else null
 
             val netWorthDeferred = if (mode == DashboardMode.EXPENSE_AND_ACCOUNT) {
-                async { accountRepository.getNetWorthSummary() }
+                async { accountRepository.getNetWorthSummary(forceRefresh = isRefresh) }
             } else null
 
             val txnsRes = txnsDeferred.await()
@@ -129,7 +154,9 @@ class DashboardViewModel @Inject constructor(
                     dashboardMode = mode,
                     accounts = accountsRes?.getOrDefault(emptyList()) ?: emptyList(),
                     netWorthSummary = netWorthRes?.getOrNull(),
-                    recentTransactions = txnsList.take(6),
+                    recentTransactions = txnsList
+                        .sortedByDescending { getTransactionTimeMillis(it) }
+                        .take(10),
                     totalExpense = calculatedExpense,
                     totalIncome = calculatedIncome,
                     netSavings = calculatedNetSavings,
@@ -138,7 +165,32 @@ class DashboardViewModel @Inject constructor(
                     error = firstError
                 )
             }
+            lastLoadedTransactionMutationTime = transactionRepository.lastMutationTime
+            lastLoadedAccountMutationTime = accountRepository.lastMutationTime
         }
+    }
+
+    private fun getTransactionTimeMillis(tx: Transaction): Long {
+        val raw = tx.effectiveTimestamp.ifBlank { tx.timestamp }.trim()
+        if (raw.isBlank()) return Long.MIN_VALUE
+        raw.toLongOrNull()?.let { return it }
+        try {
+            return java.time.Instant.parse(raw).toEpochMilli()
+        } catch (_: Exception) { }
+        try {
+            return java.time.LocalDateTime.parse(raw, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                .atZone(java.time.ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+        } catch (_: Exception) { }
+        try {
+            val datePart = raw.substring(0, 10)
+            return java.time.LocalDate.parse(datePart)
+                .atStartOfDay(java.time.ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+        } catch (_: Exception) { }
+        return Long.MIN_VALUE
     }
 
     private fun getMonthDateRange(monthName: String): Pair<String, String> {

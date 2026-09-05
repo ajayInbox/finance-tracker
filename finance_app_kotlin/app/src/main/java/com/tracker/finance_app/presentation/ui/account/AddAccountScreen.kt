@@ -57,6 +57,11 @@ fun AddAccountScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val isEditMode = uiState.editingAccountId != null
+    val handleBack = {
+        viewModel.closeBottomSheet()
+        onNavigateBack()
+    }
 
     var statementDay by remember { mutableStateOf("1") }
     var dueDay by remember { mutableStateOf("15") }
@@ -109,7 +114,7 @@ fun AddAccountScreen(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
-                            onClick = onNavigateBack
+                            onClick = handleBack
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -124,7 +129,7 @@ fun AddAccountScreen(
                 Spacer(modifier = Modifier.width(6.dp))
 
                 Text(
-                    text = "Add Account",
+                    text = if (isEditMode) "Edit Account" else "Add Account",
                     fontSize = 23.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.5).sp,
@@ -823,7 +828,7 @@ fun AddAccountScreen(
                             )
                         } else {
                             Text(
-                                text = "Save Account",
+                                text = if (isEditMode) "Save Changes" else "Save Account",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White

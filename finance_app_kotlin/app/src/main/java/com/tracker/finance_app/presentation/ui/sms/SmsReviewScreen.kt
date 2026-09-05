@@ -10,8 +10,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import com.tracker.finance_app.presentation.components.FinPullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +28,7 @@ import com.tracker.finance_app.core.util.hasSmsPermissions
 import com.tracker.finance_app.core.util.rememberSmsPermissionRequest
 import com.tracker.finance_app.data.sync.SyncUiStatus
 import com.tracker.finance_app.domain.model.TransactionDraft
+import com.tracker.finance_app.presentation.components.ScreenHeader
 import com.tracker.finance_app.presentation.components.ShimmerList
 import com.tracker.finance_app.presentation.components.SplitAmountText
 import java.util.concurrent.TimeUnit
@@ -35,6 +37,8 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun SmsReviewScreen(
     viewModel: SmsViewModel,
+    onNavigateBack: () -> Unit = {},
+    onNotificationClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -42,6 +46,7 @@ fun SmsReviewScreen(
     val lastSyncTimestamp by viewModel.lastSyncTimestamp.collectAsState()
     val accounts by viewModel.accounts.collectAsState()
     val categories by viewModel.categories.collectAsState()
+    val listState = rememberLazyListState()
 
     val context = LocalContext.current
     var hasPermissions by remember { mutableStateOf(hasSmsPermissions(context)) }
@@ -107,16 +112,7 @@ fun SmsReviewScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("SMS Drafts") },
-                actions = {
-                    IconButton(onClick = { viewModel.loadDrafts(true) }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                    }
-                }
-            )
-        },
+        containerColor = Color(0xFFFBFCFD),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             AnimatedVisibility(visible = selectedDraftIds.isNotEmpty()) {
@@ -159,33 +155,53 @@ fun SmsReviewScreen(
             }
         }
     ) { innerPadding ->
-        PullToRefreshBox(
+        FinPullToRefreshBox(
             isRefreshing = uiState.isRefreshing,
             onRefresh = { viewModel.loadDrafts(true) },
+            lazyListState = listState,
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when {
-                uiState.isLoading -> {
-                    ShimmerList(modifier = Modifier.padding(16.dp))
-                }
-                uiState.error != null && uiState.drafts.isEmpty() -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = uiState.error ?: "An error occurred", color = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.loadDrafts() }) { Text("Retry") }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 18.dp)
+            ) {
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Consistent Screen Header
+                ScreenHeader(
+                    title = "SMS Drafts",
+                    onBackClick = onNavigateBack,
+                    onNotificationClick = onNotificationClick
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                when {
+                    uiState.isLoading -> {
+                        ShimmerList(modifier = Modifier.fillMaxSize())
                     }
-                }
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                    uiState.error != null && uiState.drafts.isEmpty() -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = uiState.error ?: "An error occurred", color = MaterialTheme.colorScheme.error)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(onClick = { viewModel.loadDrafts() }) { Text("Retry") }
+                        }
+                    }
+                    else -> {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 80.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
                         item {
                             SyncHeroCard(
                                 isSyncing = isSyncing,
@@ -293,6 +309,7 @@ fun SmsReviewScreen(
             }
         }
     }
+}
 }
 
 @Composable

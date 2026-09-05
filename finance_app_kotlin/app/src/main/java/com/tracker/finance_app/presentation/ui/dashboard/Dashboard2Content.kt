@@ -32,12 +32,14 @@ fun Dashboard2Content(
     onNavigateToAccounts: () -> Unit,
     onNavigateToCategories: () -> Unit,
     onNavigateToTransactions: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    listState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
 ) {
     // Map account id to account name for transaction subtitle
     val accountMap = accounts.associate { it.id to it.name }
 
     LazyColumn(
+        state = listState,
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 20.dp),
@@ -146,58 +148,39 @@ fun Dashboard2Content(
             }
         }
 
-        // Card 3: Accounts
+
+
+        // Card 3: Recent Transactions
         item {
             FinCard(contentPadding = PaddingValues(18.dp)) {
                 SectionHeading(
-                    title = "Accounts",
-                    actionText = "View All",
-                    onActionClick = onNavigateToAccounts
+                    title = "Recent Transactions",
+                    actionText = if (recentTransactions.isNotEmpty()) "View All" else null,
+                    onActionClick = onNavigateToTransactions
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                accounts.take(4).forEachIndexed { index, account ->
-                    AccountItemRow(
-                        account = account,
-                        onClick = onNavigateToAccounts
+                if (recentTransactions.isEmpty()) {
+                    Text(
+                        text = "No recent transactions found.",
+                        fontSize = 12.sp,
+                        color = FinTextMuted,
+                        modifier = Modifier.padding(vertical = 12.dp)
                     )
-                    if (index < accounts.size - 1 && index < 3) {
-                        HorizontalDivider(color = FinDivider, thickness = 1.dp)
-                    }
-                }
-            }
-        }
-
-        // Section 4: Recent Transactions
-        item {
-            Spacer(modifier = Modifier.height(4.dp))
-            SectionHeading(
-                title = "Recent Transactions",
-                actionText = "See All",
-                onActionClick = onNavigateToTransactions
-            )
-        }
-
-        if (recentTransactions.isEmpty()) {
-            item {
-                Text(
-                    text = "No recent transactions found.",
-                    fontSize = 13.sp,
-                    color = FinTextMuted,
-                    modifier = Modifier.padding(vertical = 12.dp)
-                )
-            }
-        } else {
-            itemsIndexed(recentTransactions, key = { _, tx -> tx.id }) { index, transaction ->
-                Column {
-                    TransactionItemRow(
-                        transaction = transaction,
-                        accountName = accountMap[transaction.accountId] ?: transaction.merchantName,
-                        onClick = onNavigateToTransactions
-                    )
-                    if (index < recentTransactions.size - 1) {
-                        HorizontalDivider(color = FinDivider, thickness = 1.dp)
+                } else {
+                    val displayTransactions = recentTransactions.take(5)
+                    displayTransactions.forEachIndexed { index, transaction ->
+                        Column {
+                            TransactionItemRow(
+                                transaction = transaction,
+                                accountName = accountMap[transaction.accountId] ?: transaction.merchantName,
+                                onClick = onNavigateToTransactions
+                            )
+                            if (index < displayTransactions.size - 1) {
+                                HorizontalDivider(color = FinDivider, thickness = 1.dp)
+                            }
+                        }
                     }
                 }
             }

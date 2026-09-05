@@ -5,7 +5,9 @@ import kotlinx.coroutines.flow.Flow
 
 interface CategoryRepository {
     fun getCategoriesFlow(): Flow<List<Category>>
-    suspend fun fetchCategories(): Result<List<Category>>
+    suspend fun fetchCategories(forceRefresh: Boolean = false): Result<List<Category>>
+    fun invalidateCache()
+    fun clearCache()
     suspend fun createCategory(
         name: String,
         groupName: String = "General",

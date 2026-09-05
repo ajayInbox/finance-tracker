@@ -48,16 +48,24 @@ class AccountsViewModel @Inject constructor(
 
     init {
         loadData()
+        viewModelScope.launch {
+            accountRepository.getAccountsFlow().collect { accounts ->
+                if (accounts.isNotEmpty()) {
+                    _uiState.update { it.copy(accounts = accounts) }
+                }
+            }
+        }
     }
 
     fun loadData(isRefresh: Boolean = false) {
+        val hasExistingData = _uiState.value.accounts.isNotEmpty()
         viewModelScope.launch {
             if (isRefresh) {
                 _uiState.update { it.copy(isRefreshing = true, error = null) }
-            } else {
+            } else if (!hasExistingData) {
                 _uiState.update { it.copy(isLoading = true, error = null) }
             }
-            accountRepository.fetchAccounts()
+            accountRepository.fetchAccounts(forceRefresh = isRefresh)
                 .onSuccess { list ->
                     _uiState.update { it.copy(isLoading = false, isRefreshing = false, accounts = list) }
                 }
@@ -65,7 +73,7 @@ class AccountsViewModel @Inject constructor(
                     _uiState.update { it.copy(isLoading = false, isRefreshing = false, error = exc.message) }
                 }
 
-            accountRepository.getNetWorthSummary().onSuccess { summary ->
+            accountRepository.getNetWorthSummary(forceRefresh = isRefresh).onSuccess { summary ->
                 _uiState.update { it.copy(netWorthSummary = summary) }
             }
         }
@@ -83,6 +91,42 @@ class AccountsViewModel @Inject constructor(
                 newAccountCreditLimit = "",
                 newAccountCategory = AccountCategory.ASSET,
                 newAccountType = AccountType.CHECKING,
+                error = null
+            )
+        }
+    }
+
+    // Single-route form: reset for full-page AddAccountScreen (no bottom sheet)
+    fun prepareAddAccount() {
+        _uiState.update {
+            it.copy(
+                isBottomSheetOpen = false,
+                editingAccountId = null,
+                newAccountName = "",
+                newAccountInstitution = "",
+                newAccountNumber = "",
+                newAccountBalance = "",
+                newAccountCreditLimit = "",
+                newAccountCategory = AccountCategory.ASSET,
+                newAccountType = AccountType.CHECKING,
+                error = null
+            )
+        }
+    }
+
+    // Single-route form: populate for full-page AddAccountScreen edit mode (no bottom sheet)
+    fun prepareEditAccount(account: Account) {
+        _uiState.update {
+            it.copy(
+                isBottomSheetOpen = false,
+                editingAccountId = account.id,
+                newAccountName = account.name,
+                newAccountInstitution = account.institution.orEmpty(),
+                newAccountNumber = account.accountNumber.orEmpty(),
+                newAccountBalance = if (account.balance == 0.0) "" else account.balance.toString(),
+                newAccountCreditLimit = account.creditLimit?.toString().orEmpty(),
+                newAccountCategory = account.category,
+                newAccountType = account.type,
                 error = null
             )
         }

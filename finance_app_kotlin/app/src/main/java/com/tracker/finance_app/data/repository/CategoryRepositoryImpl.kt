@@ -15,13 +15,18 @@ class CategoryRepositoryImpl @Inject constructor(
 ) : CategoryRepository {
 
     private val _categoriesState = MutableStateFlow<List<Category>>(emptyList())
+    private var isCacheValid = false
 
     override fun getCategoriesFlow(): Flow<List<Category>> = _categoriesState.asStateFlow()
 
-    override suspend fun fetchCategories(): Result<List<Category>> {
+    override suspend fun fetchCategories(forceRefresh: Boolean): Result<List<Category>> {
+        if (!forceRefresh && isCacheValid && _categoriesState.value.isNotEmpty()) {
+            return Result.success(_categoriesState.value)
+        }
         return runCatching {
             val items = apiService.getCategories()
             _categoriesState.value = items
+            isCacheValid = true
             items
         }
     }
@@ -43,7 +48,7 @@ class CategoryRepositoryImpl @Inject constructor(
                 colorCode = colorCode ?: "#087B3D"
             )
             val item = apiService.createCategory(request)
-            fetchCategories()
+            fetchCategories(forceRefresh = true)
             item
         }
     }
@@ -63,7 +68,7 @@ class CategoryRepositoryImpl @Inject constructor(
                 colorCode = colorCode ?: "#087B3D"
             )
             val item = apiService.updateCategory(id, request)
-            fetchCategories()
+            fetchCategories(forceRefresh = true)
             item
         }
     }
@@ -71,7 +76,16 @@ class CategoryRepositoryImpl @Inject constructor(
     override suspend fun deleteCategory(id: String): Result<Unit> {
         return runCatching {
             apiService.deleteCategory(id)
-            fetchCategories()
+            fetchCategories(forceRefresh = true)
         }
+    }
+
+    override fun invalidateCache() {
+        isCacheValid = false
+    }
+
+    override fun clearCache() {
+        _categoriesState.value = emptyList()
+        isCacheValid = false
     }
 }

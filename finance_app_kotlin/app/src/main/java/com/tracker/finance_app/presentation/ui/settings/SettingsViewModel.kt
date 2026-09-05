@@ -87,9 +87,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun signOut() {
+    fun signOut(onComplete: () -> Unit = {}) {
         viewModelScope.launch {
             authRepository.signOut()
+            onComplete()
         }
     }
 

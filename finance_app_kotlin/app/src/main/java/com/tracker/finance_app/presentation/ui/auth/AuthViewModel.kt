@@ -33,7 +33,9 @@ class AuthViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             authRepository.getAuthTokenFlow().collect { token ->
-                _uiState.update { it.copy(isAuthenticated = !token.isNullOrBlank()) }
+                if (token.isNullOrBlank()) {
+                    _uiState.update { it.copy(isAuthenticated = false) }
+                }
             }
         }
     }

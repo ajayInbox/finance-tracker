@@ -17,7 +17,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import com.tracker.finance_app.presentation.components.FinPullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.tracker.finance_app.domain.model.TransactionType
+import com.tracker.finance_app.presentation.components.ScreenHeader
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -42,6 +43,7 @@ import java.time.format.DateTimeFormatter
 fun TransactionsScreen(
     viewModel: TransactionsViewModel,
     onNavigateToAddTransaction: () -> Unit,
+    onNotificationClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -57,6 +59,11 @@ fun TransactionsScreen(
     )
     var showFilterSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Load transactions whenever entering the screen
+    LaunchedEffect(Unit) {
+        viewModel.loadTransactions()
+    }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let { message ->
@@ -96,30 +103,33 @@ fun TransactionsScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Transactions") },
-                actions = {
-                    IconButton(onClick = { viewModel.loadTransactions() }) {
-                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
-                    }
-                }
-            )
-        }
+        containerColor = Color(0xFFFBFCFD)
     ) { innerPadding ->
-        PullToRefreshBox(
+        FinPullToRefreshBox(
             isRefreshing = uiState.isRefreshing,
-            onRefresh = { viewModel.loadTransactions() },
+            onRefresh = { viewModel.loadTransactions(forceRefresh = true) },
+            lazyListState = listState,
             modifier = modifier.fillMaxSize().padding(innerPadding)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Consistent Screen Header
+                ScreenHeader(
+                    title = "Transactions",
+                    onNotificationClick = onNotificationClick,
+                    modifier = Modifier.padding(horizontal = 18.dp)
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
                 // Search Bar
                 OutlinedTextField(
                     value = uiState.searchQuery,
                     onValueChange = { viewModel.onSearchQueryChanged(it) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(horizontal = 18.dp, vertical = 4.dp)
                         .shadow(4.dp, RoundedCornerShape(24.dp))
                         .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp)),
                     shape = RoundedCornerShape(24.dp),
@@ -143,7 +153,7 @@ fun TransactionsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 18.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     FilterChip(
