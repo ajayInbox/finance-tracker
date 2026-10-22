@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.UUID
 import javax.inject.Inject
 
@@ -50,18 +53,45 @@ class TransactionRepositoryImpl @Inject constructor(
         try { accountRepositoryProvider.get()?.invalidateCache() } catch (_: Exception) {}
     }
 
+    private val fetchMutex = kotlinx.coroutines.sync.Mutex()
+    private var inFlightFetch: kotlinx.coroutines.CompletableDeferred<Result<List<Transaction>>>? = null
+
     override fun getTransactionsFlow(): Flow<List<Transaction>> = _transactionsState.asStateFlow()
 
     override suspend fun fetchTransactions(forceRefresh: Boolean): Result<List<Transaction>> {
         if (!forceRefresh && isCacheValid && _transactionsState.value.isNotEmpty()) {
             return Result.success(_transactionsState.value)
         }
-        return runCatching {
-            val items = apiService.getTransactions().map { it.normalized() }
-            _transactionsState.value = items
-            isCacheValid = true
-            items
+
+        val (deferred, isLeader) = fetchMutex.withLock {
+            if (!forceRefresh && isCacheValid && _transactionsState.value.isNotEmpty()) {
+                return@withLock Pair(CompletableDeferred(Result.success(_transactionsState.value)), false)
+            }
+            inFlightFetch?.let { return@withLock Pair(it, false) }
+            val newDeferred = CompletableDeferred<Result<List<Transaction>>>()
+            inFlightFetch = newDeferred
+            Pair(newDeferred, true)
         }
+
+        if (!isLeader) {
+            return deferred.await()
+        }
+
+        val result = try {
+            runCatching {
+                val items = apiService.getTransactions().map { it.normalized() }
+                _transactionsState.value = items
+                isCacheValid = true
+                items
+            }
+        } finally {
+            fetchMutex.withLock {
+                inFlightFetch = null
+            }
+        }
+
+        deferred.complete(result)
+        return result
     }
 
     override suspend fun addTransaction(

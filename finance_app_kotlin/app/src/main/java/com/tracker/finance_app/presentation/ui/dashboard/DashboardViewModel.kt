@@ -53,26 +53,41 @@ class DashboardViewModel @Inject constructor(
 
     private var lastLoadedTransactionMutationTime: Long = -1L
     private var lastLoadedAccountMutationTime: Long = -1L
+    private var loadJob: kotlinx.coroutines.Job? = null
 
     init {
-        loadDashboardData()
+        if (authRepository.hasValidToken) {
+            loadDashboardData()
+        }
 
         // Reactively reload dashboard data whenever transactions change (add, update, delete)
         viewModelScope.launch {
             transactionRepository.transactionUpdates.collect {
-                loadDashboardData(isRefresh = true, silent = true)
+                if (authRepository.hasValidToken) {
+                    loadDashboardData(isRefresh = true, silent = true)
+                }
             }
         }
 
         // Reactively reload dashboard data whenever accounts change (create, update, delete)
         viewModelScope.launch {
             accountRepository.accountUpdates.collect {
-                loadDashboardData(isRefresh = true, silent = true)
+                if (authRepository.hasValidToken) {
+                    loadDashboardData(isRefresh = true, silent = true)
+                }
             }
         }
     }
 
+    fun resetState() {
+        loadJob?.cancel()
+        _uiState.value = DashboardUiState()
+        lastLoadedTransactionMutationTime = -1L
+        lastLoadedAccountMutationTime = -1L
+    }
+
     fun loadDashboardDataIfNeeded() {
+        if (!authRepository.hasValidToken) return
         val txDirty = lastLoadedTransactionMutationTime != transactionRepository.lastMutationTime
         val accDirty = lastLoadedAccountMutationTime != accountRepository.lastMutationTime
         if (txDirty || accDirty) {
@@ -90,7 +105,14 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun loadDashboardData(isRefresh: Boolean = false, silent: Boolean = false) {
-        viewModelScope.launch {
+        if (!authRepository.hasValidToken) return
+
+        if (loadJob?.isActive == true && !isRefresh) {
+            return
+        }
+
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             if (isRefresh && !silent) {
                 _uiState.update { it.copy(isRefreshing = true, error = null) }
             } else if (!isRefresh && _uiState.value.recentTransactions.isEmpty()) {

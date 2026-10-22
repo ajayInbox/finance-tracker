@@ -48,13 +48,15 @@ class TransactionsViewModel @Inject constructor(
         loadTransactions()
         viewModelScope.launch {
             transactionRepository.getTransactionsFlow().collect { transactions ->
-                if (transactions.isNotEmpty()) {
-                    _uiState.update { state ->
-                        updateLists(state, transactions)
-                    }
+                _uiState.update { state ->
+                    updateLists(state, transactions)
                 }
             }
         }
+    }
+
+    fun resetState() {
+        _uiState.value = TransactionsUiState()
     }
 
     fun loadTransactions(forceRefresh: Boolean = false) {

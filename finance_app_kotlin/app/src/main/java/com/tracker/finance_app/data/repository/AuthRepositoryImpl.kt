@@ -7,6 +7,9 @@ import com.tracker.finance_app.data.remote.SignUpRequest
 import com.tracker.finance_app.domain.model.*
 import com.tracker.finance_app.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
@@ -47,13 +50,45 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    private val profileMutex = kotlinx.coroutines.sync.Mutex()
+    private var inFlightProfileFetch: kotlinx.coroutines.CompletableDeferred<Result<UserProfile>>? = null
+    private var cachedProfile: UserProfile? = null
+
     override suspend fun getUserProfile(): Result<UserProfile> {
-        return runCatching { apiService.getUserProfile() }
+        cachedProfile?.let { return Result.success(it) }
+
+        val (deferred, isLeader) = profileMutex.withLock {
+            cachedProfile?.let { return@withLock Pair(kotlinx.coroutines.CompletableDeferred(Result.success(it)), false) }
+            inFlightProfileFetch?.let { return@withLock Pair(it, false) }
+            val newDeferred = kotlinx.coroutines.CompletableDeferred<Result<UserProfile>>()
+            inFlightProfileFetch = newDeferred
+            Pair(newDeferred, true)
+        }
+
+        if (!isLeader) {
+            return deferred.await()
+        }
+
+        val result = try {
+            runCatching {
+                val profile = apiService.getUserProfile()
+                cachedProfile = profile
+                profile
+            }
+        } finally {
+            profileMutex.withLock {
+                inFlightProfileFetch = null
+            }
+        }
+
+        deferred.complete(result)
+        return result
     }
 
     override suspend fun signOut() {
         val refreshToken = tokenManager.cachedRefreshToken
         tokenManager.clearTokens()
+        cachedProfile = null
         try { accountRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }
         try { transactionRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }
         try { categoryRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }
@@ -72,6 +107,7 @@ class AuthRepositoryImpl @Inject constructor(
         return runCatching {
             apiService.deleteUserAccount()
             tokenManager.clearTokens()
+            cachedProfile = null
             try { accountRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }
             try { transactionRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }
             try { categoryRepositoryProvider.get()?.clearCache() } catch (_: Exception) { }

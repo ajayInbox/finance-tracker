@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
 class AccountRepositoryImpl @Inject constructor(
@@ -32,18 +35,48 @@ class AccountRepositoryImpl @Inject constructor(
         _accountUpdates.tryEmit(Unit)
     }
 
+    private val accountsMutex = kotlinx.coroutines.sync.Mutex()
+    private var inFlightAccountsFetch: kotlinx.coroutines.CompletableDeferred<Result<List<Account>>>? = null
+
+    private val netWorthMutex = kotlinx.coroutines.sync.Mutex()
+    private var inFlightNetWorthFetch: kotlinx.coroutines.CompletableDeferred<Result<NetWorthSummary>>? = null
+
     override fun getAccountsFlow(): Flow<List<Account>> = _accountsState.asStateFlow()
 
     override suspend fun fetchAccounts(forceRefresh: Boolean): Result<List<Account>> {
         if (!forceRefresh && isCacheValid && _accountsState.value.isNotEmpty()) {
             return Result.success(_accountsState.value)
         }
-        return runCatching {
-            val items = apiService.getAccounts()
-            _accountsState.value = items
-            isCacheValid = true
-            items
+
+        val (deferred, isLeader) = accountsMutex.withLock {
+            if (!forceRefresh && isCacheValid && _accountsState.value.isNotEmpty()) {
+                return@withLock Pair(CompletableDeferred(Result.success(_accountsState.value)), false)
+            }
+            inFlightAccountsFetch?.let { return@withLock Pair(it, false) }
+            val newDeferred = CompletableDeferred<Result<List<Account>>>()
+            inFlightAccountsFetch = newDeferred
+            Pair(newDeferred, true)
         }
+
+        if (!isLeader) {
+            return deferred.await()
+        }
+
+        val result = try {
+            runCatching {
+                val items = apiService.getAccounts()
+                _accountsState.value = items
+                isCacheValid = true
+                items
+            }
+        } finally {
+            accountsMutex.withLock {
+                inFlightAccountsFetch = null
+            }
+        }
+
+        deferred.complete(result)
+        return result
     }
 
     override suspend fun createAccount(request: AccountCreateUpdateRequest): Result<Account> {
@@ -82,11 +115,35 @@ class AccountRepositoryImpl @Inject constructor(
         if (!forceRefresh && isCacheValid && cachedNetWorthSummary != null) {
             return Result.success(cachedNetWorthSummary!!)
         }
-        return runCatching {
-            val summary = apiService.getNetWorthSummary()
-            cachedNetWorthSummary = summary
-            summary
+
+        val (deferred, isLeader) = netWorthMutex.withLock {
+            if (!forceRefresh && isCacheValid && cachedNetWorthSummary != null) {
+                return@withLock Pair(CompletableDeferred(Result.success(cachedNetWorthSummary!!)), false)
+            }
+            inFlightNetWorthFetch?.let { return@withLock Pair(it, false) }
+            val newDeferred = CompletableDeferred<Result<NetWorthSummary>>()
+            inFlightNetWorthFetch = newDeferred
+            Pair(newDeferred, true)
         }
+
+        if (!isLeader) {
+            return deferred.await()
+        }
+
+        val result = try {
+            runCatching {
+                val summary = apiService.getNetWorthSummary()
+                cachedNetWorthSummary = summary
+                summary
+            }
+        } finally {
+            netWorthMutex.withLock {
+                inFlightNetWorthFetch = null
+            }
+        }
+
+        deferred.complete(result)
+        return result
     }
     
     override suspend fun initializeDefaults(): Result<Account> {

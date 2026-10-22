@@ -58,6 +58,10 @@ class CategoryViewModel @Inject constructor(
         loadCategories()
     }
 
+    fun resetState() {
+        _uiState.value = CategoryUiState()
+    }
+
     fun loadCategories(forceRefresh: Boolean = false) {
         val hasExistingData = _uiState.value.categories.isNotEmpty()
         viewModelScope.launch {

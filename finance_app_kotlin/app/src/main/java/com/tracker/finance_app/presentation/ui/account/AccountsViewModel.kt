@@ -50,11 +50,13 @@ class AccountsViewModel @Inject constructor(
         loadData()
         viewModelScope.launch {
             accountRepository.getAccountsFlow().collect { accounts ->
-                if (accounts.isNotEmpty()) {
-                    _uiState.update { it.copy(accounts = accounts) }
-                }
+                _uiState.update { it.copy(accounts = accounts) }
             }
         }
+    }
+
+    fun resetState() {
+        _uiState.value = AccountsUiState()
     }
 
     fun loadData(isRefresh: Boolean = false) {

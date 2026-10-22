@@ -57,6 +57,11 @@ fun MainAppNavigation(
         LaunchedEffect(authRepository) {
             authRepository.getAuthTokenFlow().collect { token ->
                 if (token.isNullOrBlank()) {
+                    dashboardViewModel.resetState()
+                    accountsViewModel.resetState()
+                    transactionsViewModel.resetState()
+                    categoryViewModel.resetState()
+
                     val current = navController.currentDestination?.route
                     if (current != null && current != Screen.SignIn.route && current != Screen.SignUp.route) {
                         navController.navigate(Screen.SignIn.route) {
@@ -65,11 +70,8 @@ fun MainAppNavigation(
                         }
                     }
                 } else {
-                    // Token is valid / user logged in: reload all shared ViewModels
+                    // Token is valid / user logged in: reload active Dashboard
                     dashboardViewModel.loadDashboardData(isRefresh = true)
-                    accountsViewModel.loadData(isRefresh = true)
-                    transactionsViewModel.loadTransactions(forceRefresh = true)
-                    categoryViewModel.loadCategories(forceRefresh = true)
                 }
             }
         }

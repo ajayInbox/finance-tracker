@@ -8,6 +8,9 @@ import com.tracker.finance_app.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
 class CategoryRepositoryImpl @Inject constructor(
@@ -17,18 +20,45 @@ class CategoryRepositoryImpl @Inject constructor(
     private val _categoriesState = MutableStateFlow<List<Category>>(emptyList())
     private var isCacheValid = false
 
+    private val categoryMutex = Mutex()
+    private var inFlightCategoriesFetch: CompletableDeferred<Result<List<Category>>>? = null
+
     override fun getCategoriesFlow(): Flow<List<Category>> = _categoriesState.asStateFlow()
 
     override suspend fun fetchCategories(forceRefresh: Boolean): Result<List<Category>> {
         if (!forceRefresh && isCacheValid && _categoriesState.value.isNotEmpty()) {
             return Result.success(_categoriesState.value)
         }
-        return runCatching {
-            val items = apiService.getCategories()
-            _categoriesState.value = items
-            isCacheValid = true
-            items
+
+        val (deferred, isLeader) = categoryMutex.withLock {
+            if (!forceRefresh && isCacheValid && _categoriesState.value.isNotEmpty()) {
+                return@withLock Pair(CompletableDeferred(Result.success(_categoriesState.value)), false)
+            }
+            inFlightCategoriesFetch?.let { return@withLock Pair(it, false) }
+            val newDeferred = CompletableDeferred<Result<List<Category>>>()
+            inFlightCategoriesFetch = newDeferred
+            Pair(newDeferred, true)
         }
+
+        if (!isLeader) {
+            return deferred.await()
+        }
+
+        val result = try {
+            runCatching {
+                val items = apiService.getCategories()
+                _categoriesState.value = items
+                isCacheValid = true
+                items
+            }
+        } finally {
+            categoryMutex.withLock {
+                inFlightCategoriesFetch = null
+            }
+        }
+
+        deferred.complete(result)
+        return result
     }
 
     override suspend fun createCategory(

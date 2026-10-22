@@ -9,6 +9,8 @@ import com.tracker.finance_app.domain.repository.AccountRepository
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -243,6 +245,7 @@ class RepositoryCachingTest {
         val accUpdateFlow = kotlinx.coroutines.flow.MutableSharedFlow<Unit>()
         every { mockTxRepo.transactionUpdates } returns txUpdateFlow
         every { mockAccRepo.accountUpdates } returns accUpdateFlow
+        every { mockAuthRepo.hasValidToken } returns true
         coEvery { mockAuthRepo.getUserProfile() } returns Result.success(UserProfile(id = "user-1", email = "test@example.com", name = "Test User"))
         coEvery { mockTxRepo.fetchTransactions(any()) } returns Result.success(emptyList())
         coEvery { mockTxRepo.fetchExpenseReport(any(), any(), any()) } returns Result.success(MonthlyExpenseResponse(total = 0.0))
@@ -265,5 +268,67 @@ class RepositoryCachingTest {
 
         // Verifying fetchTransactions was called a 2nd time because DashboardViewModel refreshed!
         coVerify(exactly = 2) { mockTxRepo.fetchTransactions(any()) }
+    }
+
+    @Test
+    fun `TransactionRepositoryImpl coalesces concurrent fetchTransactions calls into a single API request`() = runTest {
+        val sampleTx = Transaction(id = "tx-1", amount = 100.0, type = TransactionType.EXPENSE, description = "Lunch")
+        coEvery { apiService.getTransactions() } coAnswers {
+            kotlinx.coroutines.delay(50)
+            listOf(sampleTx)
+        }
+
+        val repo = TransactionRepositoryImpl(
+            apiService = apiService,
+            accountRepositoryProvider = { mockAccountRepository }
+        )
+
+        // Launch 5 concurrent calls with forceRefresh = true
+        val deferred1 = async { repo.fetchTransactions(forceRefresh = true) }
+        val deferred2 = async { repo.fetchTransactions(forceRefresh = true) }
+        val deferred3 = async { repo.fetchTransactions(forceRefresh = true) }
+        val deferred4 = async { repo.fetchTransactions(forceRefresh = true) }
+        val deferred5 = async { repo.fetchTransactions(forceRefresh = true) }
+
+        val results = listOf(
+            deferred1.await(),
+            deferred2.await(),
+            deferred3.await(),
+            deferred4.await(),
+            deferred5.await()
+        )
+
+        results.forEach { res ->
+            assertTrue(res.isSuccess)
+            assertEquals(1, res.getOrNull()?.size)
+            assertEquals("tx-1", res.getOrNull()?.first()?.id)
+        }
+
+        // Even with 5 concurrent callers requesting forceRefresh, only 1 actual API call was made
+        coVerify(exactly = 1) { apiService.getTransactions() }
+    }
+
+    @Test
+    fun `AccountRepositoryImpl coalesces concurrent fetchAccounts calls into a single API request`() = runTest {
+        val sampleAcc = Account(id = "acc-1", name = "Checking", balance = 1000.0, type = AccountType.CHECKING, category = AccountCategory.ASSET)
+        coEvery { apiService.getAccounts() } coAnswers {
+            delay(50)
+            listOf(sampleAcc)
+        }
+
+        val repo = AccountRepositoryImpl(apiService = apiService)
+
+        val deferred1 = async { repo.fetchAccounts(forceRefresh = true) }
+        val deferred2 = async { repo.fetchAccounts(forceRefresh = true) }
+        val deferred3 = async { repo.fetchAccounts(forceRefresh = true) }
+
+        val results = listOf(deferred1.await(), deferred2.await(), deferred3.await())
+        results.forEach { res ->
+            assertTrue(res.isSuccess)
+            assertEquals(1, res.getOrNull()?.size)
+        }
+
+        // Only 1 actual API call across all 3 concurrent callers
+        coVerify(exactly = 1) { apiService.getAccounts() }
     }
 }

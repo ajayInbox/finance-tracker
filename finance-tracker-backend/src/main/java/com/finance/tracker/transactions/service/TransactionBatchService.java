@@ -1,14 +1,10 @@
 package com.finance.tracker.transactions.service;
 
-import com.finance.tracker.accounts.domain.AccountType;
-import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
-import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.accounts.service.AccountService;
 import com.finance.tracker.category.domain.CategoryType;
 import com.finance.tracker.category.domain.entities.Category;
 import com.finance.tracker.category.service.CategoryService;
 import com.finance.tracker.sync.domain.EndScanRequest;
-import com.finance.tracker.sync.domain.dtos.ScanResponse;
 import com.finance.tracker.sync.domain.dtos.ScanStartResponse;
 import com.finance.tracker.sync.exceptions.InvalidSyncRequestException;
 import com.finance.tracker.sync.service.SyncService;
@@ -18,7 +14,6 @@ import com.finance.tracker.transactions.domain.dtos.BatchUpdateTransactionReques
 import com.finance.tracker.transactions.domain.entities.Transaction;
 import com.finance.tracker.transactions.repository.TransactionBatchRepository;
 import com.finance.tracker.transactions.repository.TransactionRepository;
-import com.finance.tracker.transactions.utilities.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -224,7 +219,7 @@ public class TransactionBatchService {
                 .originalMessage(raw)
                 .externalRef(String.format("Scan Id: %s", scanId))
                 .accountId(null)
-                .category(Category.builder().id(Constants.DUMMY_CATEGORY_ID).build())
+                //.category(Category.builder().id(Constants.DUMMY_CATEGORY_ID).build())
                 .build();
     }
 
