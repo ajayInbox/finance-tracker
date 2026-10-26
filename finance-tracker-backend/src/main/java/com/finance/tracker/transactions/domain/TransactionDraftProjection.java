@@ -25,4 +25,6 @@ public interface TransactionDraftProjection {
     TransactionStatus getStatus();
     List<String> getTags();
     String getOriginalMessage();
+    String getMerchant();
+    String getNotes();
 }

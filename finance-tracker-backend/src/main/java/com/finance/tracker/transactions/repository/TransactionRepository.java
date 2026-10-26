@@ -12,7 +12,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -38,8 +37,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
            WHERE t.user_id = :userId
              AND t.type = :type
              AND t.occurred_at >= :startTime
-            AND t.occurred_at <= :endTime
-            AND t.status = 'CONFIRMED'
+             AND t.occurred_at <= :endTime
+             AND t.status = 'CONFIRMED'
            GROUP BY c.id, c.name
            ORDER BY SUM(t.amount) DESC
         """, nativeQuery = true)
@@ -52,8 +51,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
     Optional<Transaction> findTransactionByUniqueIdentifier(@Param("uniqueIdentifier") String uniqueIdentifier);
 
     @Query(value = """
-    SELECT t.id AS id,t.transaction_name AS transactionName,t.amount AS amount,t.type AS type,t.account_id AS accountId,a.account_name AS accountName,t.category_id AS categoryId,
-              c.name AS categoryName,t.occurred_at AS occurredAt,t.posted_at AS postedAt,t.currency AS currency,t.status AS status,t.tags AS tags,t.original_message AS originalMessage FROM transactions t LEFT JOIN accounts a ON t.account_id = a.id LEFT JOIN categories c ON t.category_id = c.id WHERE t.status = :status AND t.user_id = :userId
+    SELECT t.id AS id, t.transaction_name AS transactionName, t.amount AS amount, t.type AS type,
+           t.account_id AS accountId, a.account_name AS accountName, t.category_id AS categoryId,
+           c.name AS categoryName, t.occurred_at AS occurredAt, t.posted_at AS postedAt,
+           t.currency AS currency, t.status AS status, t.tags AS tags, t.original_message AS originalMessage,
+           t.merchant AS merchant, t.notes AS notes
+    FROM transactions t
+    LEFT JOIN accounts a ON t.account_id = a.id
+    LEFT JOIN categories c ON t.category_id = c.id
+    WHERE t.status = :status AND t.user_id = :userId
    """,
             nativeQuery = true)
     Page<TransactionDraftProjection> findAllTransactions(@Param("userId") UUID userId, @Param("status") String status, Pageable pageable);
@@ -62,9 +68,18 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     Page<Transaction> findAllByUserIdAndStatus(UUID userId, TransactionStatus status, Pageable pageable);
 
-    // Finds all existing identifiers in a single trip to the DB
+    // Finds all existing identifiers for a specific user in a single trip to the DB
+    @Query(value = "SELECT t.uniqueIdentifier FROM Transaction t WHERE t.userId = :userId AND t.uniqueIdentifier IN :identifiers", nativeQuery = false)
+    Set<String> findExistingIdentifiers(@Param("userId") UUID userId, @Param("identifiers") Collection<String> identifiers);
+
+    // Legacy fallback
     @Query(value = "SELECT t.uniqueIdentifier FROM Transaction t WHERE t.uniqueIdentifier IN :identifiers", nativeQuery = false)
     Set<String> findExistingIdentifiers(@Param("identifiers") Collection<String> identifiers);
+
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM Transaction t WHERE t.userId = :userId AND t.status = 'DRAFT' AND t.id IN :ids", nativeQuery = false)
+    void deleteDraftsByUserIdAndIds(@Param("userId") UUID userId, @Param("ids") List<UUID> ids);
 
     @Modifying
     @Transactional

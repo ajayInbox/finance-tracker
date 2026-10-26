@@ -37,6 +37,12 @@ class SmsRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getLatestWatermark(): Result<Long> {
+        return runCatching {
+            apiService.getSyncLatestTimestamp().watermark
+        }
+    }
+
     companion object {
         fun normalizeOccurredAt(iso: String?): String {
             if (iso.isNullOrBlank()) return LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
@@ -51,13 +57,13 @@ class SmsRepositoryImpl @Inject constructor(
         fun buildConfirmRequest(draft: TransactionDraft): BatchUpdateTransactionRequest {
             return BatchUpdateTransactionRequest(
                 id = draft.id,
-                transactionName = draft.transactionName ?: "SMS Transaction",
+                transactionName = draft.effectiveMerchant,
                 amount = draft.amount,
                 type = draft.type.name,
-                categoryId = draft.categoryId!!,
-                accountId = draft.accountId!!,
+                categoryId = draft.categoryId ?: "default-category",
+                accountId = draft.accountId, // Optional: null when user has no accounts configured
                 occurredAt = normalizeOccurredAt(draft.occurredAt),
-                merchant = draft.transactionName,
+                merchant = draft.effectiveMerchant,
                 notes = draft.notes ?: draft.rawSms.ifBlank { null },
                 tags = draft.tags,
                 currency = draft.currency.take(3).ifBlank { "INR" }

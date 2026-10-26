@@ -85,19 +85,28 @@ data class TransactionDraft(
     val notes: String? = null,
     val status: String? = null,
     val tags: List<String> = emptyList(),
-    val originalMessage: String? = null
+    val originalMessage: String? = null,
+    val merchant: String? = null
 ) {
     val rawSms: String get() = originalMessage.orEmpty()
-    val merchant: String? get() = transactionName
+    val effectiveMerchant: String get() = merchant?.ifBlank { null } ?: transactionName?.ifBlank { null } ?: "Transaction"
 
+    /**
+     * Account is optional to eliminate friction when the user has not configured accounts
+     * and is using the tracker purely for expense overview. Only categoryId and id are required.
+     */
     fun isReadyForConfirm(): Boolean =
-        accountId != null && categoryId != null && id.isNotBlank()
+        categoryId != null && id.isNotBlank()
 
     fun withAccount(accountId: String?, accountName: String?): TransactionDraft =
         copy(accountId = accountId, accountName = accountName)
 
-    fun withCategory(categoryId: String?, categoryName: String?): TransactionDraft =
-        copy(categoryId = categoryId, categoryName = categoryName)
+    fun withCategory(categoryId: String?, categoryName: String?, categoryType: TransactionType? = null): TransactionDraft =
+        copy(
+            categoryId = categoryId,
+            categoryName = categoryName,
+            type = if (categoryType != null && (type == TransactionType.UNKNOWN || type != categoryType)) categoryType else type
+        )
 }
 
 @Serializable  
@@ -107,6 +116,7 @@ data class ExpenseReportRequest(
     val type: String = "EXPENSE"
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class SyncTimestamp(
     val timestamp: Long? = null,

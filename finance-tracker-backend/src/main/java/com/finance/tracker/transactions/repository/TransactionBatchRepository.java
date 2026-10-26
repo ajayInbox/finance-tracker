@@ -1,9 +1,6 @@
 package com.finance.tracker.transactions.repository;
 
-import com.finance.tracker.transactions.domain.Currency;
 import com.finance.tracker.transactions.domain.TransactionStatus;
-import com.finance.tracker.transactions.domain.TransactionType;
-import com.finance.tracker.transactions.domain.dtos.BatchUpdateTransactionRequestDto;
 import com.finance.tracker.transactions.domain.entities.Transaction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -36,7 +33,7 @@ public class TransactionBatchRepository {
                 status = ?,
                 last_action = ?,
                 updated_at = ?
-            WHERE id = ? AND status = ?
+            WHERE id = ? AND user_id = ? AND status = ?
         """;
 
         jdbcTemplate.batchUpdate(
@@ -47,7 +44,11 @@ public class TransactionBatchRepository {
 
                     ps.setBigDecimal(1, req.getAmount());
                     ps.setObject(2, req.getType().name());
-                    ps.setObject(3, req.getAccountId());
+                    if (req.getAccountId() != null) {
+                        ps.setObject(3, req.getAccountId());
+                    } else {
+                        ps.setNull(3, java.sql.Types.OTHER);
+                    }
                     ps.setObject(4, req.getCategory().getId());
                     ps.setString(5, req.getTransactionName());
                     ps.setObject(6, req.getCurrency().name());
@@ -61,7 +62,8 @@ public class TransactionBatchRepository {
                     ps.setTimestamp(12, Timestamp.from(Instant.now()));
 
                     ps.setObject(13, req.getId());
-                    ps.setObject(14, TransactionStatus.DRAFT.name());
+                    ps.setObject(14, req.getUserId());
+                    ps.setObject(15, TransactionStatus.DRAFT.name());
                 }
         );
     }

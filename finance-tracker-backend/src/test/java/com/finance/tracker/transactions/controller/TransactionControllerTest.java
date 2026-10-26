@@ -568,7 +568,7 @@ class TransactionControllerTest {
                             .content(objectMapper.writeValueAsString(idsToDelete)))
                     .andExpect(status().isNoContent());
 
-            verify(batchService, times(1)).deleteDraftTransactions(idsToDelete);
+            verify(batchService, times(1)).deleteDraftTransactions(eq(userId), eq(idsToDelete));
         }
 
         @Test

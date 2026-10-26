@@ -15,5 +15,6 @@ public class ParsedTransaction {
     private String availableLimit;
     private String referenceId;
     private double confidence;
+    private TransactionType type;
 
 }

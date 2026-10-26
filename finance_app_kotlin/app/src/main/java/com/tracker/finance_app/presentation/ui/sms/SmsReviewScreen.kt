@@ -101,8 +101,9 @@ fun SmsReviewScreen(
     }
 
     categoryPickerDraft?.let { draft ->
+        val matchingCategories = categories.filter { it.type == draft.type }
         CategoryPickerSheet(
-            categories = categories.filter { it.type == draft.type },
+            categories = if (matchingCategories.isNotEmpty()) matchingCategories else categories,
             onDismiss = { categoryPickerDraft = null },
             onSelect = { category ->
                 viewModel.assignCategory(draft, category)
@@ -456,7 +457,7 @@ private fun SyncRangeBottomSheet(
                     supportingContent = { Text(timeAgo(lastSyncTimestamp)) },
                     leadingContent = { Icon(Icons.Default.History, contentDescription = null) },
                     trailingContent = { Text("FASTEST", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary) },
-                    modifier = Modifier.clickable { onRangeSelected(lastSyncTimestamp) }
+                    modifier = Modifier.clickable { onRangeSelected(0L) }
                 )
             }
             ListItem(
@@ -548,7 +549,7 @@ private fun DraftCard(
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
-                            text = draft.merchant ?: "Unknown Merchant",
+                            text = draft.effectiveMerchant,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -572,7 +573,7 @@ private fun DraftCard(
                     onClick = onPickAccount,
                     label = {
                         Text(
-                            draft.accountName ?: "Choose account",
+                            draft.accountName ?: "Account (optional)",
                             fontSize = 12.sp,
                             maxLines = 1
                         )
@@ -641,7 +642,12 @@ private fun DraftCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val ready = draft.isReadyForConfirm()
-                Button(onClick = onConfirm, enabled = !isConfirming && !isSelected) {
+                Button(
+                    onClick = {
+                        if (ready) onConfirm() else onPickCategory()
+                    },
+                    enabled = !isConfirming && !isSelected
+                ) {
                     if (isConfirming) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.width(4.dp))
@@ -649,7 +655,16 @@ private fun DraftCard(
                         Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                     }
-                    Text(if (ready) "Confirm ${draft.type.name.lowercase()}" else "Confirm")
+                    Text(
+                        if (ready) {
+                            if (draft.type != com.tracker.finance_app.domain.model.TransactionType.UNKNOWN)
+                                "Confirm ${draft.type.name.lowercase()}"
+                            else
+                                "Confirm"
+                        } else {
+                            "Select category"
+                        }
+                    )
                 }
             }
         }
@@ -661,7 +676,7 @@ private fun DraftCard(
 private fun AccountPickerSheet(
     accounts: List<com.tracker.finance_app.domain.model.Account>,
     onDismiss: () -> Unit,
-    onSelect: (com.tracker.finance_app.domain.model.Account) -> Unit
+    onSelect: (com.tracker.finance_app.domain.model.Account?) -> Unit
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.padding(bottom = 24.dp)) {
@@ -671,9 +686,15 @@ private fun AccountPickerSheet(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
+            ListItem(
+                headlineContent = { Text("None (No account)") },
+                supportingContent = { Text("Track purely for expense/income overview") },
+                leadingContent = { Icon(Icons.Default.Clear, contentDescription = null) },
+                modifier = Modifier.clickable { onSelect(null) }
+            )
             if (accounts.isEmpty()) {
                 Text(
-                    "No accounts yet — add one first",
+                    "No accounts added yet",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(16.dp)
@@ -700,13 +721,17 @@ private fun CategoryPickerSheet(
 ) {
     val subcategories = remember(categories) {
         val nestedSubs = categories.flatMap { parent ->
-            parent.children.map { child ->
-                child.copy(
-                    type = parent.type,
-                    groupName = parent.name,
-                    iconName = child.iconName ?: parent.iconName,
-                    colorHex = child.colorHex ?: parent.colorHex
-                )
+            if (parent.children.isEmpty()) {
+                listOf(parent)
+            } else {
+                parent.children.map { child ->
+                    child.copy(
+                        type = parent.type,
+                        groupName = parent.name,
+                        iconName = child.iconName ?: parent.iconName,
+                        colorHex = child.colorHex ?: parent.colorHex
+                    )
+                }
             }
         }
         val directSubs = categories.filter { it.parentId != null }
@@ -724,7 +749,7 @@ private fun CategoryPickerSheet(
             )
             if (subcategories.isEmpty()) {
                 Text(
-                    "No categories for this transaction type",
+                    "No categories available",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(16.dp)
@@ -733,7 +758,10 @@ private fun CategoryPickerSheet(
             subcategories.forEach { category ->
                 ListItem(
                     headlineContent = { Text(category.name) },
-                    supportingContent = { if (category.groupName.isNotBlank()) Text(category.groupName) },
+                    supportingContent = {
+                        val groupOrType = if (category.groupName.isNotBlank()) category.groupName else category.type.name.lowercase().replaceFirstChar { it.uppercase() }
+                        Text(groupOrType)
+                    },
                     leadingContent = { Icon(Icons.Default.Label, contentDescription = null) },
                     modifier = Modifier.clickable { onSelect(category) }
                 )

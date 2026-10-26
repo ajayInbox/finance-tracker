@@ -23,7 +23,7 @@ class SmsReader @Inject constructor(
             Telephony.Sms.BODY,
             Telephony.Sms.DATE
         )
-        val selection = "${Telephony.Sms.DATE} > ?"
+        val selection = "${Telephony.Sms.DATE} >= ?"
         val selectionArgs = arrayOf(timestamp.toString())
         val sortOrder = "${Telephony.Sms.DATE} DESC"
 

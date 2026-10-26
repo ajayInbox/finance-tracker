@@ -7,4 +7,5 @@ interface SmsRepository {
     suspend fun fetchDrafts(): Result<List<TransactionDraft>>
     suspend fun confirmDrafts(requests: List<BatchUpdateTransactionRequest>): Result<Unit>
     suspend fun deleteDraftsBatch(ids: List<String>): Result<Unit>
+    suspend fun getLatestWatermark(): Result<Long>
 }

@@ -2,6 +2,7 @@ package com.finance.tracker.transactions.service.impl;
 
 import com.finance.tracker.transactions.domain.ParsedTransaction;
 import com.finance.tracker.transactions.domain.SmsRequest;
+import com.finance.tracker.transactions.domain.TransactionType;
 import com.finance.tracker.transactions.service.SmsParserService;
 import org.springframework.stereotype.Service;
 
@@ -19,10 +20,10 @@ public class UpiSmsParserServiceImpl implements SmsParserService {
             Pattern.compile("(?i)(rs\\.?|inr|₹)\\s?([\\d,]+(?:\\.\\d{1,2})?)");
 
     private static final Pattern DEBIT =
-            Pattern.compile("(?i)(paid|sent|debited)");
+            Pattern.compile("(?i)(paid|sent|debited|debit)");
 
     private static final Pattern CREDIT =
-            Pattern.compile("(?i)(received|credited)");
+            Pattern.compile("(?i)(received|credited|credit)");
 
     private static final Pattern UPI_ID =
             Pattern.compile("(?i)([a-z0-9._-]+@[a-z0-9._-]+)");
@@ -52,10 +53,14 @@ public class UpiSmsParserServiceImpl implements SmsParserService {
             return Optional.empty();
         }
 
-        String type =
+        String typeStr =
                 DEBIT.matcher(smsBody).find() ? "DEBIT" :
                         CREDIT.matcher(smsBody).find() ? "CREDIT" :
                                 null;
+
+        TransactionType txnType = CREDIT.matcher(smsBody).find()
+                ? TransactionType.INCOME
+                : TransactionType.EXPENSE;
 
         String upiId = extract(UPI_ID, smsBody, 1);
         String merchant = extract(MERCHANT, smsBody, 1);
@@ -63,12 +68,13 @@ public class UpiSmsParserServiceImpl implements SmsParserService {
         String date = extract(DATE, smsBody, 1);
         String lastFour = extract(LAST_FOUR, smsBody, 1);
 
-        double confidence = calculateConfidence(amount, type, upiId, utr);
+        double confidence = calculateConfidence(amount, typeStr, upiId, utr);
 
         return Optional.of(
                 ParsedTransaction.builder()
                         .bank("UPI")
                         .amount(amount)
+                        .type(txnType)
                         .lastFour(lastFour)
                         .merchant(
                                 merchant != null
@@ -96,11 +102,11 @@ public class UpiSmsParserServiceImpl implements SmsParserService {
                                        String upiId, String utr) {
 
         int score = 0;
-        if (amount != null) score += 40;
+        if (amount != null) score += 50;
         if (type != null) score += 20;
-        if (upiId != null) score += 20;
-        if (utr != null) score += 20;
+        if (upiId != null) score += 15;
+        if (utr != null) score += 15;
 
-        return score / 100.0;
+        return Math.min(1.0, score / 100.0);
     }
 }

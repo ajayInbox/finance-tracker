@@ -2,6 +2,7 @@ package com.finance.tracker.transactions.service.impl;
 
 import com.finance.tracker.transactions.domain.ParsedTransaction;
 import com.finance.tracker.transactions.domain.SmsRequest;
+import com.finance.tracker.transactions.domain.TransactionType;
 import com.finance.tracker.transactions.service.SmsParserService;
 import org.springframework.stereotype.Service;
 
@@ -16,10 +17,10 @@ public class GenericBankSmsParserServiceImpl implements SmsParserService {
             Pattern.compile("(?i)(rs\\.?|inr|₹)\\s?([\\d,]+(?:\\.\\d{1,2})?)");
 
     private static final Pattern DEBIT =
-            Pattern.compile("(?i)(debited|spent|paid|withdrawn|purchase)");
+            Pattern.compile("(?i)(debited|debit|spent|paid|withdrawn|withdrawal|purchase)");
 
     private static final Pattern CREDIT =
-            Pattern.compile("(?i)(credited|received|refund|deposited)");
+            Pattern.compile("(?i)(credited|credit|received|refund|deposited)");
 
     private static final Pattern MERCHANT =
             Pattern.compile("(?i)(?:at|to)\\s+([a-z0-9 &._-]{3,})");
@@ -42,6 +43,10 @@ public class GenericBankSmsParserServiceImpl implements SmsParserService {
                 : CREDIT.matcher(smsBody).find() ? "CREDIT"
                 : null;
 
+        TransactionType txnType = CREDIT.matcher(smsBody).find()
+                ? TransactionType.INCOME
+                : TransactionType.EXPENSE;
+
         String merchant = extract(MERCHANT, smsBody, 1);
         String date = extract(DATE, smsBody, 1);
         String lastFour = extract(LAST_FOUR, smsBody, 1);
@@ -52,6 +57,7 @@ public class GenericBankSmsParserServiceImpl implements SmsParserService {
                 ParsedTransaction.builder()
                         .bank("UNKNOWN")
                         .amount(amount)
+                        .type(txnType)
                         .lastFour(lastFour)
                         .merchant(merchant != null ? merchant.toUpperCase() : null)
                         .dateTime(date)

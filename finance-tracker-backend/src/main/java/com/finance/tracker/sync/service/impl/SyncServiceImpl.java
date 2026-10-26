@@ -117,7 +117,7 @@ public class SyncServiceImpl implements SyncService {
     }
 
     @Override
-    public SyncMetadataResponse updateMetadata(UUID userId, long  latestTimestamp) {
+    public SyncMetadataResponse updateMetadata(UUID userId, long latestTimestamp) {
         if (latestTimestamp < 0) {
             throw new InvalidSyncRequestException("Timestamp must be non-negative");
         }
@@ -130,15 +130,15 @@ public class SyncServiceImpl implements SyncService {
                     return newMeta;
                 });
 
-        // Only move the bookmark forward, never backward
-        if (latestTimestamp < metadata.getLastScannedSmsDate()) {
-            throw new InvalidSyncRequestException("Timestamp cannot move backward");
+        // Only move the bookmark forward, never backward. Do not throw an error during historical range syncs.
+        if (latestTimestamp > metadata.getLastScannedSmsDate()) {
+            metadata.setLastScannedSmsDate(latestTimestamp);
+            metadata = syncMetadataRepository.save(metadata);
         }
-        metadata.setLastScannedSmsDate(latestTimestamp);
-        SyncMetadata saved = syncMetadataRepository.save(metadata);
+
         return new SyncMetadataResponse(
-                saved.getUserId(),
-                saved.getLastScannedSmsDate(),
+                metadata.getUserId(),
+                metadata.getLastScannedSmsDate(),
                 "UPDATED"
         );
     }
@@ -182,6 +182,9 @@ public class SyncServiceImpl implements SyncService {
     }
 
     private OffsetDateTime fromTimestamp(long timestamp) {
+        if (timestamp <= 0) {
+            return OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        }
         return Instant.ofEpochMilli(timestamp).atOffset(ZoneOffset.UTC);
     }
 }

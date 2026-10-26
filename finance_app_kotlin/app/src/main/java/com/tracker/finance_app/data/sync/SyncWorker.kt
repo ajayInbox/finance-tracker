@@ -76,14 +76,16 @@ class SyncWorker(
             } else 0
 
             val now = System.currentTimeMillis()
-            prefs.setLastSyncTimestamp(now)
-            bus.emit(SyncUiStatus.Success(count, now))
+            val latestScanned = messages.maxOfOrNull { it.timestamp } ?: watermark
+            val effectiveTimestamp = if (latestScanned > 0) latestScanned else now
+            prefs.setLastSyncTimestamp(effectiveTimestamp)
+            bus.emit(SyncUiStatus.Success(count, effectiveTimestamp))
 
             Result.success(
                 workDataOf(
                     KEY_STATUS to "SUCCESS",
                     KEY_COUNT to count,
-                    KEY_TIMESTAMP to now
+                    KEY_TIMESTAMP to effectiveTimestamp
                 )
             )
         } catch (e: IOException) {
@@ -103,21 +105,24 @@ class SyncWorker(
     )
 
     private fun resolveScanStartTimestamp(watermark: Long): Long {
-        // If the user explicitly chose a range, honour it
+        // If the user explicitly chose a manual range (> 0), honour it (e.g. 7 days, 30 days)
         val manualBootstrap = inputData.getLong(KEY_BOOTSTRAP_START_TIMESTAMP, 0L)
+        Log.d(TAG, "manual range: $manualBootstrap")
         if (manualBootstrap > 0) return manualBootstrap
 
-        // Otherwise, continue from the backend watermark
+        // For "Continue from last sync" (0L) or background auto-sync: continue from the backend watermark fetched via API
         if (watermark > 0) return watermark
 
-        // Fallback for first-ever sync with no explicit range
+        // Fallback for first-ever sync with no prior watermark
         return System.currentTimeMillis() - TimeUnit.DAYS.toMillis(DEFAULT_INITIAL_SYNC_DAYS)
     }
 
     private fun queryTransactionSms(smsReader: SmsReader, sinceTimestamp: Long): List<SmsMessagePayload> {
-        if (sinceTimestamp <= 0) return emptyList()
-        return smsReader.readMessagesSince(sinceTimestamp)
-            .filter { TransactionFilter.isTransaction(it.body) }
+        val effectiveStart = if (sinceTimestamp > 0) sinceTimestamp else (System.currentTimeMillis() - TimeUnit.DAYS.toMillis(DEFAULT_INITIAL_SYNC_DAYS))
+        return smsReader.readMessagesSince(effectiveStart)
+            .filter { msg ->
+                TransactionFilter.isTransaction(msg.body)
+            }
             .map { msg ->
                 SmsMessagePayload(
                     body = msg.body,
@@ -184,9 +189,18 @@ class SyncWorker(
 }
 
 object TransactionFilter {
-    private val keywords = listOf("debited", "credited", "spent", "upi")
+    private val keywords = listOf(
+        "debited", "debit", "credited", "credit", "spent", "spend",
+        "upi", "txn", "transaction", "withdrawn", "withdrawal",
+        "paid", "payment", "refund", "purchase", "transferred", "sent", "received", "rs.", "inr"
+    )
+
+    // True OTP-only messages start with or explicitly declare e.g. "123456 is your OTP"
+    // whereas actual bank transaction notifications often include "Never share your OTP" as a footer.
+    private val explicitOtpOnlyRegex = Regex("""(?i)^\s*(\d{4,8}\s+is\s+(your\s+)?otp|otp\s+is\s+\d{4,8}|your\s+login\s+otp)""")
 
     fun isTransaction(text: String): Boolean {
+        if (explicitOtpOnlyRegex.containsMatchIn(text)) return false
         val msg = text.lowercase()
         return keywords.any { msg.contains(it) }
     }

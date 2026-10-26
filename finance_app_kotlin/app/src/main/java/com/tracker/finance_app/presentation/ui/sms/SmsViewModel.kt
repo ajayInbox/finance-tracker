@@ -65,6 +65,7 @@ class SmsViewModel @Inject constructor(
         loadPickers()
         observeSyncStatus()
         restoreAutoSyncSetting()
+        refreshWatermark()
     }
 
     private fun loadPickers() {
@@ -76,11 +77,11 @@ class SmsViewModel @Inject constructor(
         }
     }
 
-    fun assignAccount(draft: TransactionDraft, account: Account) {
+    fun assignAccount(draft: TransactionDraft, account: Account?) {
         _uiState.update { state ->
             state.copy(
                 drafts = state.drafts.map {
-                    if (it.id == draft.id) it.withAccount(account.id, account.name) else it
+                    if (it.id == draft.id) it.withAccount(account?.id, account?.name) else it
                 }
             )
         }
@@ -90,7 +91,7 @@ class SmsViewModel @Inject constructor(
         _uiState.update { state ->
             state.copy(
                 drafts = state.drafts.map {
-                    if (it.id == draft.id) it.withCategory(category.id, category.name) else it
+                    if (it.id == draft.id) it.withCategory(category.id, category.name, category.type) else it
                 }
             )
         }
@@ -100,7 +101,7 @@ class SmsViewModel @Inject constructor(
     fun confirmDrafts(toConfirm: List<TransactionDraft>) {
         val ready = toConfirm.filter { it.isReadyForConfirm() }
         if (ready.isEmpty()) {
-            _uiState.update { it.copy(message = "Select an account and category for each draft first") }
+            _uiState.update { it.copy(message = "Select a category for each draft first") }
             return
         }
 
@@ -155,8 +156,19 @@ class SmsViewModel @Inject constructor(
                     is SyncUiStatus.Success -> {
                         loadDrafts(isRefresh = true)
                         loadPickers()
+                        refreshWatermark()
                     }
                     else -> Unit
+                }
+            }
+        }
+    }
+
+    fun refreshWatermark() {
+        viewModelScope.launch {
+            smsRepository.getLatestWatermark().onSuccess { watermark ->
+                if (watermark > 0) {
+                    syncPreferences.setLastSyncTimestamp(watermark)
                 }
             }
         }

@@ -1,6 +1,7 @@
 package com.tracker.finance_app.data.remote
 
 import com.tracker.finance_app.domain.model.*
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.*
 
@@ -37,7 +38,10 @@ data class SyncBatchUploadRequest(
 
 @Serializable
 data class SyncBatchUploadResponse(
-    val newCount: Int = 0
+    @SerialName("transactionsCreated")
+    val newCount: Int = 0,
+    val duplicatesSkipped: Int = 0,
+    val failedToParse: Int = 0
 )
 
 @Serializable
@@ -47,7 +51,7 @@ data class BatchUpdateTransactionRequest(
     val amount: Double,
     val type: String,
     val categoryId: String,
-    val accountId: String,
+    val accountId: String? = null,
     val occurredAt: String,
     val merchant: String? = null,
     val notes: String? = null,

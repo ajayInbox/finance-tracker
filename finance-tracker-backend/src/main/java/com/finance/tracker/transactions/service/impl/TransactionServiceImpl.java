@@ -1,7 +1,6 @@
 package com.finance.tracker.transactions.service.impl;
 
 import com.finance.tracker.accounts.domain.AccountType;
-import com.finance.tracker.accounts.domain.BalanceUpdateRequest;
 import com.finance.tracker.accounts.domain.entities.Account;
 import com.finance.tracker.accounts.service.AccountService;
 import com.finance.tracker.category.domain.CategoryType;
@@ -17,6 +16,7 @@ import com.finance.tracker.transactions.exceptions.TransactionNotFoundException;
 import com.finance.tracker.transactions.repository.TransactionRepository;
 import com.finance.tracker.transactions.repository.UnparsedSmsLogsRepository;
 import com.finance.tracker.transactions.service.*;
+import com.finance.tracker.transactions.utilities.DateParserUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -139,16 +140,18 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 2. Build and Save Reversal
         // This restores the funds to the Account balance
-        Transaction reversal = buildReversalTransaction(transaction);
-        Transaction savedReversal = transactionRepository.save(reversal);
+        if (transaction.getAccountId() != null) {
+            Transaction reversal = buildReversalTransaction(transaction);
+            Transaction savedReversal = transactionRepository.save(reversal);
 
-        // 3. Update Account Balance
-        // It's vital this happens inside the transaction
-        accountService.updateBalance(savedReversal.getAccountId(),
-                userId,
-                savedReversal.getId(),
-                savedReversal.getType(),
-                savedReversal.getAmount());
+            // 3. Update Account Balance
+            // It's vital this happens inside the transaction
+            accountService.updateBalance(savedReversal.getAccountId(),
+                    userId,
+                    savedReversal.getId(),
+                    savedReversal.getType(),
+                    savedReversal.getAmount());
+        }
 
         // 4. Update Original Transaction
         // We mark it DELETED so it no longer shows up in user's active history
@@ -166,28 +169,28 @@ public class TransactionServiceImpl implements TransactionService {
         // 1. Check for Structural Changes
         boolean amountChanged = original.getAmount().compareTo(request.amount()) != 0;
         boolean typeChanged = !original.getType().name().equalsIgnoreCase(request.type());
-        boolean accountChanged = !original.getAccountId().equals(request.accountId());
+        boolean accountChanged = (original.getAccountId() == null && request.accountId() != null) ||
+                (original.getAccountId() != null && !original.getAccountId().equals(request.accountId()));
         boolean categoryChanged = !original.getCategory().getId().equals(request.categoryId());
 
         if (amountChanged || typeChanged || accountChanged || categoryChanged) {
 
             // Step A: Neutralize the old impact
-            Transaction reversal = buildReversalTransaction(original);
-            transactionRepository.save(reversal);
-            accountService.updateBalance(reversal.getAccountId(),
-                    userId,
-                    reversal.getId(),
-                    reversal.getType(),
-                    reversal.getAmount());
+            if (original.getAccountId() != null) {
+                Transaction reversal = buildReversalTransaction(original);
+                transactionRepository.save(reversal);
+                accountService.updateBalance(reversal.getAccountId(),
+                        userId,
+                        reversal.getId(),
+                        reversal.getType(),
+                        reversal.getAmount());
+            }
 
             // Step B: Resolve the Category and Account for the NEW transaction
-            // We always fetch these to ensure we have the most recent validated objects
             Category category = categoryService.validateAndGet(userId, request.categoryId(),
                     CategoryType.fromValueIgnoreCase(request.type()));
-            Account account = accountService.getAccountByIdAndUser(request.accountId(), userId);
 
             // Step C: Create the "corrected" transaction
-            // This takes ALL fields from the request, including non-structural ones
             Transaction newTxn = Transaction.builder()
                     .transactionName(request.transactionName())
                     .amount(request.amount())
@@ -206,11 +209,13 @@ public class TransactionServiceImpl implements TransactionService {
                     .build();
 
             Transaction savedNewTxn = transactionRepository.save(newTxn);
-            accountService.updateBalance(savedNewTxn.getAccountId(),
-                    userId,
-                    savedNewTxn.getId(),
-                    savedNewTxn.getType(),
-                    savedNewTxn.getAmount());
+            if (savedNewTxn.getAccountId() != null) {
+                accountService.updateBalance(savedNewTxn.getAccountId(),
+                        userId,
+                        savedNewTxn.getId(),
+                        savedNewTxn.getType(),
+                        savedNewTxn.getAmount());
+            }
 
             // Step D: Archive the old transaction
             original.setStatus(TransactionStatus.SUPERSEDED);
@@ -255,7 +260,7 @@ public class TransactionServiceImpl implements TransactionService {
                     .build();
         }
         // save parsed transaction as draft
-        saveParsedTransaction(userId, uniqueIdentifier, parsedTransaction.get(), message.getBody());
+        saveParsedTransaction(userId, uniqueIdentifier, parsedTransaction.get(), message.getBody(), message.getTimestamp());
         return ParsedTxnResponse.builder()
                 .status("CREATED")
                 .uniqueIdentifier(uniqueIdentifier)
@@ -271,7 +276,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .toList();
     }
 
-    private void saveParsedTransaction(UUID userId, String uniqueIdentifier, ParsedTransaction parsedTransaction, String originalMessage) {
+    private void saveParsedTransaction(UUID userId, String uniqueIdentifier, ParsedTransaction parsedTransaction, String originalMessage, Long smsTimestamp) {
         // 1. Sanitize the amount string to handle commas
         String sanitizedAmount = parsedTransaction.getAmount().replace(",", "");
 
@@ -280,22 +285,30 @@ public class TransactionServiceImpl implements TransactionService {
                 parsedTransaction.getBank(),
                 parsedTransaction.getReferenceId() != null ? parsedTransaction.getReferenceId() : "N/A");
 
+        TransactionType txnType = parsedTransaction.getType() != null
+                ? parsedTransaction.getType()
+                : TransactionType.EXPENSE;
+
+        OffsetDateTime occurredAt = DateParserUtils.parseFlexible(parsedTransaction.getDateTime(), smsTimestamp);
+
+        String merchant = parsedTransaction.getMerchant() != null ? parsedTransaction.getMerchant() : "Unknown Merchant";
+        String txnName = parsedTransaction.getMerchant() != null ? parsedTransaction.getMerchant() : "SMS Transaction";
+
         // 3. Map the DRAFT entity
         Transaction draftTransaction = Transaction.builder()
                 .amount(new BigDecimal(sanitizedAmount))
                 .createdAt(Instant.now())
                 .currency(Currency.INR)
-                .transactionName("Auto-detected Transaction")
+                .transactionName(txnName)
                 .status(TransactionStatus.DRAFT)
                 .lastAction("CREATED")
                 .accountId(null)
-                .category(resolveDefaultCategory(userId))
+                .category(resolveDefaultCategory(userId, txnType))
                 .userId(userId)
-                .type(TransactionType.UNKNOWN)
-                // Ensure occurredAt is parsed using a consistent formatter or fallback to now
-                .occurredAt(safeParseDateTime(parsedTransaction.getDateTime()))
+                .type(txnType)
+                .occurredAt(occurredAt)
                 .postedAt(OffsetDateTime.now())
-                .merchant(parsedTransaction.getMerchant() != null ? parsedTransaction.getMerchant() : "Unknown Merchant")
+                .merchant(merchant)
                 .source(TransactionSource.SMS)
                 .notes(notes)
                 .uniqueIdentifier(uniqueIdentifier)
@@ -306,7 +319,6 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private String generateSecureId(SmsRequest msg) {
-        // For production, use DigestUtils.sha256Hex(msg.getBody())
         return String.format("sms_%s_%d_%d",
                 msg.getSender(),
                 msg.getTimestamp(),
@@ -322,27 +334,21 @@ public class TransactionServiceImpl implements TransactionService {
         unparsedSmsLogsRepository.save(log);
     }
 
-    private OffsetDateTime safeParseDateTime(String dateTimeStr) {
-        try {
-            // Implementation depends on your parser's output format
-            return OffsetDateTime.parse(dateTimeStr);
-        } catch (Exception e) {
-            return OffsetDateTime.now(); // Fallback to current time if parsing fails
-        }
-    }
-
     @Override
     public TransactionResponseDto mapToResponseDto(Transaction txn) {
         return TransactionResponseDto.builder()
                 .id(txn.getId())
                 .transactionName(txn.getTransactionName())
                 .amount(txn.getAmount())
-                .type(txn.getType().name())
-                .categoryName(txn.getCategory().getName())
-               // .accountName(txn.getAccount().getAccountName())
-                .occurredAt(txn.getOccurredAt().toLocalDateTime())
+                .type(txn.getType() != null ? txn.getType().name() : TransactionType.EXPENSE.name())
+                .accountId(txn.getAccountId())
+                .categoryId(txn.getCategory() != null ? txn.getCategory().getId() : null)
+                .categoryName(txn.getCategory() != null ? txn.getCategory().getName() : null)
+                .occurredAt(txn.getOccurredAt() != null ? txn.getOccurredAt().toLocalDateTime() : LocalDateTime.now())
                 .tags(txn.getTags())
-                .status(txn.getStatus().name())
+                .status(txn.getStatus() != null ? txn.getStatus().name() : null)
+                .merchant(txn.getMerchant())
+                .notes(txn.getNotes())
                 .build();
     }
 
@@ -351,32 +357,32 @@ public class TransactionServiceImpl implements TransactionService {
                 .id(txn.getId())
                 .transactionName(txn.getTransactionName())
                 .amount(txn.getAmount())
-                .type(txn.getType().name())
+                .type(txn.getType() != null ? txn.getType().name() : TransactionType.EXPENSE.name())
+                .accountId(txn.getAccountId())
+                .accountName(txn.getAccountName())
+                .categoryId(txn.getCategoryId())
                 .categoryName(txn.getCategoryName())
-             //   .accountName(txn.getAccountName())
-                .occurredAt(txn.getOccurredAt().atOffset(ZoneOffset.UTC).toLocalDateTime())
+                .occurredAt(txn.getOccurredAt() != null ? txn.getOccurredAt().atOffset(ZoneOffset.UTC).toLocalDateTime() : LocalDateTime.now())
                 .tags(txn.getTags())
-                .status(txn.getStatus().name())
+                .status(txn.getStatus() != null ? txn.getStatus().name() : TransactionStatus.DRAFT.name())
                 .originalMessage(txn.getOriginalMessage())
+                .merchant(txn.getMerchant())
+                .notes(txn.getNotes())
                 .build();
     }
 
     private Transaction buildReversalTransaction(Transaction original) {
         return Transaction.builder()
-                // 1. Audit Details
                 .transactionName("Reversal: " + original.getTransactionName())
                 .notes("System generated reversal for transaction ID: " + original.getId())
                 .amount(original.getAmount())
                 .type(getReversalType(original.getType()))
                 .currency(original.getCurrency())
-             //   .account(original.getAccount())
                 .category(original.getCategory())
                 .userId(original.getUserId())
-
-                // 4. Timestamps
-                .occurredAt(OffsetDateTime.now()) // The reversal happens "now"
+                .occurredAt(OffsetDateTime.now())
                 .status(TransactionStatus.REVERSAL)
-                .reversalOf(original) // Self-reference link
+                .reversalOf(original)
                 .source(TransactionSource.Manual)
                 .build();
     }
@@ -390,36 +396,25 @@ public class TransactionServiceImpl implements TransactionService {
         };
     }
 
-    private Account resolveDefaultAccount(UUID userId) {
-        return accountRepository.findByUserIdAndIsDefaultTrue(userId)
-                .orElseGet(() -> accountRepository.findByUserIdAndActiveTrue(userId).stream().findFirst()
-                        .orElseGet(this::dummyAccount));
-    }
-
-    private Category resolveDefaultCategory(UUID userId) {
+    private Category resolveDefaultCategory(UUID userId, TransactionType type) {
+        String categoryTypeStr = (type == TransactionType.INCOME) ? "INCOME" : "EXPENSE";
         List<Category> userCategories = categoryRepository.findAllByUserIdAndDeletedAtIsNullAndIsActiveTrue(userId);
         return userCategories.stream()
-                .filter(c -> c.getName().equalsIgnoreCase("Uncategorized"))
+                .filter(c -> c.getType() != null && c.getType().name().equalsIgnoreCase(categoryTypeStr))
+                .filter(c -> c.getName().equalsIgnoreCase("Other") || c.getName().equalsIgnoreCase("Uncategorized") || c.getName().equalsIgnoreCase("General"))
                 .findFirst()
-                .orElseGet(() -> userCategories.stream().findFirst().orElseGet(this::dummyCategory));
-    }
-
-    private Account dummyAccount(){
-        return Account.builder()
-                .accountName("Dummy Account")
-                .id(UUID.fromString("303fcdca-458a-4709-96a1-646f79e00e1b"))
-                .lastFour("0000")
-                .accountType(AccountType.BANK)
-                .version(0L)
-                .build();
+                .orElseGet(() -> userCategories.stream()
+                        .filter(c -> c.getType() != null && c.getType().name().equalsIgnoreCase(categoryTypeStr))
+                        .findFirst()
+                        .orElseGet(() -> userCategories.stream().findFirst().orElseGet(this::dummyCategory)));
     }
 
     private Category dummyCategory(){
         return Category.builder()
                 .id(UUID.fromString("dc9ab23d-5b9f-41c7-b9fb-d043e0e3a835"))
-                .name("Unknown")
-                .description("Dummy Category")
-                .type(CategoryType.UNKNOWN)
+                .name("General")
+                .description("Default Category")
+                .type(CategoryType.EXPENSE)
                 .build();
     }
 }

@@ -144,7 +144,7 @@ public class TransactionController {
     }
 
     // -----------------------------------------------------
-    // Parse SMS Messages
+    // Batch Update Transactions
     // -----------------------------------------------------
     @PutMapping("/batch")
     public ResponseEntity<Void> batchUpdate(@RequestBody List<BatchUpdateTransactionRequestDto> requests, Authentication auth) {
@@ -154,14 +154,15 @@ public class TransactionController {
     }
 
     // -----------------------------------------------------
-    // Delete Draft Transactions
+    // Delete Draft Transactions (Scoped by userId)
     // -----------------------------------------------------
     @PostMapping("/drafts/batch-delete")
-    public ResponseEntity<Void> batchDelete(@RequestBody List<UUID> transactionIds) {
+    public ResponseEntity<Void> batchDelete(@RequestBody List<UUID> transactionIds, Authentication auth) {
         if (transactionIds == null || transactionIds.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        batchService.deleteDraftTransactions(transactionIds);
-        return ResponseEntity.noContent().build(); // 204 No Content is standard for successful deletes
+        UUID userId = UUID.fromString((String) auth.getPrincipal());
+        batchService.deleteDraftTransactions(userId, transactionIds);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -3,6 +3,7 @@ package com.finance.tracker.transactions.service.impl;
 import com.finance.tracker.transactions.domain.BankTemplate;
 import com.finance.tracker.transactions.domain.ParsedTransaction;
 import com.finance.tracker.transactions.domain.SmsRequest;
+import com.finance.tracker.transactions.domain.TransactionType;
 import com.finance.tracker.transactions.service.SmsParserService;
 import com.finance.tracker.transactions.utilities.BankSenderRegistry;
 import com.finance.tracker.transactions.utilities.DateParserUtils;
@@ -48,8 +49,14 @@ public class BankSmsParserServiceImpl implements SmsParserService {
                 if (confidence > bestConfidence) {
                     bestConfidence = confidence;
 
+                    boolean isIncome = template.getName().toUpperCase().contains("CREDIT_TXN") ||
+                            (smsBody.toLowerCase().contains("credited") && !smsBody.toLowerCase().contains("debited")) ||
+                            smsBody.toLowerCase().contains("refund");
+                    TransactionType txnType = isIncome ? TransactionType.INCOME : TransactionType.EXPENSE;
+
                     bestTx = ParsedTransaction.builder()
                             .bank(bank)
+                            .type(txnType)
                             .amount(get(matcher, "Amount"))
                             .merchant(get(matcher, "Merchant"))
                             .lastFour(extractLast4Digits(get(matcher, "LastFour")))

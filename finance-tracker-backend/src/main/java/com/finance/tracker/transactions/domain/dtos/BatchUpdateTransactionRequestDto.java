@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,7 +28,7 @@ public record BatchUpdateTransactionRequestDto(
         @NotNull(message = "Category ID is required")
         UUID categoryId,
 
-        @NotNull(message = "Account ID is required")
+        // Optional: user may not have added an account or is using the app purely for expense overview
         UUID accountId,
 
         @NotNull(message = "Occurrence date is required")
